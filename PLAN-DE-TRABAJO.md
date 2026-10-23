@@ -150,6 +150,7 @@ Requiere V3 y V6.
 
 ## Cómo le informo
 
+- Todo lo que necesite de usted viene con un paso a paso numerado: dónde entrar, dónde hacer clic, qué copiar y cómo comprobar que quedó bien.
 - Cada fase termina en un PR en español con qué se hizo, cómo probarlo, qué quedó pendiente, qué necesito de usted y la sección «Cumplimiento».
 - `docs/ESTADO.md` dice en qué va cada fase y qué está esperando su validación.
 - Cuando algo requiera un punto de validación, se lo pregunto directamente en la sesión, con mi recomendación.
