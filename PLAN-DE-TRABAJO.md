@@ -1,154 +1,162 @@
-# Plan de trabajo: de prototipo a producto
+# Plan de trabajo, versión 2: de prototipo a producto
 
-**Meta:** un MVP piloteado con una campaña real antes de las elecciones territoriales de octubre de 2027. Las fechas oficiales del calendario electoral se toman de la Registraduría cuando se publiquen.
+Versión 2 del 23/10/2026. Reemplaza al plan original y conserva su meta: un MVP piloteado con una campaña real antes de las elecciones territoriales de octubre de 2027. Las fechas oficiales del calendario electoral se toman de la Registraduría cuando se publiquen.
 
-Cada fase se hace en **una o varias sesiones de nube**. Cada sesión trabaja en su rama y termina en un PR que Mauricio revisa y fusiona. Una fase no empieza hasta que la anterior esté fusionada, salvo donde se indica que se puede trabajar **en paralelo**.
+## Qué cambia y por qué
 
-**Leyenda:**
-- 🔑 lo que Mauricio debe entregar o hacer;
-- ✅ criterios de aceptación.
+El plan original detenía cada fase en dos esperas: la revisión y fusión de cada PR, y las claves de cada servicio. Con ese esquema, una clave que tardara semanas (por ejemplo, el permiso de Meta) frenaba todo lo que venía después. Este plan cambia tres cosas:
 
----
+1. **Avanzo sin esperar las claves.** Cada servicio externo (Supabase, mapas, IA, pauta, SMS, correo) queda detrás de un adaptador con un modo de demostración que funciona con datos ficticios. Cuando usted entrega una clave, el servicio real se enciende con una variable de entorno, sin reescribir nada.
+2. **Fusiono mis propios PR**, cuando la integración continua está en verde y pasa la revisión de cumplimiento. Cada fase sigue teniendo su rama y su PR, para que quede trazabilidad completa y usted pueda revisar después lo que quiera.
+3. **Su validación se pide solo en los puntos de la sección siguiente.** Son los que implican dinero, cuentas a su nombre, decisiones legales, datos reales o producción. Todo lo demás lo decido yo y queda explicado en el PR de la fase.
 
-## Fase 0: cimientos del repositorio (1 sesión)
+## Lo que necesita su validación
 
-**Objetivo:** pasar del prototipo suelto a un monorepo ordenado, con integración continua.
+Solo estos puntos me detienen. Si uno de ellos llega en mitad de una fase, sigo con lo que no dependa de él y se lo pregunto.
 
-1. Crear el monorepo con npm workspaces:
-   ```
-   apps/web          ← mover aquí el prototipo (src, index.html, vite.config.ts)
-   apps/movil        ← vacío por ahora (lo crea la fase 3)
-   packages/nucleo   ← mover aquí src/logic.ts, tipos compartidos y formatos (miles, pct, fechas)
-   supabase/         ← migraciones, semillas y pruebas (lo llena la fase 1)
-   docs/
-   ```
-2. Que `apps/web` importe la lógica de `packages/nucleo`. Pruebas unitarias con Vitest para todo `nucleo`: índice del líder, recomendación tierra + pauta, cobertura de mesas, enlace de WhatsApp manual y duplicados (sección 7.1 del diseño).
-3. GitHub Actions: *typecheck*, *lint* y pruebas en cada PR.
-4. `.env.example` completo y un `docs/DESARROLLO.md` con cómo correr todo en local.
-
-✅ `npm run dev -w apps/web` abre el prototipo igual que antes. `npm test` pasa con al menos 20 pruebas de `nucleo`. La integración continua está en verde.
-
----
-
-## Fase 1: base de datos, seguridad y cuentas (2-3 sesiones)
-
-**Objetivo:** el corazón de datos del producto, seguro desde el primer día.
-
-1. Migraciones SQL del modelo de datos (sección 6 del diseño): organización, campaña, usuario, membresía, territorio, puesto, persona, autorización, `preferencia_politica` (opcional), solicitud_titular, líder, formulario y respuesta, tarea, testigo, incidencia, acta_e14, pauta_metrica, historico_resultado y auditoría.
-2. **RLS en todas las tablas con datos de personas.** Las políticas se basan en `membresia` (rol + territorios) y una persona solo ve su campaña y sus territorios.
-3. **Pruebas de RLS:** un líder no ve otra zona, un candidato no ve la base de otro candidato del mismo partido y un testigo solo ve su mesa.
-4. Cédula cifrada + `documento_hash` para buscar duplicados sin exponer el documento.
-5. Funciones: detección de posibles duplicados (con sus razones), fusión con auditoría y registro de autorización.
-6. Auth: correo + contraseña o enlace mágico, **2FA obligatorio** para administradores y gerentes, e invitaciones por rol.
-7. Semilla de datos ficticios (Turbaco del prototipo) para desarrollo y demos.
-8. Carga de territorios: DIVIPOLE (departamentos y municipios) y el catálogo de puestos desde datos abiertos oficiales, con fuente y fecha.
-
-🔑 Proyecto de Supabase creado (región São Paulo), con `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` en el entorno de nube.
-✅ Migraciones aplicables desde cero. Pruebas de RLS en verde. Ningún dato de persona es legible sin membresía. Semilla cargada.
-
-> Si el entorno no tiene Docker para la Supabase local, instale PostgreSQL + PostGIS con el gestor de paquetes y pruebe las migraciones y las RLS allí, con un esquema `auth` mínimo que simule `auth.uid()`.
-
----
-
-## Fase 2: panel web con datos reales (2-3 sesiones, en paralelo con la fase 3)
-
-1. Conectar el prototipo a Supabase. Las pantallas Mando, Líderes, Día E, Datos y Resumen leen datos reales.
-2. MapLibre con teselas del proveedor elegido y las zonas y puestos desde PostGIS (dejando el SVG como respaldo sin conexión).
-3. **Importación de Excel**: asistente que reconoce las columnas, vista previa, duplicados explicables y validación.
-4. Gestión de equipo: invitar líderes, coordinadores y testigos, asignar territorios y metas, y enlaces y QR de inscripción por rol con la autorización integrada.
-5. Formularios: constructor básico y respuestas.
-6. Datos y cumplimiento: autorizaciones, solicitudes de titulares con plazos y exportaciones con marca de agua y registro en la auditoría.
-
-🔑 Clave del proveedor de mapas (`MAPTILER_KEY` o equivalente).
-✅ Con la semilla, un gerente ve la campaña completa y un coordinador solo su territorio. La importación de un Excel de 5.000 filas ficticias termina con su reporte de duplicados. Playwright cubre el inicio de sesión, la importación y la invitación.
-
----
-
-## Fase 3: app del líder y del testigo (2-3 sesiones, en paralelo con la fase 2)
-
-1. App en Expo con inicio de sesión, rol líder y rol testigo.
-2. **Sin conexión primero:** SQLite local, cola de sincronización y estados visibles (pendiente, enviado, revisado). Nada se pierde si se cierra la app.
-3. Líder: tareas de hoy, registrar persona con autorización, mis metas y botón de WhatsApp manual.
-4. Escáner de planillas: foto o lote, guardado local y envío al recuperar señal (la lectura con IA la hace la fase 4).
-5. Testigo: mi mesa, confirmar apertura, foto del E-14 y reportar una novedad.
-6. Generador de la planilla imprimible (PDF) con QR del líder y del lote, y texto de autorización.
-
-🔑 Cuentas de Apple Developer y Google Play, cuando se vaya a publicar.
-✅ En modo avión, un líder registra 10 personas y escanea 2 planillas; al volver la señal todo se sincroniza sin duplicar. Hay builds de prueba para Android e iOS.
-
----
-
-## Fase 4: IA (2 sesiones)
-
-1. **Lectura de planillas** con visión: extrae las filas con su confianza, marca dudas y duplicados, y obliga a la revisión humana en web y app (como en el prototipo).
-2. **Lectura del E-14** con revisión humana y consolidación privada por mesa, puesto y zona.
-3. **Strategos**: chat con *tool use* sobre vistas agregadas (cobertura, metas, histórico, pauta, llamadas, índice de líderes).
-   - Cada respuesta lista sus fuentes.
-   - Las tareas propuestas se aprueban con un clic.
-   - Queda un registro de uso y costo por campaña.
-4. Límites por plan: cupos de lectura y de consultas.
-
-🔑 `ANTHROPIC_API_KEY` en el entorno.
-✅ Una planilla ficticia escrita a mano se lee con dudas marcadas. Strategos responde «¿dónde actúo esta semana?» con datos de la semilla y fuentes. Una prueba automática verifica que ninguna herramienta devuelva filas de personas.
-
----
-
-## Fase 5: tierra + pauta (2 sesiones)
-
-1. Conector de **Meta Ads** (OAuth de la cuenta publicitaria del cliente): alcance, clics y gasto por región o ciudad.
-2. Conector de **Google Ads**, con las mismas métricas.
-3. Asignación de las métricas a zonas, con un método documentado y sus límites (la geografía de las plataformas no coincide con los barrios).
-4. Capa «Alcance de la pauta» y recomendación tierra + pauta con datos reales; Strategos las usa.
-
-🔑 App de Meta con permisos `ads_read` aprobados, y *developer token* de Google Ads. **Pídalos al inicio del proyecto: la revisión puede tardar semanas.**
-✅ Con una cuenta de prueba conectada, el mapa muestra la pauta por zona y las recomendaciones cambian según esos datos.
-
----
-
-## Fase 6: Día E (1-2 sesiones)
-
-1. Centro de mando en tiempo real: mesas con semáforo, E-14 recibidos y novedades.
-2. Novedades con prioridad, responsable, escalamiento al abogado de zona y cierre.
-3. Índice de cumplimiento del líder después de la elección, **en agregado por mesa** (sección 7.3 del diseño).
-4. Modo **simulacro** para entrenar al equipo.
-
-✅ Un simulacro con 100 mesas ficticias y 20 usuarios simultáneos funciona sin errores ni retrasos visibles.
-
----
-
-## Fase 7: comunicaciones, telemarketing y finanzas (2-3 sesiones)
-
-1. SMS y correo a contactos autorizados, con baja automática y reportes de entrega.
-2. Telemarketing: colas por grupo y territorio, guion con IA y resultado de cada llamada.
-3. Finanzas de campaña: presupuesto, ingresos y gastos, topes, soportes y exportación para el contador (formato de Cuentas Claras).
-4. Panel de partido: multicandidato y cruce entre candidatos sin exponer datos personales.
-
-🔑 Proveedor de SMS y de correo con sus claves.
-
----
-
-## Fase 8: piloto y salida a producción
-
-1. Despliegue: web en Cloudflare Pages y backend en Supabase de producción, con copias de respaldo.
-2. Monitoreo de errores, registro de auditoría revisable y plan de respuesta a incidentes.
-3. Piloto con una campaña real pequeña (concejo o JAL), con capacitación y soporte.
-
-🔑 **Antes de cargar datos reales:**
-- revisión de un abogado de datos personales (contrato de encargado del tratamiento, texto de autorización y registro de bases ante la SIC si aplica);
-- dominio propio.
-
----
-
-## Cómo encadenar las sesiones
-
-| Orden | Sesiones | Depende de |
+| | Punto de validación | Cuándo aparece |
 |---|---|---|
-| 1 | Fase 0 | — |
-| 2 | Fase 1 | Fase 0 fusionada |
-| 3 | Fase 2 y fase 3 **en paralelo** (dos sesiones) | Fase 1 fusionada |
-| 4 | Fase 4 | Fases 2 y 3 |
-| 5 | Fase 5 y fase 6 en paralelo | Fase 4 (fase 6 solo necesita la 3) |
-| 6 | Fase 7 | Fase 2 |
-| 7 | Fase 8 | Todo lo anterior |
+| **V1** | **Aprobar este plan.** | Ahora. |
+| **V2** | **Cuentas y claves a su nombre:** Supabase, proveedor de mapas, API de Anthropic, Expo (EAS), Meta y Google Ads, SMS y correo. Usted las crea y las carga en el entorno; yo le digo exactamente cuáles y dónde. No bloquean el desarrollo: solo encienden el servicio real. | Escalonado (ver la sección «Lo que necesito de usted»). |
+| **V3** | **Textos y decisiones legales:** el texto de la autorización de datos, el aviso de privacidad, la política de tratamiento y el contrato de encargado. Yo preparo borradores; los valida un abogado de datos personales. | Antes de cualquier dato real. |
+| **V4** | **Cualquier excepción a las reglas que no se negocian de `CLAUDE.md`**, por ejemplo activar la tabla de opinión política para una campaña o cambiar una regla. Nunca lo hago por mi cuenta. | Si surge. |
+| **V5** | **Enviar código o datos a un servicio externo que no esté ya aprobado** (por ejemplo, Superdesign), o agregar una dependencia de pago. | Si surge. |
+| **V6** | **Producción:** desplegar, apuntar un dominio, cargar datos reales, publicar en las tiendas, gastar dinero o hacer cualquier cambio irreversible sobre la base de producción. | Fases 8 y 9. |
+| **V7** | **Decisiones de negocio:** precios, nombre definitivo y alcance que se recorte por tiempo. | Cuando haga falta; le presento opciones con mi recomendación. |
 
-Al cerrar cada fase, la sesión actualiza la casilla correspondiente en `docs/ESTADO.md` (la crea la fase 0) con: fecha, PR, qué quedó y qué falta.
+**Revisiones sin bloqueo.** Al terminar el panel web (fase 2) y la app (fase 3) le dejo un enlace o un video corto para que los vea. Sigo con la fase siguiente mientras tanto, y sus comentarios entran como ajustes en un PR aparte.
+
+## Lo que decido yo
+
+- Arquitectura, librerías (de código abierto y con licencias permisivas), estructura del código y orden de trabajo dentro de cada fase.
+- Fusionar mis PR con la integración continua en verde y la revisión de cumplimiento hecha. Nunca subo cambios directo a `main` ni reescribo su historial.
+- Corregir inconsistencias de la documentación (por ejemplo, alinear la sección 7.4 del diseño con los umbrales del prototipo).
+- Hacer varias fases seguidas en una misma sesión cuando no dependan de nada suyo.
+- Datos de prueba: siempre ficticios, a partir de la semilla de Turbaco.
+
+## Fases
+
+| Fase | Tema | Necesita algo suyo para empezar | Qué enciende la clave cuando llegue |
+|---|---|---|---|
+| 0 | Cimientos del repositorio | — | ✅ Hecha (PR #1). |
+| 1 | Base de datos, seguridad y cuentas | No | Aplicar las migraciones a su proyecto de Supabase y activar el 2FA. |
+| 2 | Panel web con datos | No | Datos reales de Supabase y teselas del mapa. |
+| 3 | App del líder y del testigo | No | Builds de prueba en Android e iOS (Expo). |
+| 4 | IA: lectura de planillas y E-14, y Strategos | No | Respuestas reales de Claude. |
+| 5 | Día E | No | — |
+| 6 | Comunicaciones, telemarketing y finanzas | No | Envíos reales de SMS y correo. |
+| 7 | Tierra + pauta | No | Métricas reales de Meta y Google Ads. |
+| 8 | Endurecimiento y despliegue de prueba | Claves de V2 para el entorno de prueba | — |
+| 9 | Piloto y producción | V3 y V6 | — |
+
+### Fase 1: base de datos, seguridad y cuentas
+
+En un Postgres 16 con PostGIS local, que imita a Supabase:
+- Migraciones del modelo de datos de la sección 6 del diseño.
+- RLS en todas las tablas con datos de personas, basada en `membresia` (rol y territorios).
+- Pruebas SQL de RLS: un líder no ve otra zona, un candidato no ve la base de otro candidato del mismo partido y un testigo solo ve su mesa.
+- Cédula cifrada y `documento_hash`.
+- Funciones de duplicados, fusión con auditoría y registro de autorización.
+- Semilla ficticia de Turbaco.
+- Un esquema `auth` mínimo que simula al de Supabase.
+
+Las pruebas de RLS entran a la integración continua. La carga de DIVIPOLE y del catálogo de puestos queda lista como script; corre cuando se permita el dominio de datos abiertos (ver «Lo que necesito de usted»).
+
+✅ Las migraciones se aplican desde cero y las pruebas de RLS pasan en la integración continua. Ningún dato de persona se puede leer sin membresía.
+
+### Fase 2: panel web con datos
+
+- Una capa de datos con dos modos: «demo» (la semilla, en el navegador) y «supabase» (real).
+- Inicio de sesión por rol.
+- Importación de Excel con vista previa, duplicados explicables y validación.
+- Gestión del equipo con invitaciones, enlaces y QR por rol.
+- Constructor básico de formularios.
+- Datos y cumplimiento: autorizaciones, solicitudes de titulares con plazos y exportaciones con marca de agua.
+- Mapa con MapLibre, y el SVG actual como respaldo.
+- Playwright para el inicio de sesión, la importación y la invitación.
+
+✅ En modo demo, un gerente ve toda la campaña y un coordinador solo su territorio. Un Excel de 5.000 filas ficticias termina con su reporte de duplicados. Las pruebas de Playwright pasan.
+
+### Fase 3: app del líder y del testigo
+
+- Expo con SQLite local y cola de sincronización, con estados visibles (pendiente, enviado, revisado).
+- Líder: tareas, registro con autorización, metas, WhatsApp manual y escáner de planillas.
+- Testigo: su mesa, apertura, foto del E-14 y novedades.
+- Planilla imprimible en PDF con QR.
+
+La sincronización se prueba con pruebas automáticas que simulan quedarse sin señal. No tengo teléfonos reales: la prueba en un equipo físico la hace usted o alguien del equipo, con el build de prueba (V2: cuenta de Expo).
+
+✅ Sin conexión, 10 registros y 2 planillas se sincronizan sin duplicar al volver la señal (prueba automática).
+
+### Fase 4: IA
+
+- Lectura de planillas y del E-14 con visión, con revisión humana obligatoria.
+- Strategos con *tool use* sobre vistas agregadas, con fuentes en cada respuesta y tareas aprobables con un clic.
+- Registro de uso y costo por campaña, y cupos por plan.
+
+Sin clave, un modelo simulado devuelve respuestas fijas para las pruebas.
+
+✅ Una prueba automática verifica que ninguna herramienta de Strategos devuelve filas de personas. Con la clave, Strategos responde «¿dónde actúo esta semana?» con la semilla y sus fuentes.
+
+### Fase 5: Día E
+
+Antes estaba después de la pauta. La adelanto porque no depende de nada externo.
+- Centro de mando en tiempo real: mesas con semáforo, E-14 recibidos y novedades con prioridad, responsable y escalamiento.
+- Índice de cumplimiento del líder, agregado por mesa.
+- Modo simulacro.
+
+✅ Un simulacro con 100 mesas y 20 usuarios simultáneos funciona sin errores (prueba de carga automática).
+
+### Fase 6: comunicaciones, telemarketing y finanzas
+
+- SMS y correo detrás de adaptadores, solo a contactos autorizados, con baja en un paso.
+- Colas de telemarketing con guion y resultado de cada llamada.
+- Finanzas: presupuesto, topes, soportes y exportación para el contador.
+- Panel de partido sin cruce de datos personales.
+
+El formato de Cuentas Claras lo armo a partir de la documentación pública del CNE. Si no logro confirmarlo desde aquí, le pido un ejemplo real del contador.
+
+### Fase 7: tierra + pauta
+
+- Conectores de Meta Ads y Google Ads con OAuth del cliente.
+- Asignación de las métricas a zonas, con su método y sus límites documentados.
+- Capa del mapa y recomendación con datos reales.
+
+Se construye con respuestas de ejemplo de las APIs mientras llegan los permisos.
+
+### Fase 8: endurecimiento y despliegue de prueba
+
+- Revisión de seguridad, copias de respaldo, monitoreo de errores, registro de auditoría revisable y plan de incidentes.
+- Despliegue de un entorno de **prueba** (Cloudflare Pages y Supabase), con datos ficticios.
+
+### Fase 9: piloto y producción
+
+Requiere V3 y V6.
+- Producción.
+- Piloto con una campaña pequeña (concejo o JAL), con capacitación y soporte.
+
+## Lo que necesito de usted, por orden
+
+1. **Ahora:** aprobar este plan (V1).
+2. **Ahora, porque tarda semanas:** pedir el acceso a la API de Meta (app con `ads_read`) y el *developer token* de Google Ads. No frena el desarrollo, pero sin ellos la fase 7 se queda en modo demo.
+3. **Ahora, en la red del entorno** (Edit → Network access → Allowed domains, con «Allow package managers» marcado):
+   - `www.datos.gov.co`, para cargar DIVIPOLE y el catálogo de puestos;
+   - más adelante, el dominio de su proyecto de Supabase (`*.supabase.co`) y el del proveedor de mapas.
+4. **Durante las fases 1 y 2:** el proyecto de Supabase en São Paulo, con sus tres claves en el entorno, y la clave de MapTiler o Stadia.
+5. **Durante la fase 3:** una cuenta de Expo, para los builds de prueba.
+6. **Durante la fase 4:** la clave de la API de Anthropic.
+7. **Durante la fase 6:** los proveedores de SMS y correo.
+8. **Antes de la fase 9:** el abogado de datos personales, el dominio propio y las cuentas de Apple Developer y Google Play.
+
+## Cómo le informo
+
+- Cada fase termina en un PR en español con qué se hizo, cómo probarlo, qué quedó pendiente, qué necesito de usted y la sección «Cumplimiento».
+- `docs/ESTADO.md` dice en qué va cada fase y qué está esperando su validación.
+- Cuando algo requiera un punto de validación, se lo pregunto directamente en la sesión, con mi recomendación.
+
+## Límites del entorno que debe conocer
+
+- **Red restringida.** Cada servicio externo necesita su dominio permitido. Lo que no esté permitido queda en modo demo hasta que lo esté.
+- **Sin teléfonos reales.** La app se prueba con pruebas automáticas y en el navegador. La prueba en un equipo físico la tiene que hacer una persona.
+- **Contenedor efímero.** Todo lo que vale queda en el repositorio: nada importante vive solo en la sesión.
+- **Revisión legal.** No reemplazo a un abogado. Los textos legales que prepare son borradores hasta que pasen por V3.
