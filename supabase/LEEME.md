@@ -10,6 +10,9 @@
 | `local/` | Solo para pruebas locales: imita lo mínimo de Supabase (roles y `auth.uid()`) y trae funciones para actuar como un usuario de la semilla. **No se aplica en Supabase.** |
 | `scripts/probar.sh` | Crea una base desde cero, aplica todo y corre las pruebas (`npm run test:db`). |
 | `scripts/cargar-territorios.mjs` | Convierte un CSV de datos abiertos (municipios o puestos) en SQL para cargarlo. |
+| `scripts/preparar-datos-abiertos.mjs` | Descarga de datos.gov.co los municipios del DANE y los puestos de la Registraduría y los deja listos para `cargar-territorios.mjs`, con un informe. |
+| `scripts/aplicar-remoto.mjs` | Aplica las migraciones, crea los secretos del Vault, carga territorios y verifica el proyecto real, por la API de administración de Supabase. Nunca carga `seed.sql`. |
+| `datos/informe-datos-abiertos.md` | Lo que dio el último cruce de municipios y puestos: qué se cruzó sin nombre exacto y qué quedó sin ubicación. |
 
 ## Quién ve qué
 
@@ -55,16 +58,35 @@ La integración continua lo hace sola en cada PR.
 
 ## Cargar municipios y puestos oficiales
 
+Las fuentes son de www.datos.gov.co:
+
+| Qué | Conjunto | Quién lo publica | Datos al |
+|---|---|---|---|
+| Departamentos y municipios | `gdxc-w37w`, «DIVIPOLA - Códigos municipios» | DANE | 24/01/2025 |
+| Puestos de votación | `mv2e-prx5`, «Divipole Elecciones Territoriales 2023 con georreferenciación» | Registraduría | 11/10/2023 |
+
+Es el único catálogo nacional de puestos con coordenadas que hay en datos.gov.co. Tiene tres vacíos que conviene conocer:
+- **No trae el código DIVIPOLA del municipio**, solo su nombre. El script lo cruza con el DANE por nombre; si el nombre no coincide exacto (por ejemplo «CALI» frente a «SANTIAGO DE CALI»), por palabras, y si hay varios candidatos («SAN PEDRO» en Antioquia), por cercanía a la cabecera. Dos casos se resolvieron a mano (Mompós y Papunahua). Todo cruce que no fue exacto queda en el informe para revisarlo.
+- **No trae el código del puesto.** Se genera uno estable (`RNEC23-<municipio>-<huella>`) a partir de departamento, municipio, comuna, nombre y dirección. Así, recargar el archivo actualiza en vez de duplicar.
+- **No trae el número de mesas.** Queda en 0 (sin dato) hasta que la Registraduría publique la Divipole de 2027.
+
+Además, 8 puestos traen coordenadas imposibles (fuera de Colombia). Se cargan sin ubicación; no se corrigen a ojo.
+
 ```bash
-node supabase/scripts/cargar-territorios.mjs municipios archivo.csv --fuente "DANE, DIVIPOLA" --fecha 2026-10-01 > municipios.sql
-node supabase/scripts/cargar-territorios.mjs puestos archivo.csv --fuente "Registraduría" --fecha 2026-10-01 > puestos.sql
+node supabase/scripts/preparar-datos-abiertos.mjs /tmp/datos       # descarga y deja municipios.csv, puestos.csv e informe.md
+node supabase/scripts/cargar-territorios.mjs municipios /tmp/datos/municipios.csv --fuente "DANE, DIVIPOLA - Códigos municipios (datos.gov.co gdxc-w37w)" --fecha 2025-01-24 > /tmp/datos/municipios.sql
+node supabase/scripts/cargar-territorios.mjs puestos /tmp/datos/puestos.csv --fuente "Registraduría, Divipole territoriales 2023 (datos.gov.co mv2e-prx5)" --fecha 2023-10-11 > /tmp/datos/puestos.sql
+node supabase/scripts/aplicar-remoto.mjs cargar /tmp/datos/municipios.sql   # primero municipios: los puestos cuelgan de ellos
+node supabase/scripts/aplicar-remoto.mjs cargar /tmp/datos/puestos.sql
 ```
 
-Si el archivo oficial usa otros nombres de columna, se indican con `--columna cod_mpio="Código Municipio"`. Si falta alguna columna, el script le muestra las que encontró. No se pudo descargar ni revisar el archivo oficial desde el entorno de nube, porque la red no permite `datos.gov.co`: el primer archivo real hay que revisarlo antes de cargarlo.
+En local, los `.sql` también se pueden aplicar con `psql -f`. Si un archivo oficial usa otros nombres de columna, `cargar-territorios.mjs` acepta `--columna cod_mpio="Código Municipio"` y, si falta alguna, muestra las que encontró.
 
 ## Pasar esto a su proyecto de Supabase (paso a paso)
 
 Esto se hace una sola vez, cuando tenga el proyecto creado. Los nombres de los menús de Supabase pueden cambiar un poco con el tiempo. Si algo no coincide, avíseme qué ve en pantalla.
+
+**Por qué hace falta un token personal.** El entorno de nube solo deja salir conexiones web (HTTPS). La cadena `SUPABASE_DB_URL` usa el puerto 5432 de Postgres, que el entorno no permite. Por eso las migraciones se aplican por la API de administración de Supabase (`api.supabase.com`), que es HTTPS y pide un token personal.
 
 **1. Crear el proyecto**
 1. Entre a https://supabase.com y cree una cuenta (puede usar «Continue with GitHub»).
@@ -75,27 +97,33 @@ Esto se hace una sola vez, cuando tenga el proyecto creado. Los nombres de los m
    - **Region:** `South America (São Paulo)`.
 4. Pulse **Create new project** y espere un par de minutos.
 
-**2. Copiar las tres claves al entorno de nube**
-1. En el proyecto, entre a **Project Settings** (ícono de engranaje) y luego a **API**.
-2. Copie **Project URL**, la clave **anon public** y la clave **service_role**. La `service_role` es secreta: no la comparta con nadie ni la pegue en el chat.
-3. En claude.ai/code, abra el menú del entorno, en la barra de título de la sesión, y pulse **Edit**.
-4. En **Environment variables**, agregue una línea por clave:
+**2. Copiar las claves al entorno de nube**
+1. En el proyecto, entre a **Project Settings** (ícono de engranaje) y luego a **API Keys**.
+2. Copie la clave **publishable** (empieza por `sb_publishable_`) y cree y copie una clave **secret** (empieza por `sb_secret_`). La secreta no la comparta con nadie ni la pegue en el chat. Si su proyecto solo muestra las claves antiguas («anon» y «service_role», en la pestaña **Legacy API Keys**), también sirven: la «anon» va como publicable y la «service_role» como secreta.
+3. En **Project Settings → Data API** (o en la página de inicio del proyecto) copie la **Project URL**. Debe verse así: `https://abcdefghijklmnopqrst.supabase.co`, **sin** `/rest/v1/` al final.
+4. Cree el token personal: entre a https://supabase.com/dashboard/account/tokens, pulse **Generate new token**, póngale de nombre `ventaja-mando-nube` y copie el valor (empieza por `sbp_`). Solo se muestra una vez. Este token puede administrar todos los proyectos de su cuenta: trátelo como una contraseña.
+5. En claude.ai/code, abra el menú del entorno, en la barra de título de la sesión, y pulse **Edit**.
+6. En **Environment variables**, deje una línea por clave:
    ```
-   SUPABASE_URL=la Project URL
-   SUPABASE_ANON_KEY=la clave anon public
-   SUPABASE_SERVICE_ROLE_KEY=la clave service_role
+   SUPABASE_URL=la Project URL, sin /rest/v1/
+   SUPABASE_PUBLISHABLE_KEY=la clave publishable
+   SUPABASE_SECRET_KEY=la clave secret
+   SUPABASE_DB_URL=la cadena de conexión (Project Settings → Database → Connection string)
+   SUPABASE_ACCESS_TOKEN=el token personal
    ```
-5. En **Network access → Allowed domains**, agregue `*.supabase.co` y deje marcado **Allow package managers**.
-6. Guarde y avíseme. Yo aplico las migraciones y le confirmo que todo quedó bien.
+7. En **Network access → Allowed domains**, deje `*.supabase.co` y agregue `api.supabase.com`. Deje marcado **Allow package managers**.
+8. Guarde, abra una sesión nueva y avíseme. Yo aplico las migraciones, creo los secretos y le confirmo que todo quedó bien.
 
-**3. Crear los secretos de cifrado de la cédula** (lo puedo hacer yo con las claves; si prefiere hacerlo usted):
+**3. Los secretos de cifrado de la cédula**
+
+Los crea `aplicar-remoto.mjs migrar` dentro de la base: los valores se generan allí y nadie los ve, ni siquiera yo. Si prefiere crearlos usted:
 1. En Supabase, abra **SQL Editor** y pulse **New query**.
 2. Pegue esto y pulse **Run**:
    ```sql
    select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'clave_documento');
    select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'pepper_documento');
    ```
-3. Los valores se generan solos y nadie los ve. **No los borre nunca:** sin `clave_documento`, las cédulas cifradas no se pueden recuperar.
+3. **No los borre nunca:** sin `clave_documento`, las cédulas cifradas no se pueden recuperar.
 
 **4. Activar la verificación en dos pasos (2FA)**
 1. En Supabase, entre a **Authentication**, luego a **Sign In / Providers** (o **Multi-Factor**, según la versión).
@@ -104,7 +132,4 @@ Esto se hace una sola vez, cuando tenga el proyecto creado. Los nombres de los m
 
 ## Lo que no se pudo probar desde aquí
 
-Las pruebas corren sobre un Postgres 16 con PostGIS que imita a Supabase, con la parte de autenticación simulada. El primer despliegue en su proyecto real confirmará tres cosas:
-- que el Vault lee los secretos;
-- que el token de sesión trae el dato de dos factores (`aal`);
-- que las migraciones se aplican sin cambios.
+Las pruebas corren sobre un Postgres 16 con PostGIS que imita a Supabase, con la parte de autenticación simulada. `aplicar-remoto.mjs verificar` confirma en el proyecto real que las migraciones quedaron, que no hay tablas sin RLS y que el Vault cifra y descifra. Falta confirmar, con un usuario real que inicie sesión, que el token de sesión trae el dato de dos factores (`aal`). Eso se prueba en la fase 2, con el inicio de sesión del panel.
