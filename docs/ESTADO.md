@@ -4,7 +4,7 @@ Cada sesión actualiza su fila al cerrar la fase, con la fecha, el PR, qué qued
 
 | Fase | Estado | Fecha | PR | Qué quedó | Qué falta |
 |---|---|---|---|---|---|
-| 0. Cimientos del repositorio | En revisión | 23/10/2026 | [#1](https://github.com/maocampuzano/ventaja-mando/pull/1) | Monorepo con npm workspaces; prototipo en `apps/web` sin cambios visibles; lógica en `packages/nucleo` con detección de duplicados y 43 pruebas; integración continua; `docs/DESARROLLO.md`. | Confirmar que la integración continua queda en verde en GitHub. Alinear la sección 7.4 del diseño con los umbrales del prototipo. |
+| 0. Cimientos del repositorio | En revisión | 23/10/2026 | [#1](https://github.com/maocampuzano/ventaja-mando/pull/1) | Monorepo con npm workspaces; prototipo en `apps/web` sin cambios visibles; lógica en `packages/nucleo` con detección de duplicados y 43 pruebas; integración continua en verde; `docs/DESARROLLO.md`. | Alinear la sección 7.4 del diseño con los umbrales del prototipo. |
 | 1. Base de datos, seguridad y cuentas | Sin empezar | | | | Proyecto de Supabase con sus tres claves. |
 | 2. Panel web con datos reales | Sin empezar | | | | Clave de MapTiler o Stadia. |
 | 3. App del líder y del testigo | Sin empezar | | | | |
