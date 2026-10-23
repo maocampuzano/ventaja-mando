@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SQL_SECRETOS, dividirSentencias, lotes, refDelProyecto, sqlMigracion } from "./aplicar-remoto.mjs";
+import { HOOK_REGISTRO, SQL_SECRETOS, dividirSentencias, lotes, refDelProyecto, sqlMigracion } from "./aplicar-remoto.mjs";
 
 test("saca el identificador del proyecto aunque la URL traiga /rest/v1", () => {
   assert.equal(refDelProyecto("https://abcdefghijklmnopqrst.supabase.co"), "abcdefghijklmnopqrst");
@@ -35,4 +35,9 @@ test("los secretos se generan dentro de la base y no se crean dos veces", () => 
   assert.match(SQL_SECRETOS, /gen_random_bytes\(32\)/);
   assert.equal((SQL_SECRETOS.match(/where not exists/g) ?? []).length, 2);
   assert.doesNotMatch(SQL_SECRETOS, /seed/);
+});
+
+test("el registro por invitación apunta a la función de la migración", () => {
+  assert.equal(HOOK_REGISTRO.hook_before_user_created_uri, "pg-functions://postgres/privado/antes_de_crear_usuario");
+  assert.equal(HOOK_REGISTRO.hook_before_user_created_enabled, true);
 });

@@ -3,7 +3,7 @@ import { nombreRol } from "@ventaja/nucleo";
 import { CLAVE_DEMO, CODIGO_2FA_DEMO, usuariosDemo } from "./datos/demo";
 import type { FuenteDatos, Sesion } from "./datos/tipos";
 
-export function InicioSesion({ fuente, alEntrar }: { fuente: FuenteDatos; alEntrar: (s: Sesion) => void }) {
+export function InicioSesion({ fuente, alEntrar, aviso }: { fuente: FuenteDatos; alEntrar: (s: Sesion) => void; aviso?: string }) {
   const [paso, setPaso] = useState<"clave" | "codigo">("clave");
   const [correo, setCorreo] = useState("");
   const [clave, setClave] = useState("");
@@ -19,7 +19,7 @@ export function InicioSesion({ fuente, alEntrar }: { fuente: FuenteDatos; alEntr
     if (r.estado === "ok") alEntrar(r.sesion);
     else if (r.estado === "falta-2fa") { setInscripcion(null); setPaso("codigo"); setCodigo(""); }
     else if (r.estado === "inscribir-2fa") { setInscripcion({ qr: r.qr, secreto: r.secreto }); setPaso("codigo"); setCodigo(""); }
-    else setError(r.mensaje);
+    else if (r.estado === "error") setError(r.mensaje);
   }
 
   async function verificar(e: FormEvent) {
@@ -41,6 +41,7 @@ export function InicioSesion({ fuente, alEntrar }: { fuente: FuenteDatos; alEntr
           <div><h1>Ventaja Mando</h1><p className="tenue">Centro de mando de la campaña</p></div>
         </div>
 
+        {aviso && <p className="aviso" role="status">{aviso}</p>}
         {paso === "clave" ? (
           <form className="tarjeta pila" onSubmit={(e) => { e.preventDefault(); entrar(); }}>
             <h2>Entrar</h2>

@@ -46,6 +46,8 @@ Ninguna campaña ve datos de otra, aunque sean del mismo partido.
 
 Para el panel web (fase 2): `tablero_zonas` y `tablero_lideres` devuelven cifras **agregadas** por zona y por líder (registrados, validados, comprometidos, pauta de 14 días, componentes del índice del líder). Nunca devuelven personas, así que también las usa el candidato. Administración, gerencia (con 2FA) y candidato ven toda la campaña; el coordinador, sus territorios; líder, testigo y quien no sea miembro reciben un error de permiso. La meta de cada zona va en `territorio.meta_votos`.
 
+Equipo: `crear_invitacion` valida el correo, que las zonas sean de la campaña, que coordinación y liderazgo tengan al menos una, y una vigencia de 1 a 30 días; reinvitar un correo reemplaza la invitación anterior. `aceptar_invitacion` solo funciona con el correo invitado y una sola vez.
+
 `importar_personas` recibe lotes de hasta 1.000 filas ya revisadas en el panel. Crea cada persona con su autorización (canal «importacion», finalidades, evidencia y fecha del archivo), respeta el territorio de quien importa y descarta las cédulas que esa persona ya tiene en su alcance, sin revelar si existen en otras zonas. Deja en la auditoría el nombre del archivo y los conteos, nunca cédulas.
 
 ## Correr las pruebas en local
@@ -129,13 +131,15 @@ Los crea `aplicar-remoto.mjs migrar` dentro de la base: los valores se generan a
    ```
 3. **No los borre nunca:** sin `clave_documento`, las cédulas cifradas no se pueden recuperar.
 
-**4. Verificación en dos pasos (2FA) y registro cerrado**
+**4. Verificación en dos pasos (2FA) y registro solo por invitación**
 
 En los proyectos de Supabase, la verificación con app autenticadora (TOTP) viene activada (en su proyecto se confirmó el 24/10/2026). No hay que encenderla: cada administrador o gerente vincula su celular la primera vez que entra al panel, escaneando un código QR. Mientras no lo haga, la base no le muestra datos.
 
-Lo que sí conviene ajustar en el panel de Supabase:
-1. En **Authentication → Sign In / Providers**, apague **Allow new users to sign up**. Así nadie puede crearse una cuenta por su cuenta: al equipo se entra por invitación. Quedó bien si el interruptor queda gris.
-2. En **Authentication → Sign In / Providers → Email**, suba **Minimum password length** a 12. Quedó bien si al guardar aparece «Successfully updated settings».
+Registro solo por invitación: **no apague** «Allow new users to sign up», porque la persona invitada crea su cuenta desde el enlace de la invitación. En su lugar, la base revisa cada registro con `privado.antes_de_crear_usuario` y solo deja pasar correos con una invitación vigente. Se activa una vez en la configuración de Auth (lo hace `aplicar-remoto.mjs` con el token; a mano: **Authentication → Hooks → Before User Created**, tipo *Postgres*, esquema `privado`, función `antes_de_crear_usuario`).
+
+En **Authentication → Sign In / Providers → Email**, suba **Minimum password length** a 12. Quedó bien si al guardar aparece «Successfully updated settings». El panel ya exige 12 caracteres al crear la cuenta.
+
+Correo de confirmación: Supabase confirma cada cuenta nueva con un correo. Su servicio de correo incluido tiene límites estrictos de envío y no sirve para una campaña real; en la fase 6 se conecta el proveedor de correo propio. Mientras tanto, para pruebas, la cuenta se puede confirmar a mano en **Authentication → Users**.
 
 ## Lo que no se pudo probar desde aquí
 

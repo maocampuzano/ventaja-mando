@@ -3,7 +3,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { exige2fa, indiceLider, type RolCampana } from "@ventaja/nucleo";
 import type { Lider, Zona } from "../data";
-import type { Campana, DatosTablero, FuenteDatos, Ingreso, ResultadoImportacion } from "./tipos";
+import type { RolCampana as Rol } from "@ventaja/nucleo";
+import type { Campana, DatosTablero, FuenteDatos, Ingreso, InvitacionPendiente, Miembro, ResultadoImportacion } from "./tipos";
 
 const LOTE = 500;
 
@@ -41,6 +42,9 @@ const mensajeError = (m: string) =>
   /invalid login credentials/i.test(m) ? "El correo o la contraseña no coinciden." :
   /email not confirmed/i.test(m) ? "Falta confirmar el correo: revise su bandeja de entrada." :
   /invalid.*(code|totp)|expired/i.test(m) ? "El código no es válido o ya venció." :
+  /invitación/i.test(m) ? m : // mensaje propio del hook de registro (supabase/migrations/…_invitaciones.sql)
+  /password should be at least (\d+)/i.test(m) ? `La contraseña debe tener al menos ${/(\d+)/.exec(m)![1]} caracteres.` :
+  /already registered/i.test(m) ? "Ese correo ya tiene cuenta: elija «Ya tengo cuenta»." :
   `No se pudo iniciar sesión: ${m}`;
 
 export function crearFuenteSupabase(url: string, clavePublicable: string): FuenteDatos {
@@ -123,6 +127,55 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
         avance?.(Math.min(i + LOTE, filas.length), filas.length);
       }
       return r;
+    },
+    async equipo(s) {
+      const [m, i] = await Promise.all([
+        sb.from("membresia").select("id, rol, territorio_ids, activa, usuario:usuario_id(nombre)").eq("campana_id", s.campana.id).order("creado_en"),
+        sb.from("invitacion").select("id, correo, rol, territorio_ids, expira_en").eq("campana_id", s.campana.id)
+          .is("aceptada_en", null).gt("expira_en", new Date().toISOString()).order("creado_en"),
+      ]);
+      if (m.error) throw new Error(`No se pudo leer el equipo: ${m.error.message}`);
+      if (i.error) throw new Error(`No se pudieron leer las invitaciones: ${i.error.message}`);
+      const miembros: Miembro[] = (m.data ?? []).map((x) => ({
+        id: x.id, rol: x.rol as Rol, territorioIds: x.territorio_ids ?? [], activa: x.activa,
+        nombre: (x.usuario as unknown as { nombre: string } | null)?.nombre ?? "(sin nombre)",
+      }));
+      const invitaciones: InvitacionPendiente[] = (i.data ?? []).map((x) => ({
+        id: x.id, correo: x.correo, rol: x.rol as Rol, territorioIds: x.territorio_ids ?? [], expira: x.expira_en,
+      }));
+      return { miembros, invitaciones };
+    },
+    async invitar(s, d) {
+      const { data, error } = await sb.rpc("crear_invitacion", {
+        p_campana: s.campana.id, p_correo: d.correo, p_rol: d.rol, p_territorios: d.territorioIds, p_dias: d.dias,
+      });
+      if (error) throw new Error(/row-level security/.test(error.message) ? "No tiene permiso para invitar ese rol." : error.message);
+      return data as string;
+    },
+    async anularInvitacion(_s, id) {
+      const { error } = await sb.from("invitacion").delete().eq("id", id);
+      if (error) throw new Error(`No se pudo anular la invitación: ${error.message}`);
+    },
+    async aceptarInvitacion(a): Promise<Ingreso> {
+      const correo = a.correo.trim().toLowerCase();
+      const { data: yo } = await sb.auth.getUser();
+      if (yo.user?.email?.toLowerCase() !== correo) {
+        if (yo.user) await sb.auth.signOut();
+        if (a.crearCuenta) {
+          // El hook «before user created» de la base rechaza correos sin invitación vigente.
+          const { data, error } = await sb.auth.signUp({
+            email: correo, password: a.clave, options: { data: { nombre: a.nombre.trim() }, emailRedirectTo: location.href },
+          });
+          if (error) return { estado: "error", mensaje: mensajeError(error.message) };
+          if (!data.session) return { estado: "confirmar-correo" };
+        } else {
+          const { error } = await sb.auth.signInWithPassword({ email: correo, password: a.clave });
+          if (error) return { estado: "error", mensaje: mensajeError(error.message) };
+        }
+      }
+      const { error } = await sb.rpc("aceptar_invitacion", { p_codigo: a.codigo, p_nombre: a.nombre.trim() || correo });
+      if (error) return { estado: "error", mensaje: error.message };
+      return armarSesion();
     },
     async cargarTablero(s): Promise<DatosTablero> {
       const [z, l] = await Promise.all([
