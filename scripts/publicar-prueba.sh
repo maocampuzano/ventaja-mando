@@ -14,7 +14,8 @@ export WRANGLER_SEND_METRICS=false NODE_USE_ENV_PROXY=1 NODE_NO_WARNINGS=1
 
 echo "→ Proyecto de Cloudflare Pages: $PROYECTO"
 $WRANGLER pages project list 2>/dev/null | grep -q " $PROYECTO " \
-  || $WRANGLER pages project create "$PROYECTO" --production-branch main
+  || $WRANGLER pages project create "$PROYECTO" --production-branch main --force
+# --force: crea un proyecto clásico de Pages. Sin él, wrangler 4 intenta pasarlo a Workers y falla en un monorepo.
 
 echo "→ Panel conectado al proyecto de prueba de Supabase"
 MODO_DATOS=supabase npm run build -w apps/web >/dev/null
