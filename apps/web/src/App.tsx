@@ -12,7 +12,8 @@ import { Importar } from "./Importar";
 import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
-import { BandejaLider, Datos, DiaE, MiMesa, Planillas, Resumen } from "./Pantallas";
+import { Datos } from "./Datos";
+import { BandejaLider, DiaE, MiMesa, Planillas, Resumen } from "./Pantallas";
 import type { Tarea } from "./Strategos";
 
 type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";

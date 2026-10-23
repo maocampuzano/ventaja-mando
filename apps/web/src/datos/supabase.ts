@@ -4,7 +4,14 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { exige2fa, indiceLider, type RolCampana } from "@ventaja/nucleo";
 import type { Lider, Zona } from "../data";
 import type { RolCampana as Rol } from "@ventaja/nucleo";
-import type { Campana, DatosTablero, FuenteDatos, Ingreso, InvitacionPendiente, Miembro, ResultadoImportacion } from "./tipos";
+import type { TipoSolicitud } from "@ventaja/nucleo";
+import type {
+  Campana, DatosTablero, EstadoSolicitud, Exportacion, FuenteDatos, Ingreso, InvitacionPendiente, Miembro, ResultadoImportacion,
+  ResumenCumplimiento, Solicitud,
+} from "./tipos";
+
+/** Fecha de Colombia (aaaa-mm-dd) de un timestamp. */
+const fechaBogota = (t: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date(t));
 
 const LOTE = 500;
 
@@ -176,6 +183,64 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       const { error } = await sb.rpc("aceptar_invitacion", { p_codigo: a.codigo, p_nombre: a.nombre.trim() || correo });
       if (error) return { estado: "error", mensaje: error.message };
       return armarSesion();
+    },
+    async resumenCumplimiento(s): Promise<ResumenCumplimiento> {
+      const { data, error } = await sb.rpc("resumen_cumplimiento", { p_campana: s.campana.id });
+      if (error) throw new Error(error.message);
+      return {
+        personas: n(data.personas), conAutorizacionVigente: n(data.con_autorizacion_vigente), autorizacionesRevocadas: n(data.autorizaciones_revocadas),
+        porFinalidad: data.por_finalidad ?? {}, porCanal: data.por_canal ?? {}, solicitudesAbiertas: n(data.solicitudes_abiertas),
+        solicitudesVencidas: n(data.solicitudes_vencidas), exportaciones30Dias: n(data.exportaciones_30_dias),
+        preferenciaPoliticaActiva: !!data.preferencia_politica_activa,
+      };
+    },
+    async solicitudes(s): Promise<Solicitud[]> {
+      const { data, error } = await sb.from("solicitud_titular")
+        .select("id, tipo, estado, detalle, recibida_en, vence_en, prorrogada_en, respuesta, persona_id, persona:persona_id(nombre)")
+        .eq("campana_id", s.campana.id).order("vence_en");
+      if (error) throw new Error(`No se pudieron leer las solicitudes: ${error.message}`);
+      return (data ?? []).map((x) => ({
+        id: x.id, tipo: x.tipo as TipoSolicitud, estado: x.estado as EstadoSolicitud, detalle: x.detalle ?? undefined,
+        personaId: x.persona_id ?? undefined, personaNombre: (x.persona as unknown as { nombre: string } | null)?.nombre,
+        recibida: fechaBogota(x.recibida_en), vence: fechaBogota(x.vence_en), prorrogada: !!x.prorrogada_en, respuesta: x.respuesta ?? undefined,
+      }));
+    },
+    async registrarSolicitud(s, d) {
+      const { error } = await sb.rpc("registrar_solicitud_titular", {
+        p_campana: s.campana.id, p_tipo: d.tipo, p_persona: d.personaId ?? null, p_detalle: d.detalle, p_recibida: d.recibida,
+      });
+      if (error) throw new Error(error.message);
+    },
+    async prorrogarSolicitud(_s, id) {
+      const { error } = await sb.rpc("prorrogar_solicitud_titular", { p_solicitud: id });
+      if (error) throw new Error(error.message);
+    },
+    async cambiarEstadoSolicitud(_s, id, estado, respuesta) {
+      const cerrada = estado === "resuelta" || estado === "rechazada";
+      const { error } = await sb.from("solicitud_titular").update({
+        estado, ...(respuesta !== undefined ? { respuesta } : {}), resuelta_en: cerrada ? new Date().toISOString() : null,
+      }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    async buscarPersonas(s, texto) {
+      const { data, error } = await sb.rpc("buscar_personas", { p_campana: s.campana.id, p_texto: texto });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((x: { id: string; nombre: string; telefono: string | null; zona: string | null }) =>
+        ({ id: x.id, nombre: x.nombre, telefono: x.telefono ?? undefined, zona: x.zona ?? undefined }));
+    },
+    async revocarAutorizacionesDe(_s, personaId) {
+      const { data, error } = await sb.rpc("revocar_autorizaciones_de", { p_persona: personaId });
+      if (error) throw new Error(error.message);
+      return n(data);
+    },
+    async suprimirPersona(_s, personaId) {
+      const { error } = await sb.from("persona").delete().eq("id", personaId);
+      if (error) throw new Error(`No se pudo suprimir: ${error.message}`);
+    },
+    async exportarPersonas(s, finalidad): Promise<Exportacion> {
+      const { data, error } = await sb.rpc("exportar_personas", { p_campana: s.campana.id, p_finalidad: finalidad });
+      if (error) throw new Error(error.message);
+      return { referencia: data.referencia, exportadoPor: data.exportado_por, exportadoEn: data.exportado_en, finalidad: data.finalidad, filas: data.filas };
     },
     async cargarTablero(s): Promise<DatosTablero> {
       const [z, l] = await Promise.all([
