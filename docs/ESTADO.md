@@ -17,10 +17,18 @@ Cada fase actualiza su fila al cerrarse, con la fecha, el PR, qué quedó y qué
 
 ## Proyecto real de Supabase (V2)
 
+Proyecto `ventaja-mando-prueba`, Postgres 17. Revisado el 23/10/2026.
+
 | Paso | Estado |
 |---|---|
-| Variables `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` y `SUPABASE_DB_URL` en el entorno | Llegan (23/10/2026). La API del proyecto responde con ambas claves. `SUPABASE_URL` trae `/rest/v1/` al final y hay que dejarla solo con el dominio. |
-| Migraciones y secretos del Vault | Pendiente: el entorno no permite conexiones a Postgres (puerto 5432). Se aplican por la API de administración con `supabase/scripts/aplicar-remoto.mjs`, que necesita `SUPABASE_ACCESS_TOKEN` y el dominio `api.supabase.com` permitido. |
-| Municipios (DANE) y puestos (Registraduría) | Descargados de datos.gov.co y probados en local: 33 departamentos, 1.122 municipios y 12.922 puestos (12.914 con ubicación). Se cargan al proyecto real junto con las migraciones. Ver `supabase/datos/informe-datos-abiertos.md`. |
-| Semilla ficticia de Turbaco | No se carga en el proyecto real sin autorización expresa. |
-| 2FA (TOTP) | Pendiente: lo activa usted en el panel de Supabase (paso 4 de `supabase/LEEME.md`). |
+| Variables `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_DB_URL` y `SUPABASE_ACCESS_TOKEN` | Llegan. La API responde con las claves y con el token. |
+| Migraciones de la fase 1 | Aplicadas las 4 con `aplicar-remoto.mjs`: 30 tablas, todas con RLS, y 61 políticas. |
+| Secretos del Vault | `clave_documento` y `pepper_documento` creados dentro de la base; el cifrado y el HMAC de la cédula funcionan. |
+| Municipios (DANE) y puestos (Registraduría) | Cargados: 1.155 territorios (33 departamentos y 1.122 municipios) y 12.922 puestos, 12.914 con ubicación. Ver `supabase/datos/informe-datos-abiertos.md`. |
+| Prueba desde afuera con la clave pública y sin sesión | No se ve ninguna tabla, y `ver_documento` responde «permiso denegado». |
+| Migración del tablero (fase 2) | Se aplica cuando se fusione su PR. |
+| Semilla ficticia de Turbaco | No cargada; solo con autorización expresa. |
+| 2FA (TOTP) | Pendiente: lo activa Mauricio (paso 4 de `supabase/LEEME.md`). |
+| Región | **El proyecto está en `us-east-2` (Estados Unidos), no en São Paulo como dice el plan.** Sirve para pruebas con datos ficticios. Antes de cargar datos reales hay que decidir si se crea el proyecto de producción en São Paulo (V3 y V6). |
+
+Para aplicar desde el entorno de nube, Node necesita `NODE_USE_ENV_PROXY=1` para salir por el proxy: `NODE_USE_ENV_PROXY=1 node supabase/scripts/aplicar-remoto.mjs verificar`.

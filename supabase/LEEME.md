@@ -82,7 +82,7 @@ node supabase/scripts/aplicar-remoto.mjs cargar /tmp/datos/municipios.sql   # pr
 node supabase/scripts/aplicar-remoto.mjs cargar /tmp/datos/puestos.sql
 ```
 
-En local, los `.sql` también se pueden aplicar con `psql -f`. Si un archivo oficial usa otros nombres de columna, `cargar-territorios.mjs` acepta `--columna cod_mpio="Código Municipio"` y, si falta alguna, muestra las que encontró.
+En el entorno de nube, los scripts que usan la red se corren con `NODE_USE_ENV_PROXY=1` delante, porque Node no usa el proxy del entorno por su cuenta. En local, los `.sql` también se pueden aplicar con `psql -f`. Si un archivo oficial usa otros nombres de columna, `cargar-territorios.mjs` acepta `--columna cod_mpio="Código Municipio"` y, si falta alguna, muestra las que encontró.
 
 ## Pasar esto a su proyecto de Supabase (paso a paso)
 
