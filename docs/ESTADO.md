@@ -27,6 +27,8 @@ Proyecto `ventaja-mando-prueba`, Postgres 17. Revisado el 23/10/2026.
 | Municipios (DANE) y puestos (Registraduría) | Cargados: 1.155 territorios (33 departamentos y 1.122 municipios) y 12.922 puestos, 12.914 con ubicación. Ver `supabase/datos/informe-datos-abiertos.md`. |
 | Prueba desde afuera con la clave pública y sin sesión | No se ve ninguna tabla, y `ver_documento` responde «permiso denegado». |
 | Migraciones de la fase 2 | Aplicadas: tablero, importación y peso del celular en duplicados (24/10/2026). |
+| Versión de prueba publicada | `https://ventaja-mando-prueba.pages.dev` (proyecto de prueba de Supabase) y `https://demo.ventaja-mando-prueba.pages.dev` (datos ficticios), en Cloudflare Pages, 24/10/2026. |
+| Registro de cuentas | Abierto solo para correos con invitación vigente (hook `before user created`); contraseña de mínimo 12 caracteres. Verificado: un correo sin invitación recibe 403. |
 | Semilla ficticia de Turbaco | No cargada; solo con autorización expresa. |
 | 2FA (TOTP) | Pendiente: lo activa Mauricio (paso 4 de `supabase/LEEME.md`). |
 | Región | `us-east-2` (Estados Unidos). **Decisión de Mauricio del 24/10/2026: se deja así.** Supabase no tiene región en Colombia; la más cercana es São Paulo. Antes de cargar datos reales, el abogado de datos personales debe revisar que los datos se guardan fuera del país (V3). |
