@@ -54,5 +54,6 @@ Estas reglas son parte del producto y del argumento de venta. Ningún cambio las
   - `emil-design-eng` y `animate` para pulido y movimiento;
   - `mobile-native` y `animate-expo` para la app;
   - `break-ui` para probar cada pantalla con datos extremos.
+  - `superdesign` para explorar variantes visuales en el lienzo de Superdesign (servicio externo: envía código del proyecto a sus servidores; muestre la lista de archivos y pida aprobación antes de cada envío, y nunca envíe `.env` ni datos de personas).
   - `cumplimiento-electoral`: úsela para revisar cualquier cambio que toque datos de personas o mensajería.
 - La interfaz es por rol (candidato, gerente, coordinador, líder, testigo). No vuelva a un menú único con todas las opciones.

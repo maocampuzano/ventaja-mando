@@ -29,6 +29,7 @@ Vienen dentro de `.claude/skills/`, así que cualquier sesión que abra este rep
 | `animate` | Movimiento en la web. |
 | `mobile-native` y `animate-expo` | App móvil en Expo y gestos. |
 | `break-ui` | Probar cada pantalla con datos extremos. |
+| `superdesign` | Explorar variantes de pantallas en el lienzo de Superdesign (superdesign.dev). Es un servicio externo: necesita cuenta, ingreso por navegador y los dominios `superdesign.dev` y `api.superdesign.dev` permitidos en la red del entorno. Envía código del proyecto a sus servidores. |
 
 La skill `claude-api`, para integrar Strategos con la API de Claude, viene incluida en Claude Code y no hay que agregarla. Las skills de terceros son de uso personal: **mantenga el repositorio privado**.
 
