@@ -52,9 +52,15 @@ describe("evaluarPar", () => {
     expect(evaluarPar(p("a", "Ana Ruiz"), p("b", "Edilberto Cabarcas"))).toBeNull();
   });
 
-  it("con las reglas del diseño, mismo teléfono y mismo nombre sin documento no llegan al umbral", () => {
-    // 0,2 (teléfono) + 0,2 (nombre) + 0,05 (territorio) = 0,45 < 0,5. Ver la nota del PR de la fase 0.
-    expect(evaluarPar(p("a", "Ana Ruiz", { telefono: "3001112233" }), p("b", "Ana Ruiz", { telefono: "3001112233" }))).toBeNull();
+  it("mismo teléfono y mismo nombre sin documento sí llegan al umbral", () => {
+    // 0,3 (teléfono) + 0,2 (nombre) + 0,05 (territorio) = 0,55 ≥ 0,5 (pesos del 24/10/2026).
+    const c = evaluarPar(p("a", "Ana Ruiz", { telefono: "3001112233" }), p("b", "ANA RUÍZ", { telefono: "+57 300 111 2233" }));
+    expect(c?.puntaje).toBeCloseTo(0.55);
+    expect(c?.razones).toEqual(["mismo teléfono", "nombre similar (100 %)", "mismo territorio"]);
+  });
+
+  it("el mismo teléfono con otro nombre no basta: puede ser un celular de la familia", () => {
+    expect(evaluarPar(p("a", "Ana Ruiz", { telefono: "3001112233" }), p("b", "Pedro Gil", { telefono: "3001112233" }))).toBeNull();
   });
 
   it("no compara a una persona consigo misma", () => {

@@ -12,6 +12,9 @@ export type PersonaComparable = {
 export type Coincidencia = { a: string; b: string; puntaje: number; razones: string[] };
 
 export const UMBRAL_DUPLICADO = 0.5;
+// Pesos del diseño (§7.1). El teléfono pesa 0,3 desde el 24/10/2026: así, mismo celular y mismo nombre sin cédula
+// (0,3 + 0,2) sí llegan al umbral. Deben coincidir con public.posibles_duplicados en la base.
+export const PESOS = { documento: 0.7, telefono: 0.3, nombre: 0.2, territorio: 0.05 } as const;
 
 export const normaliza = (s: string) =>
   s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -36,21 +39,20 @@ export function evaluarPar(p: PersonaComparable, q: PersonaComparable): Coincide
   if (p.id === q.id) return null;
   const razones: string[] = [];
   let puntaje = 0;
-  if (p.documentoHash && p.documentoHash === q.documentoHash) { puntaje += 0.7; razones.push("mismo documento"); }
+  if (p.documentoHash && p.documentoHash === q.documentoHash) { puntaje += PESOS.documento; razones.push("mismo documento"); }
   const tp = p.telefono ? normalizaTelefono(p.telefono) : "";
-  if (tp && tp === (q.telefono ? normalizaTelefono(q.telefono) : "")) { puntaje += 0.2; razones.push("mismo teléfono"); }
+  if (tp && tp === (q.telefono ? normalizaTelefono(q.telefono) : "")) { puntaje += PESOS.telefono; razones.push("mismo teléfono"); }
   const sn = similitudNombre(p.nombre, q.nombre);
-  if (sn >= 0.75) { puntaje += 0.2 * sn; razones.push(`nombre similar (${Math.round(sn * 100)} %)`); }
-  if (p.territorioId === q.territorioId) { puntaje += 0.05; razones.push("mismo territorio"); }
+  if (sn >= 0.75) { puntaje += PESOS.nombre * sn; razones.push(`nombre similar (${Math.round(sn * 100)} %)`); }
+  if (p.territorioId === q.territorioId) { puntaje += PESOS.territorio; razones.push("mismo territorio"); }
   return puntaje >= UMBRAL_DUPLICADO ? { a: p.id, b: q.id, puntaje: Math.min(1, puntaje), razones } : null;
 }
 
-// Agrupa por documento, teléfono y palabras del nombre para no comparar todos contra todos.
-// Dos nombres con similitud > 0 comparten al menos una palabra, así que ningún par posible queda por fuera.
-// Sin el mismo documento, lo máximo que suma un par es teléfono + nombre idéntico + territorio. Si eso no llega al
-// umbral (con los pesos actuales, 0,45 < 0,5), basta con comparar dentro de cada grupo de documento: el resultado es
-// el mismo y con miles de nombres comunes («María», «Pérez») se evitan millones de comparaciones inútiles.
-const SIN_DOCUMENTO_ALCANZA = 0.2 + 0.2 + 0.05 >= UMBRAL_DUPLICADO;
+// Agrupa los candidatos para no comparar todos contra todos. Solo se agrupa por lo que puede llevar al umbral:
+// un par sin documento ni teléfono en común suma como máximo nombre + territorio (0,25 < 0,5), así que agrupar por
+// palabras del nombre no encontraría nada más y, con miles de «María» o «Pérez», costaría millones de comparaciones.
+const POR_TELEFONO = PESOS.telefono + PESOS.nombre + PESOS.territorio >= UMBRAL_DUPLICADO;
+const POR_NOMBRE = PESOS.nombre + PESOS.territorio >= UMBRAL_DUPLICADO;
 
 export function buscarDuplicados(personas: PersonaComparable[]): Coincidencia[] {
   const grupos = new Map<string, number[]>();
@@ -60,9 +62,8 @@ export function buscarDuplicados(personas: PersonaComparable[]): Coincidencia[] 
   };
   personas.forEach((p, i) => {
     if (p.documentoHash) agregar(`d:${p.documentoHash}`, i);
-    if (!SIN_DOCUMENTO_ALCANZA) return;
-    if (p.telefono) { const t = normalizaTelefono(p.telefono); if (t) agregar(`t:${t}`, i); }
-    for (const palabra of tokens(p.nombre)) agregar(`n:${palabra}`, i);
+    if (POR_TELEFONO && p.telefono) { const t = normalizaTelefono(p.telefono); if (t) agregar(`t:${t}`, i); }
+    if (POR_NOMBRE) for (const palabra of tokens(p.nombre)) agregar(`n:${palabra}`, i);
   });
 
   const vistos = new Set<string>();

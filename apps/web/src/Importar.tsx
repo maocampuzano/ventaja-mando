@@ -153,15 +153,16 @@ export function Importar() {
                   <div className="rejilla">
                     <div><div className="etiqueta">Listas para importar</div><div className="dato" data-prueba="listas">{miles(reporte.listas.length)}</div></div>
                     <div><div className="etiqueta">No entran</div><div className="dato" data-prueba="rechazadas">{miles(reporte.rechazadas.length)}</div></div>
-                    <div><div className="etiqueta">Cédulas repetidas en el archivo</div><div className="dato" data-prueba="duplicados">{miles(reporte.duplicados.length)}</div></div>
+                    <div><div className="etiqueta">Cédulas repetidas en el archivo</div><div className="dato" data-prueba="duplicados">{miles(reporte.duplicados.filter((d) => d.accion === "rechazada").length)}</div></div>
+                    <div><div className="etiqueta">Posibles duplicados para revisar</div><div className="dato" data-prueba="revisar">{miles(reporte.duplicados.filter((d) => d.accion === "revisar").length)}</div></div>
                     <div><div className="etiqueta">Avisos</div><div className="dato">{miles(reporte.advertencias.length)}</div></div>
                   </div>
                   {reporte.duplicados.length > 0 && (
                     <details>
-                      <summary>Por qué son duplicados</summary>
+                      <summary>Por qué son duplicados ({miles(reporte.duplicados.length)})</summary>
                       <ul className="lista-filas">
                         {reporte.duplicados.slice(0, MAX_LISTA).map((d) => (
-                          <li key={`${d.a}-${d.b}`}>Fila {d.b} con la fila {d.a}: {d.razones.join(", ")}. Se importa solo la fila {d.a}.</li>
+                          <li key={`${d.a}-${d.b}`}>Fila {d.b} con la fila {d.a}: {d.razones.join(", ")}. {d.accion === "rechazada" ? `Se importa solo la fila ${d.a}.` : "Entran las dos; la dirección de la campaña las verá en la revisión de duplicados para decidir si fusionarlas."}</li>
                         ))}
                       </ul>
                       {reporte.duplicados.length > MAX_LISTA && <p className="tenue">… y {miles(reporte.duplicados.length - MAX_LISTA)} más.</p>}

@@ -28,6 +28,7 @@ export type ResultadoImportacion = {
 export type Ingreso =
   | { estado: "ok"; sesion: Sesion }
   | { estado: "falta-2fa" } // la contraseña es correcta; falta el código de la app autenticadora
+  | { estado: "inscribir-2fa"; qr: string; secreto: string } // primera vez: escanear el QR con la app autenticadora
   | { estado: "error"; mensaje: string };
 
 /**

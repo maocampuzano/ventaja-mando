@@ -255,3 +255,4 @@ code { background: var(--panel-2); border-radius: 4px; padding: 1px 5px; font-si
 .oculto { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 .lista-filas { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; max-height: 320px; overflow: auto; }
 details summary { cursor: pointer; font-weight: 600; }
+.qr-2fa { background: #fff; border-radius: var(--radio-m); padding: 10px; justify-self: center; }
