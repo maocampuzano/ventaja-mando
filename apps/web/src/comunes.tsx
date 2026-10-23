@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { campana } from "./data";
 
 const trazos: Record<string, ReactNode> = {
   mando: <><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z" /><path d="M9 3v15M15 6v15" /></>,
@@ -27,10 +26,11 @@ export function Barra({ valor, color }: { valor: number; color?: string }) {
   );
 }
 
-export function diasParaEleccion() {
-  const hoy = new Date();
-  const e = new Date(`${campana.eleccion}T00:00:00-05:00`);
-  return Math.max(0, Math.ceil((e.getTime() - hoy.getTime()) / 86400000));
+/** `eleccion` en aaaa-mm-dd. Sin fecha configurada devuelve 0. */
+export function diasParaEleccion(eleccion: string) {
+  if (!eleccion) return 0;
+  const e = new Date(`${eleccion}T00:00:00-05:00`);
+  return Math.max(0, Math.ceil((e.getTime() - Date.now()) / 86400000));
 }
 
 export const colorIndice = (x: number) => (x >= 0.7 ? "var(--verde)" : x >= 0.5 ? "var(--ambar)" : "var(--rojo)");

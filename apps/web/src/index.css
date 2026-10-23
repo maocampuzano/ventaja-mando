@@ -240,3 +240,13 @@ tr[aria-selected="true"] td { background: #1c2742; }
   .escaneo { animation: none; top: 50%; }
   * { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Inicio de sesión */
+.ingreso { min-height: 100%; display: grid; place-items: center; padding: 32px 16px; }
+.ingreso-caja { width: min(480px, 100%); gap: 16px; }
+.ingreso .marca { margin-bottom: 0; }
+.ingreso .sugerida { width: 100%; }
+.error { color: #f3a19b; font-size: 13px; }
+code { background: var(--panel-2); border-radius: 4px; padding: 1px 5px; font-size: 13px; }
+.mapa-vacio { display: grid; place-items: center; }
+.usuario-demo { display: grid; gap: 2px; }

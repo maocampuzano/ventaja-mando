@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Mapa, type Capa } from "./Mapa";
 import { Barra } from "./comunes";
-import { campana, lideres, puestos, recDe, recomendaciones, totales, zonaDe } from "./data";
+import { useTablero } from "./datos/contexto";
 import { miles, pct, porcentajeCobertura, textoAccion } from "@ventaja/nucleo";
 import { Strategos, type Tarea } from "./Strategos";
 
@@ -20,6 +20,7 @@ const nombreTipo = { brigada: "Brigada", pauta: "Más pauta", oportunidad: "Opor
 const colorTipo = { brigada: "ambar", pauta: "azul", oportunidad: "azul", mantener: "" };
 
 export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
+  const { meta: metaVista, recomendaciones, totales, zonaDe, modo } = useTablero();
   const [capa, setCapa] = useState<Capa>("accion");
   const [sel, setSel] = useState<string | null>(null);
   const [pest, setPest] = useState<"zona" | "ia">("ia");
@@ -27,7 +28,7 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
   const elegir = (id: string) => { setSel(id); setPest("zona"); };
   const accionables = recomendaciones.filter((r) => r.accion !== "mantener")
     .sort((a, b) => (b.digital + b.brecha - b.tierra) - (a.digital + a.brecha - a.tierra));
-  const meta = totales.comprometidos / campana.metaVotos;
+  const meta = metaVista.votos ? totales.comprometidos / metaVista.votos : 0;
   const capaActual = capas.find((c) => c.id === capa)!;
 
   return (
@@ -44,12 +45,12 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
           <div className="embudo-fila"><span>Comprometidos</span><span className="cifra">{miles(totales.comprometidos)}</span><Barra valor={totales.comprometidos / totales.bruto} color="var(--verde)" /></div>
         </div>
         <div className="meta-linea">
-          <span className="tenue">Meta {miles(campana.metaVotos)} votos</span>
+          <span className="tenue">{metaVista.texto} {miles(metaVista.votos)} votos</span>
           <strong>{pct(meta)} cubierto</strong>
         </div>
       </section>
 
-      <span className="ficticio">Datos ficticios. Zonas ilustrativas, no son límites oficiales.</span>
+      {modo === "demo" && <span className="ficticio">Datos ficticios. Zonas ilustrativas, no son límites oficiales.</span>}
 
       <div className="capas" role="group" aria-label="Capas del mapa">
         {capas.map((c) => (
@@ -71,6 +72,7 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
               <span className="tenue" style={{ fontSize: 12 }}>Pauta {pct(r.digital)}, tierra {pct(r.tierra)}</span>
             </button>
           ))}
+          {!accionables.length && <p className="tenue" style={{ fontSize: 12.5 }}>Ninguna zona a la vista necesita un cambio hoy: todas van al ritmo esperado.</p>}
         </div>
       </section>
 
@@ -90,6 +92,7 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
 }
 
 function PerfilZona({ id }: { id: string }) {
+  const { zonaDe, recDe, lideres, puestos } = useTablero();
   const z = zonaDe(id);
   const r = recDe(id);
   const suyos = lideres.filter((l) => l.zonaId === id);

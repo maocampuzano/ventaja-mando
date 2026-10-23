@@ -1,6 +1,6 @@
 // Mapa propio en SVG: no depende de teselas ni servicios externos, así funciona sin conexión y en la página publicada.
 import { useMemo } from "react";
-import { puestos, recDe, zonas } from "./data";
+import { useTablero } from "./datos/contexto";
 import { porcentajeCobertura } from "@ventaja/nucleo";
 
 export type Capa = "accion" | "tierra" | "pauta" | "meta" | "testigos";
@@ -27,6 +27,7 @@ const proy = ([lon, lat]: [number, number]): [number, number] => [lon * K * 1000
 const METROS_POR_GRADO_LAT = 110574;
 
 export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion: string | null; alSeleccionar: (id: string) => void }) {
+  const { zonas, puestos, recDe, campana } = useTablero();
   const geo = useMemo(() => {
     const formas = zonas.map((z) => ({
       z,
@@ -35,13 +36,18 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
     }));
     const xs = formas.flatMap((f) => f.puntos.map((p) => p[0]));
     const ys = formas.flatMap((f) => f.puntos.map((p) => p[1]));
-    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const w = maxX - minX, h = maxY - minY;
+    let minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const real = { minX, maxX, minY, maxY }; // límites de las zonas, sin el encuadre mínimo
+    // Con pocas zonas a la vista (un coordinador), se encuadra como mínimo un área de unos 4 km × 3,3 km.
+    const minW = 0.036 * K * 10000, minH = 0.03 * 10000;
+    const w = Math.max(maxX - minX, minW), h = Math.max(maxY - minY, minH);
+    if (maxX - minX < minW) { const c = (minX + maxX) / 2; minX = c - w / 2; maxX = c + w / 2; }
+    if (maxY - minY < minH) { const c = (minY + maxY) / 2; minY = c - h / 2; maxY = c + h / 2; }
     // Margen asimétrico: deja libre el espacio que ocupan los paneles flotantes.
     const vb = { x: minX - w * 0.62, y: minY - h * 0.2, w: w * 2.28, h: h * 1.75 };
     const metro = 10000 / METROS_POR_GRADO_LAT; // unidades SVG por metro
-    return { formas, vb, metro, minX, maxX, minY, maxY };
-  }, []);
+    return { formas, vb, metro, ...real };
+  }, [zonas]);
 
   const relleno = (id: string) => {
     const z = zonas.find((x) => x.id === id)!;
@@ -58,6 +64,9 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
     return 0.85;
   };
 
+  if (!zonas.length) {
+    return <div className="mapa mapa-vacio" role="region" aria-label="Mapa sin zonas"><p className="tenue">Todavía no hay zonas a la vista para su usuario.</p></div>;
+  }
   const { formas, vb, metro } = geo;
   const paso = 400 * metro; // cuadrícula cada 400 m
   const lineas: number[] = [];
@@ -68,7 +77,7 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
   const fuente = vb.w / 95;
 
   return (
-    <div className="mapa" role="region" aria-label="Mapa de zonas de Turbaco con datos ficticios">
+    <div className="mapa" role="region" aria-label={`Mapa de zonas: ${campana.cargo}`}>
       <svg viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} preserveAspectRatio="xMidYMid slice" width="100%" height="100%">
         <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill="var(--mapa-fondo)" />
         <g stroke="var(--mapa-reticula)" strokeWidth={vb.w / 1400}>
@@ -120,7 +129,7 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
           <line x1={escala} x2={escala} y1={-fuente * 0.35} y2={fuente * 0.35} stroke="var(--tenue)" strokeWidth={vb.w / 600} />
           <text x={escala / 2} y={fuente * 1.3} textAnchor="middle" fontSize={fuente * 0.85} fill="var(--tenue)">500 m</text>
         </g>
-        <text x={geo.minX} y={geo.minY - (geo.maxY - geo.minY) * 0.06} fontSize={fuente * 1.05} fill="var(--tenue)">Turbaco, Bolívar</text>
+        <text x={geo.minX} y={geo.minY - (geo.maxY - geo.minY) * 0.06} fontSize={fuente * 1.05} fill="var(--tenue)">{campana.cargo}</text>
       </svg>
     </div>
   );

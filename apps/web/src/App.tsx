@@ -1,21 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { nombreRol, type RolCampana } from "@ventaja/nucleo";
 import { Icono, diasParaEleccion } from "./comunes";
-import { campana } from "./data";
+import { fuente } from "./datos";
+import { ContextoTablero, type Contexto } from "./datos/contexto";
+import { sesionDemoPorRol } from "./datos/demo";
+import { armarTablero } from "./datos/tablero";
+import type { Sesion } from "./datos/tipos";
+import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
 import { BandejaLider, Datos, DiaE, MiMesa, Planillas, Resumen } from "./Pantallas";
 import type { Tarea } from "./Strategos";
 
-type Rol = "candidato" | "gerente" | "coordinador" | "lider" | "testigo";
 type Vista = "resumen" | "mando" | "lideres" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
 
-const roles: { id: Rol; nombre: string; vistas: Vista[] }[] = [
-  { id: "candidato", nombre: "Candidata", vistas: ["resumen", "mando", "diae"] },
-  { id: "gerente", nombre: "Gerente", vistas: ["mando", "lideres", "planillas", "diae", "datos"] },
-  { id: "coordinador", nombre: "Coordinador", vistas: ["mando", "lideres", "planillas"] },
-  { id: "lider", nombre: "Líder", vistas: ["bandeja"] },
-  { id: "testigo", nombre: "Testigo", vistas: ["mimesa"] },
-];
+// Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
+const vistasPorRol: Record<RolCampana, Vista[]> = {
+  administrador: ["mando", "lideres", "planillas", "diae", "datos"],
+  gerente: ["mando", "lideres", "planillas", "diae", "datos"],
+  candidato: ["resumen", "mando", "diae"],
+  coordinador: ["mando", "lideres", "planillas"],
+  lider: ["bandeja"],
+  testigo: ["mimesa"],
+};
 
 const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n"] }> = {
   resumen: { nombre: "Resumen", icono: "resumen" },
@@ -28,57 +35,91 @@ const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n
   mimesa: { nombre: "Mi mesa", icono: "movil" },
 };
 
-// Enlaces directos con un token simple (#gerente-lideres), que es lo que admite la página publicada.
-function leerHash(): { rol: Rol; vista: Vista } {
-  const [r, v] = location.hash.replace("#", "").split(/[-/]/);
-  const rol = roles.find((x) => x.id === r) ?? roles[1];
-  const vista = (rol.vistas as string[]).includes(v) ? (v as Vista) : rol.vistas[0];
-  return { rol: rol.id, vista };
+// Enlaces directos con un token simple: #lideres, o #gerente-lideres en la página publicada del modo demo.
+function leerHash(): { rol?: string; vista?: string } {
+  const partes = location.hash.replace("#", "").split(/[-/]/).filter(Boolean);
+  if (partes.length >= 2) return { rol: partes[0], vista: partes[1] };
+  return partes[0] && partes[0] in vistasPorRol ? { rol: partes[0] } : { vista: partes[0] };
 }
 
 export default function App() {
-  const [{ rol, vista }, setEstado] = useState(leerHash);
+  const [sesion, setSesion] = useState<Sesion | null | undefined>(undefined);
+
+  useEffect(() => {
+    const { rol } = leerHash();
+    const porEnlace = fuente.modo === "demo" && rol ? sesionDemoPorRol(rol) : null;
+    if (porEnlace) { setSesion(porEnlace); return; }
+    fuente.sesionActual().then(setSesion).catch(() => setSesion(null));
+  }, []);
+
+  if (sesion === undefined) return <main className="ingreso"><p className="tenue">Cargando…</p></main>;
+  if (!sesion) return <InicioSesion fuente={fuente} alEntrar={setSesion} />;
+  return <Panel sesion={sesion} alSalir={() => { fuente.cerrarSesion(); setSesion(null); history.replaceState(null, "", " "); }} />;
+}
+
+function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
+  const vistas = vistasPorRol[sesion.rol];
+  const vistaInicial = (): Vista => {
+    const v = leerHash().vista as Vista | undefined;
+    return v && vistas.includes(v) ? v : vistas[0];
+  };
+  const [vista, setVista] = useState<Vista>(vistaInicial);
+  const [datos, setDatos] = useState<Contexto | null>(null);
+  const [error, setError] = useState("");
   const [aprobadas, setAprobadas] = useState<Tarea[]>(() => {
     try { return JSON.parse(sessionStorage.getItem("vm-aprobadas") ?? "[]"); } catch { return []; }
   });
+
+  useEffect(() => {
+    let vigente = true;
+    fuente.cargarTablero(sesion)
+      .then((d) => { if (vigente) setDatos({ ...armarTablero(d, sesion.rol), sesion, modo: fuente.modo }); })
+      .catch((e: Error) => { if (vigente) setError(e.message); });
+    return () => { vigente = false; };
+  }, [sesion]);
 
   useEffect(() => {
     try { sessionStorage.setItem("vm-aprobadas", JSON.stringify(aprobadas)); } catch { /* sin almacenamiento */ }
   }, [aprobadas]);
 
   useEffect(() => {
-    const f = () => setEstado(leerHash());
+    const f = () => setVista(vistaInicial());
     window.addEventListener("hashchange", f);
     return () => window.removeEventListener("hashchange", f);
-  }, []);
+  });
 
-  const ir = (r: Rol, v?: Vista) => {
-    const def = roles.find((x) => x.id === r)!;
-    const vista = v ?? def.vistas[0];
-    setEstado({ rol: r, vista });
-    try { history.replaceState(null, "", `#${r}-${vista}`); } catch { /* la página publicada no muestra la dirección */ }
+  const ir = (v: Vista) => {
+    setVista(v);
+    try { history.replaceState(null, "", `#${v}`); } catch { /* la página publicada no muestra la dirección */ }
   };
-  const rolActual = roles.find((x) => x.id === rol)!;
   const aprobar = (t: Tarea) => setAprobadas((a) => (a.some((x) => x.id === t.id) ? a : [...a, t]));
 
-  const selectorRol = (
-    <label className="chip">
-      <span className="tenue solo-escritorio">Ver como</span>
-      <select className="selector-rol" value={rol} onChange={(e) => ir(e.target.value as Rol)} aria-label="Ver la plataforma como">
-        {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-      </select>
-    </label>
+  const usuario = (
+    <span className="chip">
+      <span><strong>{sesion.nombre}</strong> <span className="tenue">{nombreRol[sesion.rol]}</span></span>
+      <button className="btn btn-chico" onClick={alSalir}>Salir</button>
+    </span>
   );
 
-  const barraMando = (
+  const contenido = useMemo(() => {
+    if (error) return <div className="pagina"><p className="error" role="alert">{error}</p></div>;
+    if (!datos) return <div className="pagina"><p className="tenue">Cargando el tablero…</p></div>;
+    // En el proyecto real, líder y testigo trabajan en la app del celular (fase 3), no en el panel.
+    if (fuente.modo === "supabase" && (sesion.rol === "lider" || sesion.rol === "testigo")) {
+      return <div className="pagina"><h1>Su espacio está en el celular</h1><p className="tenue">La app del líder y del testigo llega en la fase 3. Mientras tanto, su coordinador le asigna las tareas.</p></div>;
+    }
+    return null;
+  }, [error, datos, sesion.rol]);
+
+  const barraMando = datos && (
     <div className="barra">
-      <span className="chip solo-escritorio"><strong>{campana.candidato}</strong><span className="tenue">{campana.cargo}</span></span>
-      <span className="chip"><span className="cuenta">{diasParaEleccion()}</span><span className="tenue">días para la elección</span></span>
+      <span className="chip solo-escritorio"><strong>{datos.campana.candidato}</strong><span className="tenue">{datos.campana.cargo}</span></span>
+      <span className="chip"><span className="cuenta">{diasParaEleccion(datos.campana.eleccion)}</span><span className="tenue">días para la elección</span></span>
       <span className="espacio" />
       {aprobadas.length > 0 && (
         <span className="chip"><span className="punto" style={{ background: "var(--verde)" }} />{aprobadas.length} {aprobadas.length === 1 ? "tarea aprobada" : "tareas aprobadas"} hoy</span>
       )}
-      {selectorRol}
+      {usuario}
     </div>
   );
 
@@ -88,23 +129,27 @@ export default function App() {
         <div className="marca" aria-hidden="true">
           <svg viewBox="0 0 32 32" width="24" height="24"><path d="M8 9l8 15 8-15" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </div>
-        {rolActual.vistas.map((v) => (
-          <button key={v} className="riel-btn" aria-current={vista === v ? "page" : undefined} onClick={() => ir(rol, v)}>
+        {vistas.map((v) => (
+          <button key={v} className="riel-btn" aria-current={vista === v ? "page" : undefined} onClick={() => ir(v)}>
             <Icono n={nav[v].icono} />
             {nav[v].nombre}
           </button>
         ))}
       </nav>
       <main className="lienzo">
-        {vista !== "mando" && <div className="rol-flotante">{selectorRol}</div>}
-        {vista === "mando" && <Mando barra={barraMando} aprobadas={aprobadas.map((t) => t.id)} alAprobar={aprobar} />}
-        {vista === "resumen" && <Resumen aprobadas={aprobadas} />}
-        {vista === "lideres" && <Lideres />}
-        {vista === "planillas" && <Planillas />}
-        {vista === "diae" && <DiaE />}
-        {vista === "datos" && <Datos />}
-        {vista === "bandeja" && <BandejaLider />}
-        {vista === "mimesa" && <MiMesa />}
+        {contenido ?? (
+          <ContextoTablero.Provider value={datos}>
+            {vista !== "mando" && <div className="rol-flotante">{usuario}</div>}
+            {vista === "mando" && <Mando barra={barraMando} aprobadas={aprobadas.map((t) => t.id)} alAprobar={aprobar} />}
+            {vista === "resumen" && <Resumen aprobadas={aprobadas} />}
+            {vista === "lideres" && <Lideres />}
+            {vista === "planillas" && <Planillas />}
+            {vista === "diae" && <DiaE />}
+            {vista === "datos" && <Datos />}
+            {vista === "bandeja" && <BandejaLider />}
+            {vista === "mimesa" && <MiMesa />}
+          </ContextoTablero.Provider>
+        )}
       </main>
     </div>
   );
