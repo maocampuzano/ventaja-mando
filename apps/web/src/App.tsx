@@ -6,6 +6,8 @@ import { ContextoTablero, type Contexto } from "./datos/contexto";
 import { sesionDemoPorRol } from "./datos/demo";
 import { armarTablero } from "./datos/tablero";
 import type { Sesion } from "./datos/tipos";
+import { AceptarInvitacion } from "./AceptarInvitacion";
+import { Equipo } from "./Equipo";
 import { Importar } from "./Importar";
 import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
@@ -13,12 +15,12 @@ import { Mando } from "./Mando";
 import { BandejaLider, Datos, DiaE, MiMesa, Planillas, Resumen } from "./Pantallas";
 import type { Tarea } from "./Strategos";
 
-type Vista = "resumen" | "mando" | "lideres" | "importar" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
+type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["mando", "lideres", "importar", "planillas", "diae", "datos"],
-  gerente: ["mando", "lideres", "importar", "planillas", "diae", "datos"],
+  administrador: ["mando", "lideres", "equipo", "importar", "planillas", "diae", "datos"],
+  gerente: ["mando", "lideres", "equipo", "importar", "planillas", "diae", "datos"],
   candidato: ["resumen", "mando", "diae"],
   coordinador: ["mando", "lideres", "importar", "planillas"],
   lider: ["bandeja"],
@@ -29,6 +31,7 @@ const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n
   resumen: { nombre: "Resumen", icono: "resumen" },
   mando: { nombre: "Mando", icono: "mando" },
   lideres: { nombre: "Líderes", icono: "lideres" },
+  equipo: { nombre: "Equipo", icono: "equipo" },
   importar: { nombre: "Importar", icono: "importar" },
   planillas: { nombre: "Planillas", icono: "planillas" },
   diae: { nombre: "Día E", icono: "diae" },
@@ -46,6 +49,9 @@ function leerHash(): { rol?: string; vista?: string } {
 
 export default function App() {
   const [sesion, setSesion] = useState<Sesion | null | undefined>(undefined);
+  const [invitacion, setInvitacion] = useState(() => new URLSearchParams(location.search).get("invitacion"));
+  const [aviso, setAviso] = useState("");
+  const cerrarInvitacion = () => { setInvitacion(null); history.replaceState(null, "", location.pathname); };
 
   useEffect(() => {
     const { rol } = leerHash();
@@ -55,7 +61,12 @@ export default function App() {
   }, []);
 
   if (sesion === undefined) return <main className="ingreso"><p className="tenue">Cargando…</p></main>;
-  if (!sesion) return <InicioSesion fuente={fuente} alEntrar={setSesion} />;
+  if (!sesion && invitacion) {
+    return <AceptarInvitacion fuente={fuente} codigo={invitacion}
+      alEntrar={(s) => { cerrarInvitacion(); setSesion(s); }}
+      alNecesitar2fa={() => { cerrarInvitacion(); setAviso("Invitación aceptada. Su rol pide verificación en dos pasos: entre con su correo y contraseña para activarla."); }} />;
+  }
+  if (!sesion) return <InicioSesion fuente={fuente} alEntrar={setSesion} aviso={aviso} />;
   return <Panel sesion={sesion} alSalir={() => { fuente.cerrarSesion(); setSesion(null); history.replaceState(null, "", " "); }} />;
 }
 
@@ -145,6 +156,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "mando" && <Mando barra={barraMando} aprobadas={aprobadas.map((t) => t.id)} alAprobar={aprobar} />}
             {vista === "resumen" && <Resumen aprobadas={aprobadas} />}
             {vista === "lideres" && <Lideres />}
+            {vista === "equipo" && <Equipo />}
             {vista === "importar" && <Importar />}
             {vista === "planillas" && <Planillas />}
             {vista === "diae" && <DiaE />}

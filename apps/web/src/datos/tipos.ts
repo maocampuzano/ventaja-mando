@@ -24,11 +24,18 @@ export type ResultadoImportacion = {
   guardado: boolean; // false en modo demo: no se guarda nada
 };
 
+export type Miembro = { id: string; nombre: string; rol: RolCampana; territorioIds: string[]; activa: boolean };
+export type InvitacionPendiente = { id: string; correo: string; rol: RolCampana; territorioIds: string[]; expira: string };
+export type NuevaInvitacion = { correo: string; rol: RolCampana; territorioIds: string[]; dias: number };
+/** Datos de quien acepta una invitación. Si ya tiene cuenta, `crearCuenta` es false y solo se inicia sesión. */
+export type Aceptacion = { codigo: string; nombre: string; correo: string; clave: string; crearCuenta: boolean };
+
 /** Resultado de un intento de inicio de sesión. */
 export type Ingreso =
   | { estado: "ok"; sesion: Sesion }
   | { estado: "falta-2fa" } // la contraseña es correcta; falta el código de la app autenticadora
   | { estado: "inscribir-2fa"; qr: string; secreto: string } // primera vez: escanear el QR con la app autenticadora
+  | { estado: "confirmar-correo" } // la cuenta se creó; falta abrir el enlace que Supabase envió al correo
   | { estado: "error"; mensaje: string };
 
 /**
@@ -44,4 +51,9 @@ export interface FuenteDatos {
   cargarTablero(sesion: Sesion): Promise<DatosTablero>;
   importarPersonas(sesion: Sesion, filas: FilaLista[], autorizacion: DatosAutorizacion,
     avance?: (hechas: number, total: number) => void): Promise<ResultadoImportacion>;
+  equipo(sesion: Sesion): Promise<{ miembros: Miembro[]; invitaciones: InvitacionPendiente[] }>;
+  /** Devuelve el código de la invitación: va en el enlace y en el QR, y en la base solo queda su hash. */
+  invitar(sesion: Sesion, datos: NuevaInvitacion): Promise<string>;
+  anularInvitacion(sesion: Sesion, id: string): Promise<void>;
+  aceptarInvitacion(datos: Aceptacion): Promise<Ingreso>;
 }

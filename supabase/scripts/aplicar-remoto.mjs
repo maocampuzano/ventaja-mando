@@ -92,6 +92,24 @@ export const SQL_VERIFICAR = `select json_build_object(
   'puestos_con_ubicacion', (select count(geom) from public.puesto where to_regclass('public.puesto') is not null)
 ) as estado;`;
 
+// Registro solo por invitación: Auth consulta esta función antes de crear cada cuenta (…_invitaciones.sql).
+export const HOOK_REGISTRO = {
+  hook_before_user_created_enabled: true,
+  hook_before_user_created_uri: "pg-functions://postgres/privado/antes_de_crear_usuario",
+};
+
+async function configurarAuth(ref, token) {
+  const [f] = await consulta(ref, token, "select to_regprocedure('privado.antes_de_crear_usuario(jsonb)') is not null as existe");
+  if (!f?.existe) return;
+  const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/config/auth`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(HOOK_REGISTRO),
+  });
+  if (!r.ok) throw new Error(`No se pudo activar el registro solo por invitación: HTTP ${r.status} ${(await r.text()).slice(0, 300)}`);
+  console.error("→ Registro solo por invitación activo");
+}
+
 async function consulta(ref, token, query) {
   const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
     method: "POST",
@@ -135,6 +153,7 @@ async function principal([orden, archivo, ...resto]) {
     }
     console.error("→ Secretos del Vault (solo se crean si no existen)");
     await consulta(ref, token, SQL_SECRETOS);
+    await configurarAuth(ref, token);
     console.log(JSON.stringify(await estado(ref, token), null, 2));
   } else if (orden === "cargar" && archivo) {
     const i = resto.indexOf("--lote");
