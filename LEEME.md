@@ -10,7 +10,8 @@ Este paquete tiene todo lo necesario para que Claude construya el producto en se
 | `docs/02-diseno-producto.md` | Diseño de producto, arquitectura, modelo de datos y lógica. |
 | `docs/01-analisis-mercado.md` | Análisis de VOTOMAP y la competencia (contexto). |
 | `docs/captura-*.jpg/png` | Capturas del prototipo. |
-| `prototipo/` | Prototipo navegable (React + Vite + TS, datos ficticios de Turbaco). |
+| `apps/web/` | Prototipo navegable (React + Vite + TS, datos ficticios de Turbaco). Hasta la fase 0 estaba en `prototipo/`. |
+| `packages/nucleo/` | Lógica y tipos compartidos, con sus pruebas. |
 | `.claude/skills/` | Skills que Claude usa en la nube (se cargan solas, no hay que instalarlas). |
 | `.env.example` | Las claves que se irán necesitando. |
 | `scripts/` | Subir a GitHub y preparar el entorno de nube. |

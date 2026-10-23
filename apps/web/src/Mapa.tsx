@@ -1,7 +1,7 @@
 // Mapa propio en SVG: no depende de teselas ni servicios externos, así funciona sin conexión y en la página publicada.
 import { useMemo } from "react";
 import { puestos, recDe, zonas } from "./data";
-import { porcentajeCobertura } from "./logic";
+import { porcentajeCobertura } from "@ventaja/nucleo";
 
 export type Capa = "accion" | "tierra" | "pauta" | "meta" | "testigos";
 

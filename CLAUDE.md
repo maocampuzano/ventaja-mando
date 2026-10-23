@@ -2,7 +2,7 @@
 
 Centro de mando para campañas electorales en Colombia: une la operación de tierra (líderes, simpatizantes, territorio, testigos) con la pauta digital (Meta y Google Ads) y una IA estratégica (Strategos), en un mapa. Es un producto de XYZ Creatia, de la familia **Ventaja Electoral**. Dueño: Mauricio Campuzano.
 
-Antes de escribir código, lea `docs/02-diseno-producto.md` (el diseño) y `PLAN-DE-TRABAJO.md` (las fases). El prototipo navegable está en `prototipo/` (o en `apps/web/` después de la fase 0) y es la referencia visual.
+Antes de escribir código, lea `docs/02-diseno-producto.md` (el diseño) y `PLAN-DE-TRABAJO.md` (las fases). El prototipo navegable está en `apps/web/` y es la referencia visual. El estado de cada fase está en `docs/ESTADO.md` y cómo correr todo en `docs/DESARROLLO.md`.
 
 ## Idioma
 
