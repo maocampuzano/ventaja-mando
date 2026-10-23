@@ -1,0 +1,37 @@
+import type { ReactNode } from "react";
+import { campana } from "./data";
+
+const trazos: Record<string, ReactNode> = {
+  mando: <><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z" /><path d="M9 3v15M15 6v15" /></>,
+  resumen: <><rect x="3" y="3" width="8" height="8" rx="2" /><rect x="13" y="3" width="8" height="5" rx="2" /><rect x="13" y="10" width="8" height="11" rx="2" /><rect x="3" y="13" width="8" height="8" rx="2" /></>,
+  lideres: <><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.4" /><path d="M16 14.6c2.7.2 5 2 5 5.4" /></>,
+  planillas: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
+  diae: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /><path d="M8 14l2.5 2.5L16 12" /></>,
+  datos: <><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /><path d="M9 12l2 2 4-4" /></>,
+  movil: <><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></>,
+};
+
+export function Icono({ n }: { n: keyof typeof trazos }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {trazos[n]}
+    </svg>
+  );
+}
+
+export function Barra({ valor, color }: { valor: number; color?: string }) {
+  return (
+    <div className="barra-h" aria-hidden="true">
+      <span style={{ width: `${Math.max(0, Math.min(1, valor)) * 100}%`, background: color }} />
+    </div>
+  );
+}
+
+export function diasParaEleccion() {
+  const hoy = new Date();
+  const e = new Date(`${campana.eleccion}T00:00:00-05:00`);
+  return Math.max(0, Math.ceil((e.getTime() - hoy.getTime()) / 86400000));
+}
+
+export const colorIndice = (x: number) => (x >= 0.7 ? "var(--verde)" : x >= 0.5 ? "var(--ambar)" : "var(--rojo)");
+export const claseIndice = (x: number) => (x >= 0.7 ? "verde" : x >= 0.5 ? "ambar" : "rojo");
