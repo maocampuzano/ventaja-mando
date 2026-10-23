@@ -10,3 +10,5 @@ coverage/
 supabase/.temp/
 dist-ssr/
 *.local
+test-results/
+playwright-report/

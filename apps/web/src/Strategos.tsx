@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { lideres, preguntasStrategos, recomendaciones, zonaDe } from "./data";
+import { preguntasStrategos } from "./data";
+import { useTablero, type Contexto } from "./datos/contexto";
 
 export type Tarea = { id: string; titulo: string; detalle: string };
 
-function tareasPropuestas(tipos: string[]): Tarea[] {
+function tareasPropuestas(tipos: string[], { lideres, recomendaciones, zonaDe }: Contexto): Tarea[] {
   const brigadas = recomendaciones.filter((r) => r.accion === "brigada").sort((a, b) => b.digital - a.digital);
   const revisar = [...lideres].sort((a, b) => a.indice.total - b.indice.total).slice(0, 3);
   const t: Tarea[] = [];
@@ -18,6 +19,7 @@ function tareasPropuestas(tipos: string[]): Tarea[] {
 }
 
 export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
+  const tablero = useTablero();
   const [hilo, setHilo] = useState<number[]>([]);
   const [escribiendo, setEscribiendo] = useState(false);
 
@@ -41,7 +43,7 @@ export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alApr
               <p>{p.a}</p>
               <ul className="fuentes">{p.fuentes.map((f) => <li key={f}>{f}</li>)}</ul>
             </div>
-            {tareasPropuestas(p.tareas).map((t) => (
+            {tareasPropuestas(p.tareas, tablero).map((t) => (
               <div key={t.id} className="tarea-prop">
                 <div>
                   <h3>{t.titulo}</h3>

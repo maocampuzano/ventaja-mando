@@ -1,4 +1,5 @@
 // Tipos y lógica compartida de Ventaja Mando (web, app y funciones del servidor).
+export * from "./alcance";
 export * from "./cobertura";
 export * from "./duplicados";
 export * from "./formatos";

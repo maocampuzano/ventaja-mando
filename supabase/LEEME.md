@@ -44,6 +44,8 @@ Ninguna campaña ve datos de otra, aunque sean del mismo partido.
 
 `registrar_persona`, `revocar_autorizacion`, `autorizada_para`, `posibles_duplicados` (misma regla que `packages/nucleo`), `fusionar_personas`, `ver_documento`, `crear_invitacion` y `aceptar_invitacion`. Se llaman desde la app con `supabase.rpc(...)`.
 
+Para el panel web (fase 2): `tablero_zonas` y `tablero_lideres` devuelven cifras **agregadas** por zona y por líder (registrados, validados, comprometidos, pauta de 14 días, componentes del índice del líder). Nunca devuelven personas, así que también las usa el candidato. Administración, gerencia (con 2FA) y candidato ven toda la campaña; el coordinador, sus territorios; líder, testigo y quien no sea miembro reciben un error de permiso. La meta de cada zona va en `territorio.meta_votos`.
+
 ## Correr las pruebas en local
 
 Necesita PostgreSQL 16 con PostGIS y pgTAP, y `pg_prove`. En Ubuntu:
@@ -80,7 +82,7 @@ node supabase/scripts/aplicar-remoto.mjs cargar /tmp/datos/municipios.sql   # pr
 node supabase/scripts/aplicar-remoto.mjs cargar /tmp/datos/puestos.sql
 ```
 
-En local, los `.sql` también se pueden aplicar con `psql -f`. Si un archivo oficial usa otros nombres de columna, `cargar-territorios.mjs` acepta `--columna cod_mpio="Código Municipio"` y, si falta alguna, muestra las que encontró.
+En el entorno de nube, los scripts que usan la red se corren con `NODE_USE_ENV_PROXY=1` delante, porque Node no usa el proxy del entorno por su cuenta. En local, los `.sql` también se pueden aplicar con `psql -f`. Si un archivo oficial usa otros nombres de columna, `cargar-territorios.mjs` acepta `--columna cod_mpio="Código Municipio"` y, si falta alguna, muestra las que encontró.
 
 ## Pasar esto a su proyecto de Supabase (paso a paso)
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Barra, claseIndice, colorIndice } from "./comunes";
-import { lideres, zonaDe, type Lider } from "./data";
+import type { Lider } from "./data";
+import { useTablero } from "./datos/contexto";
 import { enlaceWhatsAppManual, miles, pct } from "@ventaja/nucleo";
 
 const comps = [
@@ -11,11 +12,12 @@ const comps = [
 ] as const;
 
 export function Lideres() {
+  const { lideres, zonaDe } = useTablero();
   const [orden, setOrden] = useState<"asc" | "desc">("desc");
   const [sel, setSel] = useState<Lider | null>(null);
   const lista = useMemo(
     () => [...lideres].sort((a, b) => (orden === "desc" ? b.indice.total - a.indice.total : a.indice.total - b.indice.total)),
-    [orden]
+    [orden, lideres]
   );
   const revisar = lideres.filter((l) => l.indice.total < 0.5).length;
 

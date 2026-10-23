@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Barra, diasParaEleccion } from "./comunes";
-import { campana, incidenciasBase, lideres, puestos, recomendaciones, todasLasMesas, totales, zonaDe, type Incidencia } from "./data";
+// La bandeja del líder y la mesa del testigo son vistas previas de la app (fase 3): usan la semilla ficticia.
+import { incidenciasBase, lideres as lideresSemilla, puestos as puestosSemilla, zonaDe as zonaSemilla, type Incidencia } from "./data";
+import { useTablero } from "./datos/contexto";
 import { Escaner } from "./Escaner";
 import { miles, pct, porcentajeCobertura, prioridadCobertura, textoAccion } from "@ventaja/nucleo";
 import type { Tarea } from "./Strategos";
@@ -53,11 +55,11 @@ export function Telefono({ titulo, children, nav }: { titulo: string; children: 
 
 /* ---------- Bandeja del líder (celular) ---------- */
 export function BandejaLider() {
-  const yo = lideres[0];
+  const yo = lideresSemilla[0];
   const [tab, setTab] = useState<"hoy" | "planilla" | "metas">("hoy");
   const [hechas, setHechas] = useState<string[]>([]);
   const tareas = [
-    { id: "a", t: "Visitar a 8 simpatizantes sin validar", d: `${zonaDe(yo.zonaId).nombre}, antes de las 6 p. m.` },
+    { id: "a", t: "Visitar a 8 simpatizantes sin validar", d: `${zonaSemilla(yo.zonaId).nombre}, antes de las 6 p. m.` },
     { id: "b", t: "Invitar a la reunión del jueves", d: "12 contactos con autorización" },
     { id: "c", t: "Escanear la planilla del sábado", d: "Lote 14" },
   ];
@@ -115,9 +117,10 @@ export function BandejaLider() {
 
 /* ---------- Día E ---------- */
 export function DiaE() {
+  const { puestos, todasLasMesas, zonaDe } = useTablero();
   const [simulacro, setSimulacro] = useState(false);
   const [e14, setE14] = useState<Set<string>>(new Set());
-  const [novedades, setNovedades] = useState<Incidencia[]>(incidenciasBase);
+  const [novedades, setNovedades] = useState<Incidencia[]>(() => incidenciasBase.filter((n) => puestos.some((p) => p.id === n.puestoId)));
 
   useEffect(() => {
     if (!simulacro) return;
@@ -131,11 +134,19 @@ export function DiaE() {
       });
     }, 900);
     return () => clearInterval(t);
-  }, [simulacro]);
+  }, [simulacro, todasLasMesas]);
 
   const conTestigo = todasLasMesas.filter((m) => m.testigoId).length;
   const sinCubrir = prioridadCobertura(todasLasMesas);
   const claveNov = useMemo(() => new Set(novedades.map((n) => `${n.puestoId}-${n.mesa}`)), [novedades]);
+
+  if (!todasLasMesas.length) {
+    return (
+      <div className="pagina">
+        <div className="pagina-cabeza"><div><h1>Día E</h1><p className="tenue">Todavía no hay puestos ni mesas asignados a la campaña en su territorio. El centro de mando del día E se completa en la fase 5.</p></div></div>
+      </div>
+    );
+  }
 
   return (
     <div className="pagina">
@@ -223,7 +234,7 @@ export function MiMesa() {
       <div className="escenario" style={{ gridTemplateColumns: "360px minmax(0,1fr)" }}>
         <Telefono titulo="Día E">
           <h2>Mesa 7</h2>
-          <p className="tenue" style={{ fontSize: 13 }}>{puestos[0].nombre}. Apertura confirmada a las 7:58 a. m.</p>
+          <p className="tenue" style={{ fontSize: 13 }}>{puestosSemilla[0].nombre}. Apertura confirmada a las 7:58 a. m.</p>
           <button className="btn btn-primario" onClick={() => setFoto(true)} disabled={foto}>{foto ? "E-14 enviado a las 4:21 p. m." : "Tomar foto del E-14"}</button>
           {foto && <p className="aviso">La lectura de los votos la revisa una persona del centro de mando antes de sumarla. La foto queda como evidencia de la mesa.</p>}
           <button className="btn" onClick={() => setNovedad(true)} disabled={novedad}>{novedad ? "Novedad enviada al abogado de zona" : "Reportar una novedad"}</button>
@@ -240,6 +251,7 @@ export function MiMesa() {
 
 /* ---------- Datos y cumplimiento ---------- */
 export function Datos() {
+  const { totales, modo } = useTablero();
   const autorizados = Math.round(totales.validados * 0.94);
   return (
     <div className="pagina">
@@ -249,11 +261,13 @@ export function Datos() {
           <p className="tenue">Lo que la campaña tiene que poder demostrar si alguien pregunta: de dónde salió cada dato, quién lo autorizó y quién lo ha usado.</p>
         </div>
       </div>
-      <div className="rejilla" style={{ marginBottom: 16 }}>
+      {modo === "demo" && (
+        <div className="rejilla" style={{ marginBottom: 16 }}>
         <div className="tarjeta"><div className="etiqueta">Con autorización vigente</div><div className="dato">{pct(autorizados / totales.validados)}</div><p className="tenue">{miles(autorizados)} personas</p></div>
         <div className="tarjeta"><div className="etiqueta">Solicitudes de titulares abiertas</div><div className="dato">3</div><p className="tenue">La más antigua vence en 6 días hábiles</p></div>
         <div className="tarjeta"><div className="etiqueta">Exportaciones este mes</div><div className="dato">2</div><p className="tenue">Ambas con marca de agua y registro</p></div>
       </div>
+      )}
       <div className="rejilla" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
         <div className="tarjeta pila">
           <h2>Opinión política</h2>
@@ -277,13 +291,14 @@ export function Datos() {
 
 /* ---------- Candidato ---------- */
 export function Resumen({ aprobadas }: { aprobadas: Tarea[] }) {
+  const { campana, totales, recomendaciones, zonaDe } = useTablero();
   const meta = totales.comprometidos / campana.metaVotos;
   return (
     <div className="pagina">
       <div className="pagina-cabeza">
         <div>
           <h1>Buenos días, {campana.candidato.split(" ")[0]}</h1>
-          <p className="tenue">{campana.cargo}. Faltan {diasParaEleccion()} días para la elección.</p>
+          <p className="tenue">{campana.cargo}. Faltan {diasParaEleccion(campana.eleccion)} días para la elección.</p>
         </div>
       </div>
       <div className="rejilla">

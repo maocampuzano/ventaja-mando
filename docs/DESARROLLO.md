@@ -31,11 +31,21 @@ Todos se corren desde la raíz del repositorio.
 | `npm run typecheck` | Verifica los tipos de todos los paquetes. |
 | `npm run lint` | Revisa el código con ESLint. |
 | `npm test` | Corre las pruebas de Vitest y las del script de carga de territorios. |
+| `npm run test:e2e -w apps/web` | Pruebas de Playwright del panel en modo demo: inicio de sesión por rol, 2FA y alcance por territorio. En el entorno de nube: `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e -w apps/web`. |
 | `npm run test:db` | Crea una base desde cero, aplica migraciones y semilla, y corre las pruebas de RLS (necesita PostgreSQL 16 con PostGIS y pgTAP; ver `supabase/LEEME.md`). |
 | `node supabase/scripts/aplicar-remoto.mjs verificar` | Revisa el proyecto real de Supabase: migraciones, RLS, Vault y territorios cargados (necesita `SUPABASE_ACCESS_TOKEN`; ver `supabase/LEEME.md`). |
 | `npm run test -w packages/nucleo -- --watch` | Pruebas de `nucleo` en modo observación, mientras se programa. |
 
 Antes de abrir un PR deben pasar `typecheck`, `lint`, `test` y `test:db`. La integración continua (`.github/workflows/ci.yml`) los corre en cada PR, junto con la compilación de la web.
+
+## Modo demo y modo Supabase
+
+El panel tiene dos fuentes de datos con la misma interfaz (`apps/web/src/datos/`):
+
+- **demo** (por defecto): la semilla ficticia de Turbaco, en el navegador. La pantalla de entrada muestra los usuarios de prueba (contraseña `demo2027`; el código de dos pasos del gerente es `123456`). Recorta los datos con la misma regla de alcance que la base (`packages/nucleo/src/alcance.ts`), pero no es seguridad: todo está en el navegador.
+- **supabase**: el proyecto real. Se enciende con `MODO_DATOS=supabase` más `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`. Inicia sesión con Supabase Auth, pide el código de dos pasos a administradores y gerentes, y lee el tablero con las funciones `tablero_zonas` y `tablero_lideres`, que solo devuelven agregados y aplican el alcance de cada rol en la base.
+
+En la página compilada en modo demo no queda nada del proyecto real; en modo supabase queda la URL y la clave publicable (que es pública por diseño), nunca la secreta.
 
 ## Dónde va cada cosa
 
