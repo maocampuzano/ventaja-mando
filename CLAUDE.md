@@ -36,12 +36,16 @@ Estas reglas son parte del producto y del argumento de venta. Ningún cambio las
 
 ## Forma de trabajar
 
-- **Una fase o subfase por sesión**, en su propia rama (`fase-N-tema`), que termina en un PR con:
+- **Cada fase en su propia rama** (`fase-N-tema`), que termina en un PR con:
   - qué se hizo;
   - cómo probarlo;
   - qué quedó pendiente;
-  - qué necesita de Mauricio (cuentas, claves, decisiones).
-- No mezcle fases en un PR. Si encuentra trabajo fuera de alcance, anótelo en el PR en vez de hacerlo.
+  - qué necesita de Mauricio (cuentas, claves, decisiones);
+  - la sección «Cumplimiento».
+- Se pueden hacer varias fases seguidas en una sesión. No mezcle fases en un mismo PR. Si encuentra trabajo fuera de alcance, anótelo en el PR en vez de hacerlo.
+- **Autonomía:** el agente fusiona sus propios PR cuando la integración continua está en verde y la revisión de cumplimiento está hecha. Nunca sube cambios directo a `main` ni reescribe su historial.
+- **Solo se detiene para los puntos de validación V1 a V7 de `PLAN-DE-TRABAJO.md`:** cuentas y claves, textos legales, excepciones a las reglas que no se negocian, envío de código o datos a terceros, producción y decisiones de negocio. Mientras espera, sigue con lo que no dependa de ese punto.
+- **Mauricio es principiante en lo técnico.** Todo lo que se le pida (cuentas, claves, configuraciones, revisiones) va con un paso a paso numerado: dónde hacer clic, qué escribir y cómo saber que quedó bien. Sin jerga sin explicar.
 - **Datos de prueba siempre ficticios** (la semilla de Turbaco del prototipo). Nunca use datos de personas reales.
 - Si una tarea necesita una cuenta o clave que no está en el entorno, deje el código listo detrás de una variable, documente cómo activarla y siga con lo demás.
 - Antes de abrir el PR deben pasar el *typecheck*, el *lint* y las pruebas.
