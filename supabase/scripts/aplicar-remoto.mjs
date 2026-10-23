@@ -155,6 +155,16 @@ async function principal([orden, archivo, ...resto]) {
     await consulta(ref, token, SQL_SECRETOS);
     await configurarAuth(ref, token);
     console.log(JSON.stringify(await estado(ref, token), null, 2));
+  } else if (orden === "url-sitio" && archivo) {
+    // La dirección pública del panel: a ella vuelven los enlaces de confirmación de correo de Supabase.
+    const url = new URL(archivo).origin;
+    const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/config/auth`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ site_url: url, uri_allow_list: `${url}/**` }),
+    });
+    if (!r.ok) throw new Error(`No se pudo guardar la dirección del sitio: HTTP ${r.status} ${(await r.text()).slice(0, 300)}`);
+    console.error(`→ Dirección del sitio: ${url}`);
   } else if (orden === "cargar" && archivo) {
     const i = resto.indexOf("--lote");
     const tamano = i >= 0 ? Number(resto[i + 1]) : 500;
@@ -165,7 +175,7 @@ async function principal([orden, archivo, ...resto]) {
     }
     console.log(JSON.stringify(await estado(ref, token), null, 2));
   } else {
-    console.error("Uso: aplicar-remoto.mjs <verificar|migrar|cargar archivo.sql [--lote 500]>");
+    console.error("Uso: aplicar-remoto.mjs <verificar|migrar|cargar archivo.sql [--lote 500]|url-sitio https://…>");
     process.exit(1);
   }
 }

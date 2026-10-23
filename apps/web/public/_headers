@@ -1,0 +1,9 @@
+# Cabeceras de seguridad de Cloudflare Pages.
+# no-referrer: el enlace de invitación lleva un código; no debe filtrarse a otros sitios.
+# noindex: el entorno de prueba no aparece en buscadores.
+/*
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Robots-Tag: noindex, nofollow

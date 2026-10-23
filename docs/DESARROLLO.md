@@ -47,6 +47,15 @@ El panel tiene dos fuentes de datos con la misma interfaz (`apps/web/src/datos/`
 
 En la página compilada en modo demo no queda nada del proyecto real; en modo supabase queda la URL y la clave publicable (que es pública por diseño), nunca la secreta.
 
+## Publicar la versión de prueba
+
+`bash scripts/publicar-prueba.sh` publica dos versiones del panel en Cloudflare Pages:
+
+- `https://ventaja-mando-prueba.pages.dev`: conectada al proyecto de **prueba** de Supabase.
+- `https://demo.ventaja-mando-prueba.pages.dev`: modo demo, con la semilla ficticia.
+
+Además guarda en Supabase la dirección del sitio, a la que vuelven los enlaces de confirmación de correo. Necesita `CLOUDFLARE_API_TOKEN` (permiso «Cloudflare Pages: Edit») y `CLOUDFLARE_ACCOUNT_ID`. En el entorno de nube, `api.cloudflare.com` debe estar en los dominios permitidos. Las cabeceras de seguridad están en `apps/web/public/_headers`: sin referer (los enlaces de invitación llevan un código) y sin indexación en buscadores. Esto **no** es producción: producción es la fase 9 y requiere V3 y V6.
+
 ## Dónde va cada cosa
 
 - **Lógica de negocio sin interfaz** (índices, recomendaciones, duplicados, formatos): en `packages/nucleo/src`, con un archivo de pruebas `*.test.ts` al lado. No use APIs del navegador ni de Node en `nucleo`: lo comparten la web, la app y las funciones del servidor.
