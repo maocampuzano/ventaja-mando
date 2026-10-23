@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Barra, diasParaEleccion } from "./comunes";
 import { campana, incidenciasBase, lideres, puestos, recomendaciones, todasLasMesas, totales, zonaDe, type Incidencia } from "./data";
 import { Escaner } from "./Escaner";
-import { miles, pct, porcentajeCobertura, prioridadCobertura, textoAccion } from "./logic";
+import { miles, pct, porcentajeCobertura, prioridadCobertura, textoAccion } from "@ventaja/nucleo";
 import type { Tarea } from "./Strategos";
 
 /* ---------- Planillas (gerente / coordinador) ---------- */

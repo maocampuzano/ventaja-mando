@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Mapa, type Capa } from "./Mapa";
 import { Barra } from "./comunes";
 import { campana, lideres, puestos, recDe, recomendaciones, totales, zonaDe } from "./data";
-import { miles, pct, porcentajeCobertura, textoAccion } from "./logic";
+import { miles, pct, porcentajeCobertura, textoAccion } from "@ventaja/nucleo";
 import { Strategos, type Tarea } from "./Strategos";
 
 const capas: { id: Capa; nombre: string; leyenda: ReactNode }[] = [

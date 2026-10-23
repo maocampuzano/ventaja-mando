@@ -1,6 +1,6 @@
 // Datos FICTICIOS de una campaña a la Alcaldía de Turbaco (Bolívar).
 // Las zonas son una cuadrícula hexagonal ilustrativa, no barrios ni límites oficiales.
-import { indiceLider, recomendar, type Mesa } from "./logic";
+import { indiceLider, recomendar, type Mesa } from "@ventaja/nucleo";
 
 function rng(seed: number) {
   return () => {

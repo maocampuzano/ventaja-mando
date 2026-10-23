@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Barra, claseIndice, colorIndice } from "./comunes";
 import { lideres, zonaDe, type Lider } from "./data";
-import { enlaceWhatsAppManual, miles, pct } from "./logic";
+import { enlaceWhatsAppManual, miles, pct } from "@ventaja/nucleo";
 
 const comps = [
   { k: "calidad", n: "Calidad", ayuda: "Validados sobre registrados" },

@@ -1,14 +1,14 @@
 # Ventaja Mando: prototipo navegable
 
-Prototipo para mostrar en las entrevistas con gerentes de campaña (fase 0 del plan, ver `../02-diseno-producto.md`). **Todos los datos son ficticios**: una campaña inventada a la Alcaldía de Turbaco, con zonas hexagonales ilustrativas que no son barrios ni límites oficiales.
+Prototipo para mostrar en las entrevistas con gerentes de campaña (ver `../../docs/02-diseno-producto.md`). **Todos los datos son ficticios**: una campaña inventada a la Alcaldía de Turbaco, con zonas hexagonales ilustrativas que no son barrios ni límites oficiales.
 
 ## Cómo abrirlo
 
-Desde una terminal:
+Desde la raíz del repositorio:
 
 ```bash
-cd "/Users/mauriciocampuzano/Documents/ClaudeMauricio/Desarrollo WEB/APPpolitica/prototipo"
-npm run dev
+npm install
+npm run dev -w apps/web
 ```
 
 Luego abra http://localhost:5173 en el navegador.
@@ -40,7 +40,7 @@ Arriba a la derecha, **«Ver como»** cambia de rol. Cada rol ve solo lo suyo:
 - React 19 + TypeScript + Vite. El mapa es un SVG propio (`src/Mapa.tsx`), sin teselas ni servicios externos, para que funcione en la página publicada y sin conexión. En el producto real se usará MapLibre con teselas contratadas.
 - `npm run build` genera un solo archivo, `dist/index.html`, con todo el código adentro.
 - `src/data.ts`: datos ficticios generados con semilla fija; siempre salen iguales.
-- `src/logic.ts`: la lógica del documento de diseño (índice del líder, recomendación tierra + pauta, cobertura de mesas, enlace de WhatsApp manual).
+- La lógica del documento de diseño (índice del líder, recomendación tierra + pauta, cobertura de mesas, enlace de WhatsApp manual, duplicados y formatos) vive en `packages/nucleo` y se importa como `@ventaja/nucleo`.
 - No hay backend: Strategos responde con textos de ejemplo y nada se guarda, salvo las tareas aprobadas, que duran mientras la pestaña esté abierta.
 
 ## Pendiente
