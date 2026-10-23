@@ -185,13 +185,14 @@ function similitudNombre(x: string, y: string): number {
 export function evaluarPar(p: Persona, q: Persona): Coincidencia | null {
   const razones: string[] = []; let puntaje = 0;
   if (p.documentoHash && p.documentoHash === q.documentoHash) { puntaje += 0.7; razones.push("mismo documento"); }
-  if (p.telefono && p.telefono === q.telefono)                 { puntaje += 0.2; razones.push("mismo teléfono"); }
+  if (p.telefono && p.telefono === q.telefono)                 { puntaje += 0.3; razones.push("mismo teléfono"); }
   const sn = similitudNombre(p.nombre, q.nombre);
   if (sn >= 0.75)                                              { puntaje += 0.2 * sn; razones.push(`nombre similar (${Math.round(sn * 100)} %)`); }
   if (p.territorioId === q.territorioId)                       { puntaje += 0.05; razones.push("mismo territorio"); }
   return puntaje >= 0.5 ? { a: p.id, b: q.id, puntaje: Math.min(1, puntaje), razones } : null;
 }
-// Se agrupan los candidatos por documento, teléfono o prefijo de nombre para no comparar todos contra todos.
+// El teléfono pesa 0,3 (antes 0,2, ajustado el 24/10/2026): mismo celular y mismo nombre sin cédula sí llegan al umbral.
+// Se agrupan los candidatos por documento o teléfono para no comparar todos contra todos (sin ninguno de los dos, un par no llega al umbral).
 // Es una SUGERENCIA: una persona decide fusionar, y la fusión queda en la auditoría.
 ```
 

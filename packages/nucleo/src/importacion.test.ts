@@ -80,7 +80,7 @@ describe("validar filas", () => {
 });
 
 describe("duplicados dentro del archivo", () => {
-  it("la misma cédula queda una sola vez y se explica; el mismo celular solo se avisa", () => {
+  it("la misma cédula queda una sola vez; mismo celular y nombre quedan para revisar", () => {
     const r = preparar([
       ["Ana Peña", "1047000218", "3000000001", "Centro", "", "si", ""],
       ["Ana M. Peña", "1.047.000.218", "", "Centro", "", "si", ""],
@@ -89,8 +89,19 @@ describe("duplicados dentro del archivo", () => {
     ]);
     expect(r.listas.map((l) => l.numero)).toEqual([2, 4, 5]);
     expect(r.rechazadas).toEqual([{ numero: 3, mensaje: "misma cédula que la fila 2" }]);
-    expect(r.duplicados).toEqual([{ a: "2", b: "3", puntaje: 0.75, razones: ["mismo documento", "mismo territorio"], accion: "rechazada" }]);
-    expect(r.advertencias).toEqual([{ numero: 5, mensaje: "mismo celular que la fila 4: revisar si es la misma persona" }]);
+    expect(r.duplicados.map((d) => [d.a, d.b, d.accion])).toEqual([["2", "3", "rechazada"], ["4", "5", "revisar"]]);
+    expect(r.duplicados[1].razones).toEqual(["mismo teléfono", "nombre similar (100 %)", "mismo territorio"]);
+    expect(r.advertencias).toEqual([]);
+  });
+
+  it("el mismo celular con otro nombre entra y se avisa, sin llamarlo duplicado", () => {
+    const r = preparar([
+      ["Ana Peña", "", "3000000001", "Centro", "", "si", ""],
+      ["Pedro Gil", "", "3000000001", "Centro", "", "si", ""],
+    ]);
+    expect(r.listas).toHaveLength(2);
+    expect(r.duplicados).toEqual([]);
+    expect(r.advertencias).toEqual([{ numero: 3, mensaje: "mismo celular que la fila 2: revisar si es la misma persona" }]);
   });
 
   it("5.000 filas se preparan en menos de 2 segundos", () => {

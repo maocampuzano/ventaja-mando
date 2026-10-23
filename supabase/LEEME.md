@@ -129,10 +129,13 @@ Los crea `aplicar-remoto.mjs migrar` dentro de la base: los valores se generan a
    ```
 3. **No los borre nunca:** sin `clave_documento`, las cédulas cifradas no se pueden recuperar.
 
-**4. Activar la verificación en dos pasos (2FA)**
-1. En Supabase, entre a **Authentication**, luego a **Sign In / Providers** (o **Multi-Factor**, según la versión).
-2. Active **TOTP**, que es la verificación con una app como Google Authenticator.
-3. Los administradores y gerentes que no la usen no verán datos: la base se los bloquea.
+**4. Verificación en dos pasos (2FA) y registro cerrado**
+
+En los proyectos de Supabase, la verificación con app autenticadora (TOTP) viene activada (en su proyecto se confirmó el 24/10/2026). No hay que encenderla: cada administrador o gerente vincula su celular la primera vez que entra al panel, escaneando un código QR. Mientras no lo haga, la base no le muestra datos.
+
+Lo que sí conviene ajustar en el panel de Supabase:
+1. En **Authentication → Sign In / Providers**, apague **Allow new users to sign up**. Así nadie puede crearse una cuenta por su cuenta: al equipo se entra por invitación. Quedó bien si el interruptor queda gris.
+2. En **Authentication → Sign In / Providers → Email**, suba **Minimum password length** a 12. Quedó bien si al guardar aparece «Successfully updated settings».
 
 ## Lo que no se pudo probar desde aquí
 

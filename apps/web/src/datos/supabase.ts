@@ -64,7 +64,14 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
         const { data: f } = await sb.auth.mfa.listFactors();
         const totp = f?.totp?.find((x) => x.status === "verified");
         if (!totp) {
-          return { estado: "error", mensaje: "Su rol exige verificación en dos pasos y todavía no la tiene activada. Pida al administrador que la active con usted (supabase/LEEME.md, paso 4)." };
+          // Primera vez: se inscribe la app autenticadora. Los intentos sin terminar se descartan antes.
+          for (const viejo of f?.all?.filter((x) => x.factor_type === "totp" && x.status !== "verified") ?? []) {
+            await sb.auth.mfa.unenroll({ factorId: viejo.id });
+          }
+          const { data: nuevo, error: en } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Ventaja Mando" });
+          if (en || !nuevo) return { estado: "error", mensaje: `No se pudo preparar la verificación en dos pasos: ${en?.message ?? "sin respuesta"}` };
+          factorPendiente = nuevo.id;
+          return { estado: "inscribir-2fa", qr: nuevo.totp.qr_code, secreto: nuevo.totp.secret };
         }
         factorPendiente = totp.id;
         return { estado: "falta-2fa" };

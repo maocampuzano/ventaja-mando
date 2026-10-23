@@ -179,14 +179,15 @@ export function prepararImportacion(filas: readonly (readonly string[])[], mapa:
     if (mismaCedula) fuera.add(b);
     return { ...c, a: String(a), b: String(b), accion: mismaCedula ? "rechazada" as const : "revisar" as const };
   }).sort((x, y) => Number(x.b) - Number(y.b));
-  // Con los pesos del diseño (§7.1), el mismo celular sin la misma cédula no llega al umbral de duplicado.
-  // Igual se avisa, para que alguien lo mire: puede ser la misma persona o un celular compartido en la familia.
+  // El mismo celular con un nombre distinto no llega al umbral (puede ser un celular de la familia). Igual se avisa,
+  // salvo que el par ya esté en la lista de posibles duplicados.
+  const yaMarcados = new Set(duplicados.map((d) => `${d.a}-${d.b}`));
   const porCelular = new Map<string, number>();
   for (const l of listas) {
     if (!l.telefono || fuera.has(l.numero)) continue;
     const primera = porCelular.get(l.telefono);
     if (primera === undefined) porCelular.set(l.telefono, l.numero);
-    else advertencias.push({ numero: l.numero, mensaje: `mismo celular que la fila ${primera}: revisar si es la misma persona` });
+    else if (!yaMarcados.has(`${primera}-${l.numero}`)) advertencias.push({ numero: l.numero, mensaje: `mismo celular que la fila ${primera}: revisar si es la misma persona` });
   }
   advertencias.sort((x, y) => x.numero - y.numero);
   for (const n of [...fuera].sort((x, y) => x - y)) {

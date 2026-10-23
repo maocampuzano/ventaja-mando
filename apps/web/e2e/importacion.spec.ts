@@ -37,7 +37,7 @@ test("un Excel de 5.000 filas termina con su reporte de duplicados", async ({ pa
   await expect(page.locator('[data-prueba="rechazadas"]')).toHaveText("149");
   await expect(page.locator('[data-prueba="duplicados"]')).toHaveText("100");
 
-  await page.getByText("Por qué son duplicados").click();
+  await page.getByText(/Por qué son duplicados/).click();
   await expect(page.getByText(/Fila 4902 con la fila 3: mismo documento/)).toBeVisible();
   await page.getByText(/Filas que no entran/).click();
   await expect(page.getByText(/sin autorización de datos/).first()).toBeVisible();

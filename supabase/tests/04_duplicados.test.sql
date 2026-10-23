@@ -10,10 +10,12 @@ select results_eq(
   $$ values ('80000000-0000-4000-8000-000000000101'::uuid, '80000000-0000-4000-8000-000000009001'::uuid, 0.7::numeric, array['mismo documento']) $$,
   'La misma cédula cargada por dos líderes aparece como posible duplicado, con su razón');
 
--- Con los pesos del diseño (confirmados): mismo celular + mismo nombre + misma zona = 0,45 < 0,5.
-select is((select count(*) from public.posibles_duplicados('20000000-0000-4000-8000-00000000000a')
-           where '80000000-0000-4000-8000-000000009002' in (a, b))::int, 0,
-  'Mismo celular y nombre sin cédula no llegan al umbral (igual que en packages/nucleo)');
+-- Pesos del 24/10/2026: mismo celular (0,3) + mismo nombre (0,2) + misma zona (0,05) = 0,55.
+select results_eq(
+  $$ select puntaje, razones from public.posibles_duplicados('20000000-0000-4000-8000-00000000000a')
+     where '80000000-0000-4000-8000-000000009002' in (a, b) $$,
+  $$ values (0.55::numeric, array['mismo teléfono', 'nombre similar (100 %)', 'mismo territorio']) $$,
+  'Mismo celular y nombre sin cédula sí aparecen como posible duplicado (igual que en packages/nucleo)');
 
 select is((select count(*) from public.posibles_duplicados('20000000-0000-4000-8000-00000000000a') d
            join public.persona p on p.id in (d.a, d.b) where p.campana_id <> '20000000-0000-4000-8000-00000000000a')::int, 0,

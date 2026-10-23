@@ -10,13 +10,15 @@ export function InicioSesion({ fuente, alEntrar }: { fuente: FuenteDatos; alEntr
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const [inscripcion, setInscripcion] = useState<{ qr: string; secreto: string } | null>(null);
 
   async function entrar(c = correo, k = clave) {
     setOcupado(true); setError("");
     const r = await fuente.iniciarSesion(c, k).catch((e: Error) => ({ estado: "error" as const, mensaje: e.message }));
     setOcupado(false);
     if (r.estado === "ok") alEntrar(r.sesion);
-    else if (r.estado === "falta-2fa") { setPaso("codigo"); setCodigo(""); }
+    else if (r.estado === "falta-2fa") { setInscripcion(null); setPaso("codigo"); setCodigo(""); }
+    else if (r.estado === "inscribir-2fa") { setInscripcion({ qr: r.qr, secreto: r.secreto }); setPaso("codigo"); setCodigo(""); }
     else setError(r.mensaje);
   }
 
@@ -54,7 +56,23 @@ export function InicioSesion({ fuente, alEntrar }: { fuente: FuenteDatos; alEntr
         ) : (
           <form className="tarjeta pila" onSubmit={verificar}>
             <h2>Verificación en dos pasos</h2>
-            <p className="tenue">Su rol puede ver toda la campaña. Escriba el código de 6 dígitos que muestra su app autenticadora (por ejemplo, Google Authenticator).</p>
+            {inscripcion ? (
+              <>
+                <p className="tenue">Su rol puede ver toda la campaña, así que la primera vez debe vincular su celular. Es una sola vez:</p>
+                <ol className="pila" style={{ margin: 0, paddingLeft: 18 }}>
+                  <li>Abra en su celular la app Google Authenticator o Microsoft Authenticator y toque «+» o «Agregar cuenta».</li>
+                  <li>Elija «Escanear código QR» y apunte la cámara a este código.</li>
+                  <li>La app mostrará «Ventaja Mando» con un número de 6 dígitos que cambia cada 30 segundos. Escríbalo abajo.</li>
+                </ol>
+                <img className="qr-2fa" src={inscripcion.qr} alt="Código QR para vincular la app autenticadora" width={200} height={200} />
+                <details>
+                  <summary>No puedo escanear el código</summary>
+                  <p className="tenue">En la app, elija «Ingresar una clave de configuración» y escriba esta clave: <code>{inscripcion.secreto}</code></p>
+                </details>
+              </>
+            ) : (
+              <p className="tenue">Su rol puede ver toda la campaña. Escriba el código de 6 dígitos que muestra su app autenticadora (por ejemplo, Google Authenticator).</p>
+            )}
             <label className="campo">Código
               <input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]{6,7}" required autoFocus value={codigo} onChange={(e) => setCodigo(e.target.value)} />
             </label>
