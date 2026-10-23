@@ -46,6 +46,8 @@ Ninguna campaña ve datos de otra, aunque sean del mismo partido.
 
 Para el panel web (fase 2): `tablero_zonas` y `tablero_lideres` devuelven cifras **agregadas** por zona y por líder (registrados, validados, comprometidos, pauta de 14 días, componentes del índice del líder). Nunca devuelven personas, así que también las usa el candidato. Administración, gerencia (con 2FA) y candidato ven toda la campaña; el coordinador, sus territorios; líder, testigo y quien no sea miembro reciben un error de permiso. La meta de cada zona va en `territorio.meta_votos`.
 
+`importar_personas` recibe lotes de hasta 1.000 filas ya revisadas en el panel. Crea cada persona con su autorización (canal «importacion», finalidades, evidencia y fecha del archivo), respeta el territorio de quien importa y descarta las cédulas que esa persona ya tiene en su alcance, sin revelar si existen en otras zonas. Deja en la auditoría el nombre del archivo y los conteos, nunca cédulas.
+
 ## Correr las pruebas en local
 
 Necesita PostgreSQL 16 con PostGIS y pgTAP, y `pg_prove`. En Ubuntu:

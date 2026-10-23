@@ -47,6 +47,11 @@ export function evaluarPar(p: PersonaComparable, q: PersonaComparable): Coincide
 
 // Agrupa por documento, teléfono y palabras del nombre para no comparar todos contra todos.
 // Dos nombres con similitud > 0 comparten al menos una palabra, así que ningún par posible queda por fuera.
+// Sin el mismo documento, lo máximo que suma un par es teléfono + nombre idéntico + territorio. Si eso no llega al
+// umbral (con los pesos actuales, 0,45 < 0,5), basta con comparar dentro de cada grupo de documento: el resultado es
+// el mismo y con miles de nombres comunes («María», «Pérez») se evitan millones de comparaciones inútiles.
+const SIN_DOCUMENTO_ALCANZA = 0.2 + 0.2 + 0.05 >= UMBRAL_DUPLICADO;
+
 export function buscarDuplicados(personas: PersonaComparable[]): Coincidencia[] {
   const grupos = new Map<string, number[]>();
   const agregar = (clave: string, i: number) => {
@@ -55,6 +60,7 @@ export function buscarDuplicados(personas: PersonaComparable[]): Coincidencia[] 
   };
   personas.forEach((p, i) => {
     if (p.documentoHash) agregar(`d:${p.documentoHash}`, i);
+    if (!SIN_DOCUMENTO_ALCANZA) return;
     if (p.telefono) { const t = normalizaTelefono(p.telefono); if (t) agregar(`t:${t}`, i); }
     for (const palabra of tokens(p.nombre)) agregar(`n:${palabra}`, i);
   });

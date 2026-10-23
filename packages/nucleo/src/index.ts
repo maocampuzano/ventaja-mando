@@ -6,3 +6,4 @@ export * from "./formatos";
 export * from "./lider";
 export * from "./territorio";
 export * from "./whatsapp";
+export * from "./importacion";
