@@ -29,3 +29,19 @@ jobs:
         run: npm test
       - name: Compilación de la web
         run: npm run build -w apps/web
+
+  base-de-datos:
+    name: Migraciones y pruebas de RLS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar PostgreSQL 16 con PostGIS y pgTAP
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 postgresql-16-postgis-3 postgresql-16-pgtap libtap-parser-sourcehandler-pgtap-perl
+          sudo systemctl start postgresql.service
+          pg_lsclusters
+          sudo -u postgres psql -c "alter user postgres password 'postgres'"
+      - name: Migraciones desde cero, semilla y pruebas
+        run: npm run test:db
