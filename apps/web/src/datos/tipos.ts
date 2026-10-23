@@ -1,4 +1,4 @@
-import type { RolCampana } from "@ventaja/nucleo";
+import type { FilaLista, RolCampana } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -14,6 +14,15 @@ export type Sesion = {
 
 /** Lo que el tablero necesita, ya recortado al alcance de quien inició sesión. */
 export type DatosTablero = { campana: Campana; zonas: Zona[]; lideres: Lider[]; puestos: Puesto[] };
+
+/** Lo que acompaña a cada persona importada en su autorización (regla 3). */
+export type DatosAutorizacion = { finalidades: string[]; evidencia: string; archivo: string };
+export type ResultadoImportacion = {
+  creadas: number;
+  yaExistian: number;
+  rechazos: { numero: number; motivo: string }[];
+  guardado: boolean; // false en modo demo: no se guarda nada
+};
 
 /** Resultado de un intento de inicio de sesión. */
 export type Ingreso =
@@ -32,4 +41,6 @@ export interface FuenteDatos {
   sesionActual(): Promise<Sesion | null>;
   cerrarSesion(): Promise<void>;
   cargarTablero(sesion: Sesion): Promise<DatosTablero>;
+  importarPersonas(sesion: Sesion, filas: FilaLista[], autorizacion: DatosAutorizacion,
+    avance?: (hechas: number, total: number) => void): Promise<ResultadoImportacion>;
 }

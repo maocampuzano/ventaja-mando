@@ -66,6 +66,11 @@ export function crearFuenteDemo(): FuenteDatos {
     async sesionActual() { return actual; },
     async cerrarSesion() { actual = null; pendiente = null; guardar(null); },
     async cargarTablero(s) { return datosDemo(s); },
+    // En la demostración no se guarda nada: se responde como si todas las filas listas hubieran entrado.
+    async importarPersonas(_s, filas, _a, avance) {
+      avance?.(filas.length, filas.length);
+      return { creadas: filas.length, yaExistian: 0, rechazos: [], guardado: false };
+    },
   };
 }
 

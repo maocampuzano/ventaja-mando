@@ -6,20 +6,21 @@ import { ContextoTablero, type Contexto } from "./datos/contexto";
 import { sesionDemoPorRol } from "./datos/demo";
 import { armarTablero } from "./datos/tablero";
 import type { Sesion } from "./datos/tipos";
+import { Importar } from "./Importar";
 import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
 import { BandejaLider, Datos, DiaE, MiMesa, Planillas, Resumen } from "./Pantallas";
 import type { Tarea } from "./Strategos";
 
-type Vista = "resumen" | "mando" | "lideres" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
+type Vista = "resumen" | "mando" | "lideres" | "importar" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["mando", "lideres", "planillas", "diae", "datos"],
-  gerente: ["mando", "lideres", "planillas", "diae", "datos"],
+  administrador: ["mando", "lideres", "importar", "planillas", "diae", "datos"],
+  gerente: ["mando", "lideres", "importar", "planillas", "diae", "datos"],
   candidato: ["resumen", "mando", "diae"],
-  coordinador: ["mando", "lideres", "planillas"],
+  coordinador: ["mando", "lideres", "importar", "planillas"],
   lider: ["bandeja"],
   testigo: ["mimesa"],
 };
@@ -28,6 +29,7 @@ const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n
   resumen: { nombre: "Resumen", icono: "resumen" },
   mando: { nombre: "Mando", icono: "mando" },
   lideres: { nombre: "Líderes", icono: "lideres" },
+  importar: { nombre: "Importar", icono: "importar" },
   planillas: { nombre: "Planillas", icono: "planillas" },
   diae: { nombre: "Día E", icono: "diae" },
   datos: { nombre: "Datos", icono: "datos" },
@@ -143,6 +145,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "mando" && <Mando barra={barraMando} aprobadas={aprobadas.map((t) => t.id)} alAprobar={aprobar} />}
             {vista === "resumen" && <Resumen aprobadas={aprobadas} />}
             {vista === "lideres" && <Lideres />}
+            {vista === "importar" && <Importar />}
             {vista === "planillas" && <Planillas />}
             {vista === "diae" && <DiaE />}
             {vista === "datos" && <Datos />}

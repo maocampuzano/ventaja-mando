@@ -3,7 +3,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { exige2fa, indiceLider, type RolCampana } from "@ventaja/nucleo";
 import type { Lider, Zona } from "../data";
-import type { Campana, DatosTablero, FuenteDatos, Ingreso } from "./tipos";
+import type { Campana, DatosTablero, FuenteDatos, Ingreso, ResultadoImportacion } from "./tipos";
+
+const LOTE = 500;
 
 type FilaZona = {
   territorio_id: string; nombre: string; geojson: { type: string; coordinates: number[][][][] } | null;
@@ -99,6 +101,22 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       return r.estado === "ok" ? r.sesion : null;
     },
     async cerrarSesion() { await sb.auth.signOut(); factorPendiente = null; },
+    async importarPersonas(s, filas, a, avance): Promise<ResultadoImportacion> {
+      const r: ResultadoImportacion = { creadas: 0, yaExistian: 0, rechazos: [], guardado: true };
+      for (let i = 0; i < filas.length; i += LOTE) {
+        const lote = filas.slice(i, i + LOTE).map((f) => ({
+          numero: f.numero, nombre: f.nombre, documento: f.documento ?? null, telefono: f.telefono ?? null,
+          zona_id: f.zonaId ?? null, lider_id: f.liderId ?? null, fecha_autorizacion: f.fechaAutorizacion ?? null,
+        }));
+        const { data, error } = await sb.rpc("importar_personas", {
+          p_campana: s.campana.id, p_filas: lote, p_finalidades: a.finalidades, p_evidencia: a.evidencia, p_archivo: a.archivo,
+        });
+        if (error) throw new Error(`Se guardaron ${r.creadas} personas y luego falló un lote: ${error.message}. Antes de volver a importar, quite del archivo las filas que ya entraron: las que tienen cédula aparecerían como «ya está en la base», pero las que no la tienen se duplicarían.`);
+        r.creadas += data.creadas; r.yaExistian += data.ya_existian; r.rechazos.push(...data.rechazos);
+        avance?.(Math.min(i + LOTE, filas.length), filas.length);
+      }
+      return r;
+    },
     async cargarTablero(s): Promise<DatosTablero> {
       const [z, l] = await Promise.all([
         sb.rpc("tablero_zonas", { p_campana: s.campana.id }),
