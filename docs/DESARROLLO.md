@@ -56,6 +56,10 @@ En la página compilada en modo demo no queda nada del proyecto real; en modo su
 
 Además guarda en Supabase la dirección del sitio, a la que vuelven los enlaces de confirmación de correo. Necesita `CLOUDFLARE_API_TOKEN` (permiso «Cloudflare Pages: Edit») y `CLOUDFLARE_ACCOUNT_ID`. En el entorno de nube, `api.cloudflare.com` debe estar en los dominios permitidos. Las cabeceras de seguridad están en `apps/web/public/_headers`: sin referer (los enlaces de invitación llevan un código) y sin indexación en buscadores. Esto **no** es producción: producción es la fase 9 y requiere V3 y V6.
 
+## Mapa
+
+Con `MAPTILER_KEY`, el Mando usa MapLibre con teselas de MapTiler (estilo `dataviz-dark`). Sin clave, o si la clave falla o el navegador no tiene WebGL, vuelve solo al mapa SVG del prototipo, que no depende de nada externo. MapLibre no cabe en la página de un solo archivo (su *worker* es un archivo aparte): `vite.config.ts` lo copia a `dist/vendor/maplibre-<versión>/` y la página lo carga solo cuando hay clave. La clave es pública por diseño; se protege en la cuenta de MapTiler restringiéndola a `ventaja-mando-prueba.pages.dev`, `*.ventaja-mando-prueba.pages.dev` y `localhost`.
+
 ## Dónde va cada cosa
 
 - **Lógica de negocio sin interfaz** (índices, recomendaciones, duplicados, formatos): en `packages/nucleo/src`, con un archivo de pruebas `*.test.ts` al lado. No use APIs del navegador ni de Node en `nucleo`: lo comparten la web, la app y las funciones del servidor.
