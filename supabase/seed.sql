@@ -211,6 +211,14 @@ insert into public.formulario (campana_id, nombre, esquema_json) values
 insert into public.tarea (campana_id, tipo, titulo, territorio_id, asignado_a, creado_por) values
   (pg_temp.id('campana_a'), 'brigada', 'Brigada de fin de semana en La Ceiba', '50000000-0000-4000-8000-000000000003',
    pg_temp.id('u_coord_a'), pg_temp.id('u_gerente_a'));
+-- Tareas de hoy de la líder 1 (las ve en la app del celular).
+insert into public.tarea (id, campana_id, tipo, titulo, territorio_id, asignado_a, creado_por, vence_en) values
+  ('91000000-0000-4000-8000-000000000001', pg_temp.id('campana_a'), 'visita', 'Visitar a 8 simpatizantes sin validar',
+   '50000000-0000-4000-8000-000000000001', pg_temp.id('u_lider_a1'), pg_temp.id('u_coord_a'), '2026-10-24 18:00-05'),
+  ('91000000-0000-4000-8000-000000000002', pg_temp.id('campana_a'), 'convocatoria', 'Invitar a la reunión del jueves',
+   '50000000-0000-4000-8000-000000000001', pg_temp.id('u_lider_a1'), pg_temp.id('u_coord_a'), null),
+  ('91000000-0000-4000-8000-000000000003', pg_temp.id('campana_a'), 'planilla', 'Escanear la planilla del sábado',
+   '50000000-0000-4000-8000-000000000001', pg_temp.id('u_lider_a1'), pg_temp.id('u_coord_a'), null);
 insert into public.solicitud_ciudadana (campana_id, tema, descripcion, creado_por) values
   (pg_temp.id('campana_a'), 'Alumbrado público', 'Varias cuadras sin luz en El Mirador.', pg_temp.id('u_coord_a'));
 insert into public.finanza_tope (id, campana_id, rubro, valor) values

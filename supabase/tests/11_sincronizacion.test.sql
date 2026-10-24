@@ -36,11 +36,11 @@ select throws_ok($$ select public.registrar_persona_movil('a0000000-0000-4000-80
   '22023', null, 'Solo se aceptan los canales presencial y enlace');
 
 -- Planillas: dos fotos, cada una reintentada, quedan dos lotes.
-select is(public.registrar_planilla_movil('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-00000000000a', 'planillas/p1.jpg'),
+select is(public.registrar_planilla_movil('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a/40000000-0000-4000-8000-000000000005/b1.jpg'),
   'creada', 'La planilla se recibe');
-select is(public.registrar_planilla_movil('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-00000000000a', 'planillas/p1.jpg'),
+select is(public.registrar_planilla_movil('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a/40000000-0000-4000-8000-000000000005/b1.jpg'),
   'ya_estaba', 'El reintento de la planilla no la duplica');
-select is(public.registrar_planilla_movil('b0000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-00000000000a', 'planillas/p2.jpg'),
+select is(public.registrar_planilla_movil('b0000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a/40000000-0000-4000-8000-000000000005/b2.jpg'),
   'creada', 'La segunda planilla se recibe');
 select is((select count(*) from public.lote_ocr where id::text like 'b0000000%' and estado = 'pendiente' and lider_id = '70000000-0000-4000-8000-000000000001')::int,
   2, 'Quedan dos planillas pendientes de lectura y revisión');

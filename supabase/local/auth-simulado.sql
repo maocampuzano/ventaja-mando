@@ -37,3 +37,28 @@ grant usage on schema public to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
+
+-- Storage: lo mínimo para probar las políticas de los archivos (buckets, objects y storage.foldername).
+create schema if not exists storage;
+grant usage on schema storage to anon, authenticated, service_role;
+create table if not exists storage.buckets (
+  id text primary key,
+  name text not null unique,
+  public boolean default false,
+  file_size_limit bigint,
+  allowed_mime_types text[]
+);
+create table if not exists storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text references storage.buckets (id),
+  name text not null,
+  owner uuid default auth.uid(),
+  created_at timestamptz default now(),
+  unique (bucket_id, name)
+);
+alter table storage.objects enable row level security;
+grant select, insert, update, delete on storage.objects to authenticated;
+grant select on storage.buckets to authenticated;
+create or replace function storage.foldername(name text) returns text[] language sql immutable as $$
+  select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
+$$;

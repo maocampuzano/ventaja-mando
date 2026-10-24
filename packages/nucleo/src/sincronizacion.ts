@@ -4,7 +4,7 @@
 // (el servidor responde «ya_estaba»). El almacenamiento (SQLite en la app, memoria en las pruebas) y el envío
 // (Supabase) se inyectan, para poder probar todo sin teléfono ni red.
 
-export type TipoOperacion = "persona" | "planilla" | "respuesta" | "novedad" | "e14";
+export type TipoOperacion = "persona" | "planilla" | "respuesta" | "novedad" | "e14" | "tarea";
 export type EstadoOperacion = "pendiente" | "enviado" | "revisado" | "error";
 
 export type Operacion<D = unknown> = {
@@ -45,17 +45,26 @@ export type Resumen = { enviadas: number; yaEstaban: number; pendientes: number;
 
 export class ColaSincronizacion {
   private enCurso: Promise<Resumen> | null = null;
+  private siguiente: Promise<Resumen> | null = null;
+  private forzarSiguiente = false;
 
   private almacen: Almacen;
   private transporte: Transporte;
   private nuevoId: () => string;
   private ahora: () => number;
+  private depurar: (op: Operacion) => unknown;
 
-  constructor(almacen: Almacen, transporte: Transporte, nuevoId: () => string, ahora: () => number = Date.now) {
+  /**
+   * `depurar` recorta los datos de lo que ya llegó al servidor: el teléfono no tiene por qué seguir guardando, por
+   * ejemplo, la cédula o el celular de una persona que ya está en la base. Por defecto no recorta nada.
+   */
+  constructor(almacen: Almacen, transporte: Transporte, nuevoId: () => string, ahora: () => number = Date.now,
+    depurar: (op: Operacion) => unknown = (op) => op.datos) {
     this.almacen = almacen;
     this.transporte = transporte;
     this.nuevoId = nuevoId;
     this.ahora = ahora;
+    this.depurar = depurar;
   }
 
   /** Guarda la operación en el celular. Nunca falla por falta de señal. */
@@ -69,20 +78,37 @@ export class ColaSincronizacion {
     return (await this.almacen.todas()).sort((a, b) => a.creadaEn - b.creadaEn);
   }
 
-  /** Envía lo pendiente en el orden en que se creó. Si se llama mientras ya corre, espera a la misma vuelta. */
-  sincronizar(): Promise<Resumen> {
-    if (!this.enCurso) this.enCurso = this.vuelta().finally(() => { this.enCurso = null; });
-    return this.enCurso;
+  /**
+   * Envía lo pendiente en el orden en que se creó. Nunca corren dos vueltas a la vez.
+   * `forzar` no respeta la espera entre intentos: es para cuando vuelve la señal o el líder toca «Enviar ahora».
+   */
+  sincronizar(opciones: { forzar?: boolean } = {}): Promise<Resumen> {
+    if (!this.enCurso) {
+      this.enCurso = this.vuelta(!!opciones.forzar).finally(() => { this.enCurso = null; });
+      return this.enCurso;
+    }
+    // Ya hay una vuelta en curso, que leyó la lista antes de esta llamada: queda una vuelta más al terminar
+    // (una sola, aunque lleguen muchas llamadas), para no dejar esperando lo que se acaba de agregar.
+    this.forzarSiguiente ||= !!opciones.forzar;
+    if (!this.siguiente) {
+      this.siguiente = this.enCurso.then(() => {
+        const forzar = this.forzarSiguiente;
+        this.siguiente = null;
+        this.forzarSiguiente = false;
+        return this.sincronizar({ forzar });
+      });
+    }
+    return this.siguiente;
   }
 
-  private async vuelta(): Promise<Resumen> {
+  private async vuelta(forzar: boolean): Promise<Resumen> {
     const r: Resumen = { enviadas: 0, yaEstaban: 0, pendientes: 0, errores: 0, sinSenal: false };
     for (const op of await this.operaciones()) {
       if (op.estado !== "pendiente") continue;
-      if (r.sinSenal || op.proximoIntento > this.ahora()) { r.pendientes++; continue; }
+      if (r.sinSenal || (!forzar && op.proximoIntento > this.ahora())) { r.pendientes++; continue; }
       try {
         const res = await this.transporte.enviar(op);
-        await this.almacen.guardar({ ...op, estado: "enviado", intentos: op.intentos + 1, ultimoError: undefined });
+        await this.almacen.guardar({ ...op, datos: this.depurar(op), estado: "enviado", intentos: op.intentos + 1, ultimoError: undefined });
         if (res === "creada") r.enviadas++; else r.yaEstaban++;
       } catch (e) {
         const intentos = op.intentos + 1;
@@ -158,6 +184,7 @@ export type DatosNovedadMovil = {
   prioridad?: "alta" | "media" | "baja"; evidencia?: string | null;
 };
 export type DatosE14Movil = { campana: string; puesto: string; mesa: number; foto: string };
+export type DatosTareaMovil = { tarea: string; estado: "en_curso" | "hecha" };
 
 /** Códigos de Postgres que significan «el servidor dijo que no»: reintentar no lo arregla. */
 const RECHAZOS = new Set(["42501", "22023", "23505", "23514", "P0001", "PGRST202"]);
@@ -186,6 +213,10 @@ function llamada(op: Operacion): [string, Record<string, unknown>] {
     case "e14": {
       const d = op.datos as DatosE14Movil;
       return ["registrar_e14_movil", { p_id: op.id, p_campana: d.campana, p_puesto: d.puesto, p_mesa: d.mesa, p_foto: d.foto }];
+    }
+    case "tarea": {
+      const d = op.datos as DatosTareaMovil;
+      return ["actualizar_tarea_movil", { p_tarea: d.tarea, p_estado: d.estado }];
     }
     default:
       throw new ErrorDefinitivo(`La app todavía no envía operaciones de tipo «${op.tipo}».`);

@@ -84,6 +84,17 @@ describe("cola de sincronización", () => {
     expect([espera(1), espera(2), espera(3), espera(30)]).toEqual([5_000, 10_000, 20_000, 600_000]);
   });
 
+  it("al volver la señal se envía de una vez, sin esperar el turno del reintento", async () => {
+    const servidor = new ServidorFalso();
+    servidor.conSenal = false;
+    const { cola } = crear(servidor);
+    await cola.agregar("persona", { nombre: "Ana" });
+    for (let i = 0; i < 5; i++) await cola.sincronizar({ forzar: true });
+    servidor.conSenal = true;
+    expect((await cola.sincronizar()).pendientes).toBe(1);
+    expect((await cola.sincronizar({ forzar: true })).enviadas).toBe(1);
+  });
+
   it("un rechazo definitivo no se reintenta solo: queda con su motivo hasta que el líder lo corrija", async () => {
     const servidor = new ServidorFalso();
     const { cola } = crear(servidor);
@@ -97,7 +108,7 @@ describe("cola de sincronización", () => {
     expect((await cola.sincronizar()).enviadas).toBe(1);
   });
 
-  it("llamadas simultáneas comparten la misma vuelta: nada se envía dos veces", async () => {
+  it("llamadas simultáneas no corren vueltas en paralelo: nada se envía dos veces", async () => {
     const servidor = new ServidorFalso();
     let envios = 0;
     const contador: Transporte = { enviar: async (op) => { envios++; await new Promise((r) => setTimeout(r, 5)); return servidor.enviar(op); } };
@@ -105,6 +116,30 @@ describe("cola de sincronización", () => {
     for (let i = 0; i < 3; i++) await cola.agregar("persona", { nombre: `P${i}` });
     await Promise.all([cola.sincronizar(), cola.sincronizar(), cola.sincronizar()]);
     expect(envios).toBe(3);
+  });
+
+  it("lo que se agrega mientras una vuelta está enviando sale en la vuelta siguiente, sin esperar", async () => {
+    const servidor = new ServidorFalso();
+    const lento: Transporte = { enviar: async (op) => { await new Promise((r) => setTimeout(r, 5)); return servidor.enviar(op); } };
+    const cola = new ColaSincronizacion(new AlmacenEnMemoria(), lento, () => crypto.randomUUID());
+    await cola.agregar("novedad", { tipo: "apertura" });
+    const primera = cola.sincronizar();
+    await cola.agregar("novedad", { tipo: "Falta material de la mesa" });
+    const segunda = cola.sincronizar();
+    await Promise.all([primera, segunda]);
+    expect(await cola.conteo()).toMatchObject({ pendiente: 0, enviado: 2 });
+  });
+
+  it("lo que ya llegó al servidor se recorta en el teléfono (sin cédula ni celular)", async () => {
+    const servidor = new ServidorFalso();
+    const almacen = new AlmacenEnMemoria();
+    const cola = new ColaSincronizacion(almacen, servidor, () => "p1", Date.now,
+      (op) => op.tipo === "persona" ? { nombre: (op.datos as { nombre: string }).nombre } : op.datos);
+    await cola.agregar("persona", { nombre: "Ana Ficticia", documento: "0009991001", telefono: "3000009911" });
+    expect(JSON.stringify(await almacen.todas())).toContain("0009991001");
+    await cola.sincronizar();
+    expect(servidor.personas.get("p1")).toMatchObject({ documento: "0009991001" });
+    expect((await almacen.todas())[0].datos).toEqual({ nombre: "Ana Ficticia" });
   });
 
   it("marca como revisado lo que una persona ya revisó en el servidor", async () => {
@@ -144,7 +179,9 @@ describe("transporte a Supabase", () => {
     await t.enviar(op("planilla", { campana: "c", archivo: "p.jpg" }));
     await t.enviar(op("novedad", { campana: "c", puesto: "p", mesa: 3, tipo: "apertura" }));
     await t.enviar(op("e14", { campana: "c", puesto: "p", mesa: 3, foto: "e.jpg" }));
-    expect(llamadas.map((l) => l[0])).toEqual(["registrar_persona_movil", "registrar_planilla_movil", "registrar_novedad_movil", "registrar_e14_movil"]);
+    await t.enviar(op("tarea", { tarea: "t1", estado: "hecha" }));
+    expect(llamadas.map((l) => l[0])).toEqual(["registrar_persona_movil", "registrar_planilla_movil", "registrar_novedad_movil", "registrar_e14_movil", "actualizar_tarea_movil"]);
+    expect(llamadas[4][1]).toEqual({ p_tarea: "t1", p_estado: "hecha" });
     expect(llamadas[0][1]).toMatchObject({ p_id: "00000000-0000-4000-8000-000000000001", p_capturado_en: "2026-10-20T15:00:00.000Z", p_documento: null });
   });
 
