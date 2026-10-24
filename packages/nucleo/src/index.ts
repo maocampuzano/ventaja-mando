@@ -8,3 +8,4 @@ export * from "./territorio";
 export * from "./whatsapp";
 export * from "./importacion";
 export * from "./plazos";
+export * from "./formularios";
