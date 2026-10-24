@@ -8,6 +8,7 @@ import { armarTablero } from "./datos/tablero";
 import type { Sesion } from "./datos/tipos";
 import { AceptarInvitacion } from "./AceptarInvitacion";
 import { Equipo } from "./Equipo";
+import { Formularios } from "./Formularios";
 import { Importar } from "./Importar";
 import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
@@ -16,12 +17,12 @@ import { Datos } from "./Datos";
 import { BandejaLider, DiaE, MiMesa, Planillas, Resumen } from "./Pantallas";
 import type { Tarea } from "./Strategos";
 
-type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
+type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["mando", "lideres", "equipo", "importar", "planillas", "diae", "datos"],
-  gerente: ["mando", "lideres", "equipo", "importar", "planillas", "diae", "datos"],
+  administrador: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "diae", "datos"],
+  gerente: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "diae", "datos"],
   candidato: ["resumen", "mando", "diae"],
   coordinador: ["mando", "lideres", "importar", "planillas"],
   lider: ["bandeja"],
@@ -34,6 +35,7 @@ const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n
   lideres: { nombre: "Líderes", icono: "lideres" },
   equipo: { nombre: "Equipo", icono: "equipo" },
   importar: { nombre: "Importar", icono: "importar" },
+  formularios: { nombre: "Formularios", icono: "formularios" },
   planillas: { nombre: "Planillas", icono: "planillas" },
   diae: { nombre: "Día E", icono: "diae" },
   datos: { nombre: "Datos", icono: "datos" },
@@ -159,6 +161,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "lideres" && <Lideres />}
             {vista === "equipo" && <Equipo />}
             {vista === "importar" && <Importar />}
+            {vista === "formularios" && <Formularios />}
             {vista === "planillas" && <Planillas />}
             {vista === "diae" && <DiaE />}
             {vista === "datos" && <Datos />}

@@ -50,6 +50,8 @@ Equipo: `crear_invitacion` valida el correo, que las zonas sean de la campaña, 
 
 Datos y cumplimiento: `registrar_solicitud_titular` calcula el vencimiento en días hábiles de Colombia (10 para consultas y 15 para reclamos, Ley 1581, art. 14 y 15; el día de recibo no cuenta) y `prorrogar_solicitud_titular` lo extiende una sola vez (5 u 8 días hábiles). Los festivos los calcula `privado.festivos`, igual que `packages/nucleo/src/plazos.ts`. `revocar_autorizaciones_de` atiende una revocatoria. `buscar_personas` encuentra por cédula exacta (HMAC), nombre o celular, respetando la RLS. `resumen_cumplimiento` da solo cifras. `exportar_personas` es solo para la dirección: exporta personas con autorización vigente para la finalidad elegida, nunca la cédula, y deja en la auditoría una referencia única que también va marcada en el archivo.
 
+Formularios: un disparador revisa cada formulario al guardarlo. Rechaza preguntas individuales sobre voto u opinión política (regla 2) y que se pida la cédula (`privado.texto_prohibido_en_formulario`, mismas expresiones que `packages/nucleo/src/formularios.ts`), y sube la versión cuando cambian los campos.
+
 `importar_personas` recibe lotes de hasta 1.000 filas ya revisadas en el panel. Crea cada persona con su autorización (canal «importacion», finalidades, evidencia y fecha del archivo), respeta el territorio de quien importa y descarta las cédulas que esa persona ya tiene en su alcance, sin revelar si existen en otras zonas. Deja en la auditoría el nombre del archivo y los conteos, nunca cédulas.
 
 ## Correr las pruebas en local

@@ -1,4 +1,4 @@
-import type { FilaLista, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { EsquemaFormulario, FilaLista, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -46,6 +46,8 @@ export type PersonaEncontrada = { id: string; nombre: string; telefono?: string;
 export type FilaExportada = { nombre: string; celular?: string; zona?: string; lider?: string; relacion: string; estado: string; autorizada_el: string };
 export type Exportacion = { referencia: string; exportadoPor: string; exportadoEn: string; finalidad: string; filas: FilaExportada[] };
 
+export type Formulario = { id: string; nombre: string; esquema: EsquemaFormulario; version: number; creado: string };
+
 /** Resultado de un intento de inicio de sesión. */
 export type Ingreso =
   | { estado: "ok"; sesion: Sesion }
@@ -82,4 +84,8 @@ export interface FuenteDatos {
   revocarAutorizacionesDe(sesion: Sesion, personaId: string): Promise<number>;
   suprimirPersona(sesion: Sesion, personaId: string): Promise<void>;
   exportarPersonas(sesion: Sesion, finalidad: string): Promise<Exportacion>;
+  // Formularios
+  formularios(sesion: Sesion): Promise<Formulario[]>;
+  /** Crea (sin id) o actualiza un formulario. La base sube la versión cuando cambian los campos. */
+  guardarFormulario(sesion: Sesion, datos: { id?: string; nombre: string; esquema: EsquemaFormulario }): Promise<Formulario>;
 }

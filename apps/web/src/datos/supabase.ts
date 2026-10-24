@@ -242,6 +242,19 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       if (error) throw new Error(error.message);
       return { referencia: data.referencia, exportadoPor: data.exportado_por, exportadoEn: data.exportado_en, finalidad: data.finalidad, filas: data.filas };
     },
+    async formularios(s) {
+      const { data, error } = await sb.from("formulario").select("id, nombre, esquema_json, version, creado_en")
+        .eq("campana_id", s.campana.id).order("creado_en", { ascending: false });
+      if (error) throw new Error(`No se pudieron leer los formularios: ${error.message}`);
+      return (data ?? []).map((f) => ({ id: f.id, nombre: f.nombre, esquema: f.esquema_json, version: f.version, creado: fechaBogota(f.creado_en) }));
+    },
+    async guardarFormulario(s, d) {
+      const fila = { campana_id: s.campana.id, nombre: d.nombre.trim(), esquema_json: d.esquema };
+      const q = d.id ? sb.from("formulario").update(fila).eq("id", d.id) : sb.from("formulario").insert(fila);
+      const { data, error } = await q.select("id, nombre, esquema_json, version, creado_en").single();
+      if (error) throw new Error(/row-level security/.test(error.message) ? "Solo la dirección de la campaña puede crear o cambiar formularios." : error.message);
+      return { id: data.id, nombre: data.nombre, esquema: data.esquema_json, version: data.version, creado: fechaBogota(data.creado_en) };
+    },
     async cargarTablero(s): Promise<DatosTablero> {
       const [z, l] = await Promise.all([
         sb.rpc("tablero_zonas", { p_campana: s.campana.id }),

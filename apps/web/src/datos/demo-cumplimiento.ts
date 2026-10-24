@@ -1,8 +1,8 @@
 // Datos y cumplimiento en modo demo: personas FICTICIAS, solicitudes y exportaciones que viven en la pestaña.
 // Reproduce las reglas de la base (supabase/migrations/…_cumplimiento.sql) para que la demostración sea fiel.
-import { normaliza, plazoSolicitud, sumarDiasHabiles, type TipoSolicitud } from "@ventaja/nucleo";
+import { normaliza, plazoSolicitud, revisarEsquema, sumarDiasHabiles, type TipoSolicitud } from "@ventaja/nucleo";
 import { lideres, zonas } from "../data";
-import type { Exportacion, FuenteDatos, ResumenCumplimiento, Solicitud } from "./tipos";
+import type { Exportacion, Formulario, FuenteDatos, ResumenCumplimiento, Solicitud } from "./tipos";
 
 type PersonaDemo = { id: string; nombre: string; telefono: string; documento: string; zonaId: string; liderId: string;
   estado: string; autorizada: string; finalidades: string[]; revocada: boolean };
@@ -123,5 +123,33 @@ export const cumplimientoDemo: Pick<FuenteDatos, "resumenCumplimiento" | "solici
         autorizada_el: p.autorizada.split("-").reverse().join("/"),
       })),
     };
+  },
+};
+
+// Formularios en modo demo: misma revisión que la base (nucleo/formularios) y versión que sube al cambiar los campos.
+
+const LLAVE_F = "vm-demo-formularios";
+const ejemplo = (): Formulario[] => [{
+  id: "df1", nombre: "Visita casa a casa (ejemplo)", version: 1, creado: "2026-10-20",
+  esquema: { campos: [
+    { id: "c1", tipo: "opcion", etiqueta: "¿Qué tema le preocupa más en su barrio?", obligatorio: true, opciones: ["Vías", "Seguridad", "Salud", "Empleo"] },
+    { id: "c2", tipo: "si_no", etiqueta: "¿Le gustaría que lo invitemos a la reunión del barrio?", obligatorio: false },
+    { id: "c3", tipo: "texto", etiqueta: "Comentario", obligatorio: false },
+  ] },
+}];
+
+export const formulariosDemo: Pick<FuenteDatos, "formularios" | "guardarFormulario"> = {
+  async formularios() { return leer<Formulario[]>(LLAVE_F, ejemplo); },
+  async guardarFormulario(s, d) {
+    exigirDireccion(s.rol);
+    const r = revisarEsquema(d.nombre, d.esquema);
+    if (r.errores.length) throw new Error(r.errores[0]);
+    const lista = leer<Formulario[]>(LLAVE_F, ejemplo);
+    const previo = d.id ? lista.find((f) => f.id === d.id) : undefined;
+    const f: Formulario = previo
+      ? { ...previo, nombre: d.nombre.trim(), esquema: d.esquema, version: JSON.stringify(previo.esquema) === JSON.stringify(d.esquema) ? previo.version : previo.version + 1 }
+      : { id: `df${Date.now()}`, nombre: d.nombre.trim(), esquema: d.esquema, version: 1, creado: hoy() };
+    escribir(LLAVE_F, previo ? lista.map((x) => (x.id === f.id ? f : x)) : [f, ...lista]);
+    return f;
   },
 };
