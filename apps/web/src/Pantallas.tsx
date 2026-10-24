@@ -249,46 +249,6 @@ export function MiMesa() {
   );
 }
 
-/* ---------- Datos y cumplimiento ---------- */
-export function Datos() {
-  const { totales, modo } = useTablero();
-  const autorizados = Math.round(totales.validados * 0.94);
-  return (
-    <div className="pagina">
-      <div className="pagina-cabeza">
-        <div>
-          <h1>Datos y cumplimiento</h1>
-          <p className="tenue">Lo que la campaña tiene que poder demostrar si alguien pregunta: de dónde salió cada dato, quién lo autorizó y quién lo ha usado.</p>
-        </div>
-      </div>
-      {modo === "demo" && (
-        <div className="rejilla" style={{ marginBottom: 16 }}>
-        <div className="tarjeta"><div className="etiqueta">Con autorización vigente</div><div className="dato">{pct(autorizados / totales.validados)}</div><p className="tenue">{miles(autorizados)} personas</p></div>
-        <div className="tarjeta"><div className="etiqueta">Solicitudes de titulares abiertas</div><div className="dato">3</div><p className="tenue">La más antigua vence en 6 días hábiles</p></div>
-        <div className="tarjeta"><div className="etiqueta">Exportaciones este mes</div><div className="dato">2</div><p className="tenue">Ambas con marca de agua y registro</p></div>
-      </div>
-      )}
-      <div className="rejilla" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <div className="tarjeta pila">
-          <h2>Opinión política</h2>
-          <p className="tenue">Es un dato sensible. Esta campaña lo tiene <strong style={{ color: "var(--texto)" }}>apagado</strong>: la intención se mide en agregado por mesa y por zona, nunca por persona.</p>
-          <span className="sello verde" style={{ justifySelf: "start" }}>Sin clasificación individual</span>
-        </div>
-        <div className="tarjeta pila">
-          <h2>WhatsApp</h2>
-          <p className="tenue">Solo de persona a persona: el líder envía desde su teléfono. Ningún bot ni envío automático usa el número de la campaña.</p>
-          <span className="sello verde" style={{ justifySelf: "start" }}>Dentro de las reglas de WhatsApp</span>
-        </div>
-        <div className="tarjeta pila">
-          <h2>Solicitudes ciudadanas</h2>
-          <p className="tenue">Se registran los temas que pide la comunidad, sin valor en pesos y sin relación con la intención de voto de la persona.</p>
-          <span className="sello verde" style={{ justifySelf: "start" }}>Separadas de la base electoral</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ---------- Candidato ---------- */
 export function Resumen({ aprobadas }: { aprobadas: Tarea[] }) {
   const { campana, totales, recomendaciones, zonaDe } = useTablero();
