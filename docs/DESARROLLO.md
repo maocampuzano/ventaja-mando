@@ -11,7 +11,7 @@ Por ahora no hace falta ninguna clave: el prototipo funciona con datos ficticios
 
 ```
 apps/web          Panel web (hoy, el prototipo navegable). React + TypeScript + Vite.
-apps/movil        App del líder y del testigo en Expo. Vacía hasta la fase 3.
+apps/movil        App del líder y del testigo. Expo (React Native) con SQLite y cola de sincronización.
 packages/nucleo   Tipos y lógica compartida (@ventaja/nucleo), con sus pruebas en Vitest.
 supabase/         Migraciones, semilla ficticia y pruebas de RLS (ver supabase/LEEME.md).
 docs/             Diseño, análisis de mercado, este documento y el estado de las fases.
@@ -32,6 +32,8 @@ Todos se corren desde la raíz del repositorio.
 | `npm run lint` | Revisa el código con ESLint. |
 | `npm test` | Corre las pruebas de Vitest y las del script de carga de territorios. |
 | `npm run test:e2e -w apps/web` | Pruebas de Playwright del panel en modo demo: inicio de sesión por rol, 2FA y alcance por territorio. En el entorno de nube: `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e -w apps/web`. |
+| `npm run start -w apps/movil` | Abre la app del celular con Expo (ver `apps/movil/LEEME.md`). |
+| `npm run test:e2e -w apps/movil` | Exporta la app en su vista web y prueba los flujos del líder y del testigo en modo demo, incluido el registro sin señal. En el entorno de nube: `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e -w apps/movil`. |
 | `npm run test:db` | Crea una base desde cero, aplica migraciones y semilla, y corre las pruebas de RLS (necesita PostgreSQL 16 con PostGIS y pgTAP; ver `supabase/LEEME.md`). |
 | `node supabase/scripts/aplicar-remoto.mjs verificar` | Revisa el proyecto real de Supabase: migraciones, RLS, Vault y territorios cargados (necesita `SUPABASE_ACCESS_TOKEN`; ver `supabase/LEEME.md`). |
 | `npm run test -w packages/nucleo -- --watch` | Pruebas de `nucleo` en modo observación, mientras se programa. |

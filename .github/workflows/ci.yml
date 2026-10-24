@@ -45,12 +45,16 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Pruebas de Playwright (modo demo, datos ficticios)
         run: npm run test:e2e -w apps/web
+      - name: App del celular en su vista web (modo demo, datos ficticios)
+        run: npm run test:e2e -w apps/movil
       - name: Guardar el rastro si algo falla
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: rastro-playwright
-          path: apps/web/test-results/
+          path: |
+            apps/web/test-results/
+            apps/movil/test-results/
           retention-days: 7
 
   base-de-datos:
