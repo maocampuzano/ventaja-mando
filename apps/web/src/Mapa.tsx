@@ -2,24 +2,9 @@
 import { useMemo } from "react";
 import { useTablero } from "./datos/contexto";
 import { porcentajeCobertura } from "@ventaja/nucleo";
+import { colorPuesto, colorZona, opacidadZona, type Capa } from "./mapaColores";
 
-export type Capa = "accion" | "tierra" | "pauta" | "meta" | "testigos";
-
-const colorAccion = { brigada: "#f0a73a", pauta: "#1f5bff", oportunidad: "#b46cff", mantener: "#3a465c" };
-
-function mezcla(a: string, b: string, t: number) {
-  const pa = a.match(/\w\w/g)!.map((h) => parseInt(h, 16));
-  const pb = b.match(/\w\w/g)!.map((h) => parseInt(h, 16));
-  const c = pa.map((x, i) => Math.round(x + (pb[i] - x) * Math.max(0, Math.min(1, t))));
-  return `#${c.map((x) => x.toString(16).padStart(2, "0")).join("")}`;
-}
-
-function rampa(t: number) {
-  return t < 0.5 ? mezcla("#2a3140", "#2c5ee0", t / 0.5) : mezcla("#2c5ee0", "#8fb0ff", (t - 0.5) / 0.5);
-}
-function semaforo(t: number) {
-  return t < 0.35 ? mezcla("#e5534b", "#f0a73a", t / 0.35) : mezcla("#f0a73a", "#2eb872", (t - 0.35) / 0.35);
-}
+export type { Capa } from "./mapaColores";
 
 // Proyección equirectangular local: a 10° N, un grado de longitud mide cos(10°) de uno de latitud.
 const K = Math.cos((10.33 * Math.PI) / 180);
@@ -49,20 +34,8 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
     return { formas, vb, metro, ...real };
   }, [zonas]);
 
-  const relleno = (id: string) => {
-    const z = zonas.find((x) => x.id === id)!;
-    const r = recDe(id);
-    if (capa === "accion") return colorAccion[r.accion];
-    if (capa === "tierra") return rampa(z.validados / z.potencial / 0.45);
-    if (capa === "pauta") return rampa(r.digital);
-    if (capa === "meta") return semaforo(z.comprometidos / z.meta / 0.6);
-    return "#2a3140";
-  };
-  const opacidad = (id: string) => {
-    if (capa === "testigos") return 0.35;
-    if (capa === "accion" && recDe(id).accion === "mantener") return 0.45;
-    return 0.85;
-  };
+  const relleno = (id: string) => colorZona(capa, zonas.find((x) => x.id === id)!, recDe(id));
+  const opacidad = (id: string) => opacidadZona(capa, recDe(id));
 
   if (!zonas.length) {
     return <div className="mapa mapa-vacio" role="region" aria-label="Mapa sin zonas"><p className="tenue">Todavía no hay zonas a la vista para su usuario.</p></div>;
@@ -116,7 +89,7 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
           const c = porcentajeCobertura(p.mesas);
           return (
             <g key={p.id}>
-              <circle cx={x} cy={y} r={(6 + p.mesas.length * 0.5) * fuente * 0.11} fill={c >= 0.85 ? "#2eb872" : c >= 0.7 ? "#f0a73a" : "#e5534b"}
+              <circle cx={x} cy={y} r={(6 + p.mesas.length * 0.5) * fuente * 0.11} fill={colorPuesto(p.mesas)}
                 stroke="var(--mapa-fondo)" strokeWidth={vb.w / 700} />
               <title>{`${p.nombre}: ${Math.round(c * 100)} % de mesas con testigo`}</title>
             </g>

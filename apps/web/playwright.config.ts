@@ -17,10 +17,9 @@ export default defineConfig({
     launchOptions: process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    command: "npx vite --port 5174 --strictPort",
-    url: "http://localhost:5174",
-    reuseExistingServer: !process.env.CI,
-    env: { MODO_DATOS: "demo" },
-  },
+  webServer: [
+    { command: "npx vite --port 5174 --strictPort", url: "http://localhost:5174", reuseExistingServer: !process.env.CI, env: { MODO_DATOS: "demo", MAPTILER_KEY: "" } },
+    // Con una clave de mapas falsa: MapLibre se carga, la clave falla y el panel debe volver al mapa SVG.
+    { command: "npx vite --port 5175 --strictPort", url: "http://localhost:5175", reuseExistingServer: !process.env.CI, env: { MODO_DATOS: "demo", MAPTILER_KEY: "clave-falsa-de-prueba" } },
+  ],
 });

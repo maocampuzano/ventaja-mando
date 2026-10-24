@@ -1,5 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Mapa, type Capa } from "./Mapa";
+import { MapaReal } from "./MapaReal";
+
+const CLAVE_MAPAS = import.meta.env.VITE_MAPTILER_KEY ?? "";
 import { Barra } from "./comunes";
 import { useTablero } from "./datos/contexto";
 import { miles, pct, porcentajeCobertura, textoAccion } from "@ventaja/nucleo";
@@ -20,8 +23,9 @@ const nombreTipo = { brigada: "Brigada", pauta: "Más pauta", oportunidad: "Opor
 const colorTipo = { brigada: "ambar", pauta: "azul", oportunidad: "azul", mantener: "" };
 
 export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
-  const { meta: metaVista, recomendaciones, totales, zonaDe, modo } = useTablero();
+  const { meta: metaVista, recomendaciones, totales, zonaDe, modo, zonas } = useTablero();
   const [capa, setCapa] = useState<Capa>("accion");
+  const [mapaFallo, setMapaFallo] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
   const [pest, setPest] = useState<"zona" | "ia">("ia");
 
@@ -33,7 +37,9 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
 
   return (
     <>
-      <Mapa capa={capa} seleccion={sel} alSeleccionar={elegir} />
+      {CLAVE_MAPAS && !mapaFallo && zonas.length
+        ? <MapaReal clave={CLAVE_MAPAS} capa={capa} seleccion={sel} alSeleccionar={elegir} alFallar={() => setMapaFallo(true)} />
+        : <Mapa capa={capa} seleccion={sel} alSeleccionar={elegir} />}
       {barra}
 
       <section className="flota panel-kpi" aria-label="Calidad de la base">
