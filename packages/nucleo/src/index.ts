@@ -9,3 +9,4 @@ export * from "./whatsapp";
 export * from "./importacion";
 export * from "./plazos";
 export * from "./formularios";
+export * from "./sincronizacion";
