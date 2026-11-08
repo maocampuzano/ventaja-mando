@@ -1,10 +1,10 @@
 // Lectura de una foto (planilla o E-14) con la visión de Claude y salida JSON estricta. Corre en el servidor (función
 // de Supabase «lectura»). El resultado SIEMPRE pasa por revisión humana antes de entrar a la base (regla 7).
 import type Anthropic from "@anthropic-ai/sdk";
-import { costoEstimadoUsd } from "./strategos";
+import { costoEstimadoUsd } from "./strategos.ts";
 import {
   ESQUEMA_E14, ESQUEMA_PLANILLA, INSTRUCCION_E14, INSTRUCCION_PLANILLA, type ActaLeida, type FilaLeida,
-} from "./lectura";
+} from "./lectura.ts";
 
 export const MODELO_LECTURA_POR_DEFECTO = "claude-sonnet-5-5";
 export type TipoLectura = "planilla" | "e14";
