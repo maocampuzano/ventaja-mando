@@ -4,6 +4,7 @@
 import { exige2fa, responderSimulado, territoriosVisibles, type RolCampana } from "@ventaja/nucleo";
 import { campana as campanaSemilla, lideres, puestos, zonas } from "../data";
 import { cumplimientoDemo, formulariosDemo } from "./demo-cumplimiento";
+import { crearDiaEDemo } from "./demo-dia-e";
 import { planillasDemo, revisionDemo } from "./demo-planillas";
 import type { Campana, DatosTablero, FuenteDatos, Ingreso, InvitacionPendiente, Sesion } from "./tipos";
 
@@ -79,6 +80,7 @@ export function crearFuenteDemo(): FuenteDatos {
     ...formulariosDemo,
     ...planillasDemo,
     ...revisionDemo,
+    ...crearDiaEDemo(datosDemo, campanaSemilla.eleccion),
     async iniciarSesion(correo, clave): Promise<Ingreso> {
       const s = sesionDe(correo);
       if (!s || clave !== claveDe(correo)) return { estado: "error", mensaje: "El correo o la contraseña no coinciden." };

@@ -202,6 +202,17 @@ tr[aria-selected="true"] td { background: #1c2742; }
 .mesa.con { background: rgba(46, 184, 114, 0.14); color: #8fe0b6; }
 .mesa.e14 { background: var(--acento); color: #fff; }
 .mesa.nov { background: rgba(240, 167, 58, 0.2); color: #f6c983; border-color: rgba(240, 167, 58, 0.6); }
+button.mesa { cursor: pointer; padding: 0; position: relative; transition: transform 120ms ease, box-shadow 120ms ease; }
+button.mesa:active { transform: scale(0.94); }
+button.mesa[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--texto); }
+.mesa.verde { background: rgba(46, 184, 114, 0.14); color: #8fe0b6; border-color: rgba(46, 184, 114, 0.35); }
+.mesa.ambar { background: rgba(240, 167, 58, 0.2); color: #f6c983; border-color: rgba(240, 167, 58, 0.6); }
+.mesa.rojo { background: rgba(229, 83, 75, 0.22); color: #f3a19b; border-color: rgba(229, 83, 75, 0.6); }
+.mesa.con-acta::after { content: ""; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--acento); }
+.campo input { min-width: 0; width: 100%; }
+.alertas-acta { list-style: none; padding: 0; margin: 0; gap: 4px; }
+.aviso.simulacro { border-style: solid; border-color: rgba(240, 167, 58, 0.6); color: #f6c983; background: rgba(240, 167, 58, 0.08); margin-bottom: 16px; }
+@media (prefers-reduced-motion: reduce) { button.mesa { transition: none; } }
 
 .mapa { position: absolute; inset: 0; background: var(--mapa-fondo); }
 .mapa svg { display: block; }

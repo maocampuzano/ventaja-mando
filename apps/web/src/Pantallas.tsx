@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Barra, diasParaEleccion } from "./comunes";
 // La bandeja del líder y la mesa del testigo son vistas previas de la app (fase 3): usan la semilla ficticia.
-import { incidenciasBase, lideres as lideresSemilla, puestos as puestosSemilla, zonaDe as zonaSemilla, type Incidencia } from "./data";
+import { lideres as lideresSemilla, puestos as puestosSemilla, zonaDe as zonaSemilla } from "./data";
 import { useTablero } from "./datos/contexto";
 import { Escaner } from "./Escaner";
 import { ImprimirPlanillas } from "./ImprimirPlanillas";
 import { RevisarPlanillas } from "./RevisarPlanillas";
-import { miles, pct, porcentajeCobertura, prioridadCobertura, textoAccion } from "@ventaja/nucleo";
+import { miles, pct, textoAccion } from "@ventaja/nucleo";
 import type { Tarea } from "./Strategos";
 
 /* ---------- Planillas (gerente / coordinador) ---------- */
@@ -108,110 +108,6 @@ export function BandejaLider() {
             <p className="tenue">El botón de WhatsApp abre el chat en el teléfono del líder con el mensaje listo, y lo envía él. No hay bots ni envíos automáticos que puedan bloquear el número de la campaña.</p>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Día E ---------- */
-export function DiaE() {
-  const { puestos, todasLasMesas, zonaDe } = useTablero();
-  const [simulacro, setSimulacro] = useState(false);
-  const [e14, setE14] = useState<Set<string>>(new Set());
-  const [novedades, setNovedades] = useState<Incidencia[]>(() => incidenciasBase.filter((n) => puestos.some((p) => p.id === n.puestoId)));
-
-  useEffect(() => {
-    if (!simulacro) return;
-    const t = setInterval(() => {
-      setE14((prev) => {
-        const libres = todasLasMesas.filter((m) => m.testigoId && !prev.has(`${m.puestoId}-${m.mesa}`));
-        if (!libres.length) return prev;
-        const n = new Set(prev);
-        libres.slice(0, 3).forEach((m) => n.add(`${m.puestoId}-${m.mesa}`));
-        return n;
-      });
-    }, 900);
-    return () => clearInterval(t);
-  }, [simulacro, todasLasMesas]);
-
-  const conTestigo = todasLasMesas.filter((m) => m.testigoId).length;
-  const sinCubrir = prioridadCobertura(todasLasMesas);
-  const claveNov = useMemo(() => new Set(novedades.map((n) => `${n.puestoId}-${n.mesa}`)), [novedades]);
-
-  if (!todasLasMesas.length) {
-    return (
-      <div className="pagina">
-        <div className="pagina-cabeza"><div><h1>Día E</h1><p className="tenue">Todavía no hay puestos ni mesas asignados a la campaña en su territorio. El centro de mando del día E se completa en la fase 5.</p></div></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="pagina">
-      <div className="pagina-cabeza">
-        <div>
-          <h1>Día E</h1>
-          <p className="tenue">Cobertura de mesas, novedades y E-14 en vivo. Consolidación privada de la campaña: no reemplaza el preconteo ni el escrutinio.</p>
-        </div>
-        <button className={`btn ${simulacro ? "" : "btn-primario"}`} onClick={() => setSimulacro(!simulacro)}>
-          {simulacro ? "Pausar simulacro" : "Iniciar simulacro de jornada"}
-        </button>
-      </div>
-
-      <div className="rejilla" style={{ marginBottom: 16 }}>
-        <div className="tarjeta"><div className="etiqueta">Mesas con testigo</div><div className="dato">{pct(conTestigo / todasLasMesas.length)}</div><p className="tenue">{conTestigo} de {todasLasMesas.length}</p></div>
-        <div className="tarjeta"><div className="etiqueta">E-14 recibidos</div><div className="dato">{e14.size}</div><Barra valor={e14.size / conTestigo} /></div>
-        <div className="tarjeta"><div className="etiqueta">Novedades abiertas</div><div className="dato">{novedades.length}</div><p className="tenue">{novedades.filter((n) => n.prioridad === "alta").length} de prioridad alta</p></div>
-      </div>
-
-      <div className="escenario" style={{ gridTemplateColumns: "minmax(0,1fr) 340px" }}>
-        <div className="pila">
-          {puestos.map((p) => (
-            <section key={p.id} className="tarjeta pila" aria-label={p.nombre}>
-              <div className="fila entre">
-                <div><h3>{p.nombre}</h3><span className="etiqueta">{zonaDe(p.zonaId).nombre}, {p.mesas.length} mesas</span></div>
-                <span className="tenue">{pct(porcentajeCobertura(p.mesas))} cubierto</span>
-              </div>
-              <div className="cuadricula-mesas">
-                {p.mesas.map((m) => {
-                  const k = `${m.puestoId}-${m.mesa}`;
-                  const cls = !m.testigoId ? "sin" : claveNov.has(k) ? "nov" : e14.has(k) ? "e14" : "con";
-                  return <span key={k} className={`mesa ${cls}`} title={`Mesa ${m.mesa}`}>{m.mesa}</span>;
-                })}
-              </div>
-            </section>
-          ))}
-          <div className="leyenda">
-            <span><i className="punto" style={{ background: "var(--rojo)" }} />Sin testigo</span>
-            <span><i className="punto" style={{ background: "var(--verde)" }} />Con testigo</span>
-            <span><i className="punto" style={{ background: "var(--acento)" }} />E-14 recibido</span>
-            <span><i className="punto" style={{ background: "var(--ambar)" }} />Con novedad</span>
-          </div>
-        </div>
-        <aside className="pila">
-          <div className="tarjeta pila">
-            <h2>Novedades</h2>
-            {novedades.map((n) => (
-              <div key={n.id} className="fila-ocr">
-                <div className="fila entre"><strong>{puestos.find((p) => p.id === n.puestoId)!.nombre}, mesa {n.mesa}</strong><span className={`sello ${n.prioridad === "alta" ? "rojo" : "ambar"}`}>{n.prioridad}</span></div>
-                <span>{n.tipo}</span>
-                <div className="fila entre"><span className="etiqueta">{n.hora}</span>
-                  <button className="btn btn-chico" onClick={() => setNovedades(novedades.filter((x) => x.id !== n.id))}>Marcar atendida</button></div>
-              </div>
-            ))}
-            {!novedades.length && <p className="tenue">Sin novedades abiertas.</p>}
-          </div>
-          <div className="tarjeta pila">
-            <h2>Cubrir primero</h2>
-            <p className="tenue" style={{ fontSize: 13 }}>Mesas sin testigo donde hay más votos en juego según 2023.</p>
-            {sinCubrir.slice(0, 6).map((m) => (
-              <div key={`${m.puestoId}-${m.mesa}`} className="fila entre">
-                <span>{puestos.find((p) => p.id === m.puestoId)!.nombre}, mesa {m.mesa}</span>
-                <span className="tenue">{m.votosHistoricos} votos</span>
-              </div>
-            ))}
-          </div>
-        </aside>
       </div>
     </div>
   );

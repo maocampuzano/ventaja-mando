@@ -14,7 +14,8 @@ import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
 import { Datos } from "./Datos";
-import { BandejaLider, DiaE, MiMesa, Planillas, Resumen } from "./Pantallas";
+import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
+import { DiaE } from "./DiaE";
 import type { Tarea } from "./Strategos";
 
 type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
@@ -24,7 +25,7 @@ const vistasPorRol: Record<RolCampana, Vista[]> = {
   administrador: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "diae", "datos"],
   gerente: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "diae", "datos"],
   candidato: ["resumen", "mando", "diae"],
-  coordinador: ["mando", "lideres", "importar", "planillas"],
+  coordinador: ["mando", "lideres", "importar", "planillas", "diae"],
   lider: ["bandeja"],
   testigo: ["mimesa"],
 };
