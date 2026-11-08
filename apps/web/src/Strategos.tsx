@@ -1,73 +1,116 @@
-import { useState } from "react";
-import { preguntasStrategos } from "./data";
-import { useTablero, type Contexto } from "./datos/contexto";
+// Strategos en el Mando. Pregunta con los datos agregados del alcance de quien consulta y muestra de dónde salió cada
+// respuesta. Los líderes llegan como «L-03» (la IA no recibe nombres, regla 6): aquí, del lado de quien consulta,
+// se traducen al nombre. Las tareas propuestas no se ejecutan hasta que la gerencia las aprueba.
+import { useMemo, useRef, useState, type FormEvent } from "react";
+import { armarDatosStrategos, refsLideres, type TareaPropuesta } from "@ventaja/nucleo";
+import { fuente } from "./datos/index";
+import { useTablero } from "./datos/contexto";
+import type { RespuestaStrategosPanel } from "./datos/tipos";
 
 export type Tarea = { id: string; titulo: string; detalle: string };
 
-function tareasPropuestas(tipos: string[], { lideres, recomendaciones, zonaDe }: Contexto): Tarea[] {
-  const brigadas = recomendaciones.filter((r) => r.accion === "brigada").sort((a, b) => b.digital - a.digital);
-  const revisar = [...lideres].sort((a, b) => a.indice.total - b.indice.total).slice(0, 3);
-  const t: Tarea[] = [];
-  if (tipos.includes("brigada") && brigadas.length)
-    t.push({ id: "t-brigada", titulo: `Brigada de fin de semana en ${brigadas.slice(0, 2).map((b) => zonaDe(b.territorioId).nombre).join(" y ")}`, detalle: "Asignar a 2 coordinadores, sábado 8:00 a 12:00, con formulario de registro y autorización." });
-  const oportunidad = recomendaciones.filter((r) => r.accion === "oportunidad").sort((a, b) => b.brecha - a.brecha)[0];
-  if (tipos.includes("llamadas") && oportunidad)
-    t.push({ id: "t-llamadas", titulo: `Cola de llamadas para ${zonaDe(oportunidad.territorioId).nombre}`, detalle: "Simpatizantes sin contactar de esa zona, con guion de invitación a la reunión del jueves." });
-  if (tipos.includes("revision"))
-    t.push({ id: "t-revision", titulo: "Reunión de depuración con 3 líderes", detalle: revisar.map((l) => l.nombre).join(", ") + ": revisar coincidencias antes de asignar metas nuevas." });
-  return t;
-}
+const SUGERIDAS = ["¿Dónde actúo esta semana?", "¿Qué líderes debo revisar?", "¿Cómo vamos frente a la meta?"];
+
+type Turno = { id: number; pregunta: string; respuesta?: RespuestaStrategosPanel; error?: string };
 
 export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
-  const tablero = useTablero();
-  const [hilo, setHilo] = useState<number[]>([]);
-  const [escribiendo, setEscribiendo] = useState(false);
+  const { sesion, zonas, lideres } = useTablero();
+  const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [texto, setTexto] = useState("");
+  const ocupado = turnos.some((t) => !t.respuesta && !t.error);
+  const siguiente = useRef(1);
 
-  const preguntar = (i: number) => {
-    if (escribiendo || hilo.includes(i)) return;
-    setEscribiendo(true);
-    setTimeout(() => { setHilo((h) => [...h, i]); setEscribiendo(false); }, 700);
+  const datos = useMemo(() => armarDatosStrategos(
+    { candidato: sesion.campana.candidato, cargo: sesion.campana.cargo, metaVotos: sesion.campana.metaVotos, eleccion: sesion.campana.eleccion },
+    zonas, lideres,
+  ), [sesion, zonas, lideres]);
+
+  // De referencia a nombre, solo en la pantalla.
+  const nombres = useMemo(() => {
+    const porId = new Map(lideres.map((l) => [l.id, l.nombre]));
+    return new Map([...refsLideres(lideres.map((l) => l.id))].map(([id, ref]) => [ref, porId.get(id) ?? ref]));
+  }, [lideres]);
+  const zonaNombre = useMemo(() => new Map(zonas.map((z) => [z.id, z.nombre])), [zonas]);
+  const conNombres = (t: string) => t.replace(/\bL-\d{2,}\b/g, (r) => nombres.get(r) ?? r);
+
+  const tareaDe = (turno: number, i: number, t: TareaPropuesta): Tarea => {
+    const donde = [...t.zonas.map((z) => zonaNombre.get(z) ?? z), ...t.lideres.map((r) => nombres.get(r) ?? r)];
+    const detalle = conNombres(t.detalle);
+    const faltan = donde.filter((d) => !detalle.includes(d));
+    return { id: `ia-${turno}-${i}`, titulo: conNombres(t.titulo), detalle: detalle + (faltan.length ? ` (${faltan.join(", ")})` : "") };
   };
+
+  async function preguntar(p: string) {
+    const pregunta = p.trim();
+    if (!pregunta || ocupado) return;
+    const id = siguiente.current++;
+    setTurnos((ts) => [...ts, { id, pregunta }]);
+    setTexto("");
+    try {
+      const respuesta = await fuente.preguntarStrategos(sesion, pregunta, datos);
+      setTurnos((ts) => ts.map((t) => (t.id === id ? { ...t, respuesta } : t)));
+    } catch (x) {
+      setTurnos((ts) => ts.map((t) => (t.id === id ? { ...t, error: (x as Error).message } : t)));
+    }
+  }
+
+  const enviar = (e: FormEvent) => { e.preventDefault(); void preguntar(texto); };
+  const hechas = new Set(turnos.map((t) => t.pregunta));
 
   return (
     <>
       <p className="tenue">
-        Strategos responde con los datos agregados de la campaña y dice de dónde salió cada respuesta. Las tareas que propone no se ejecutan hasta que usted las apruebe.
+        Strategos responde con los datos agregados de su alcance y dice de dónde salió cada respuesta. No recibe listas de personas. Las tareas que propone no se ejecutan hasta que usted las apruebe.
       </p>
-      {hilo.map((i) => {
-        const p = preguntasStrategos[i];
-        return (
-          <div key={i} className="pila">
-            <div className="mensaje yo">{p.q}</div>
-            <div className="mensaje ia">
-              <p>{p.a}</p>
-              <ul className="fuentes">{p.fuentes.map((f) => <li key={f}>{f}</li>)}</ul>
-            </div>
-            {tareasPropuestas(p.tareas, tablero).map((t) => (
-              <div key={t.id} className="tarea-prop">
-                <div>
-                  <h3>{t.titulo}</h3>
-                  <p className="tenue" style={{ fontSize: 12.5, marginTop: 2 }}>{t.detalle}</p>
-                </div>
-                <div className="fila">
-                  {aprobadas.includes(t.id) ? (
-                    <span className="sello verde">Aprobada y asignada</span>
-                  ) : (
-                    <button className="btn btn-primario btn-chico" onClick={() => alAprobar(t)}>Aprobar tarea</button>
-                  )}
-                </div>
+      {turnos.map((t) => (
+        <div key={t.id} className="pila" aria-label={`Pregunta: ${t.pregunta}`}>
+          <div className="mensaje yo">{t.pregunta}</div>
+          {!t.respuesta && !t.error && <div className="mensaje ia tenue" role="status">Revisando los datos de la campaña…</div>}
+          {t.error && <div className="mensaje ia"><p className="error" role="alert">{t.error}</p></div>}
+          {t.respuesta && (
+            <>
+              <div className="mensaje ia">
+                <p>{conNombres(t.respuesta.texto)}</p>
+                {t.respuesta.fuentes.length > 0 && <ul className="fuentes" aria-label="Fuentes">{t.respuesta.fuentes.map((f) => <li key={f}>{f}</li>)}</ul>}
+                {t.respuesta.aviso && <p className="etiqueta">{t.respuesta.aviso}</p>}
               </div>
-            ))}
-          </div>
-        );
-      })}
-      {escribiendo && <div className="mensaje ia tenue">Revisando los datos de la campaña…</div>}
+              {t.respuesta.tareas.map((tp, i) => {
+                const tarea = tareaDe(t.id, i, tp);
+                return (
+                  <div key={tarea.id} className="tarea-prop">
+                    <div>
+                      <h3>{tarea.titulo}</h3>
+                      <p className="tenue" style={{ fontSize: 12.5, marginTop: 2 }}>{tarea.detalle}</p>
+                    </div>
+                    <div className="fila">
+                      {aprobadas.includes(tarea.id) ? (
+                        <span className="sello verde">Aprobada y asignada</span>
+                      ) : (
+                        <button className="btn btn-primario btn-chico" onClick={() => alAprobar(tarea)}>Aprobar tarea</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      ))}
       <div className="sugeridas" aria-label="Preguntas sugeridas">
-        {preguntasStrategos.map((p, i) => !hilo.includes(i) && (
-          <button key={i} className="sugerida" onClick={() => preguntar(i)} disabled={escribiendo}>{p.q}</button>
+        {SUGERIDAS.filter((q) => !hechas.has(q)).map((q) => (
+          <button key={q} className="sugerida" onClick={() => void preguntar(q)} disabled={ocupado}>{q}</button>
         ))}
       </div>
-      <p className="aviso">Prototipo: las respuestas son de ejemplo. En el producto, Strategos consulta vistas agregadas; no recibe listas de personas.</p>
+      <form className="fila" onSubmit={enviar}>
+        <input className="enlace" style={{ flex: 1 }} value={texto} maxLength={500} placeholder="Escriba su pregunta"
+          aria-label="Pregunta para Strategos" onChange={(e) => setTexto(e.target.value)} />
+        <button className="btn btn-primario btn-chico" type="submit" disabled={ocupado || !texto.trim()}>Preguntar</button>
+      </form>
+      <p className="aviso">
+        {fuente.modo === "demo"
+          ? "Modo demo: responde el modelo simulado, con los mismos datos y herramientas que usará la IA."
+          : "Los pronósticos son escenarios con supuestos, nunca una certeza. Revise antes de decidir."}
+      </p>
     </>
   );
 }

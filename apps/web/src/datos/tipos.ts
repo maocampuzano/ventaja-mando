@@ -1,4 +1,4 @@
-import type { EsquemaFormulario, FilaLista, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { DatosStrategos, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -96,4 +96,10 @@ export interface FuenteDatos {
   lotesPlanilla(sesion: Sesion): Promise<LotePlanilla[]>;
   /** Registra el lote y devuelve su id (va en el QR de cada hoja) y su número en la campaña. */
   crearLotePlanilla(sesion: Sesion, datos: NuevoLotePlanilla): Promise<{ id: string; numero: number }>;
+  // Strategos. En modo demo, o si la función del servidor no está publicada, responde el modelo simulado con los
+  // datos del tablero (`datos`); en modo supabase con la función publicada, el servidor lee los datos con su RLS.
+  preguntarStrategos(sesion: Sesion, pregunta: string, datos: DatosStrategos): Promise<RespuestaStrategosPanel>;
 }
+
+/** `aviso` explica por qué respondió el modelo simulado cuando se esperaba el real. */
+export type RespuestaStrategosPanel = RespuestaStrategos & { aviso?: string };
