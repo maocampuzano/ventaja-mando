@@ -63,7 +63,8 @@ begin
   if not exists (select 1 from public.lider l where l.id = p_lider and l.campana_id = p_campana) then
     raise exception 'Ese líder no es de esta campaña.' using errcode = '22023';
   end if;
-  if not (privado.es_direccion(p_campana) or privado.coordina_lider(p_campana, p_lider)) then
+  -- coalesce: con un permiso desconocido (NULL), «not» daría NULL y el «if» no frenaría a nadie.
+  if not coalesce(privado.es_direccion(p_campana) or privado.coordina_lider(p_campana, p_lider), false) then
     raise exception 'Solo la dirección de la campaña o la coordinación del líder imprimen sus planillas.' using errcode = '42501';
   end if;
 

@@ -1,6 +1,6 @@
 -- Planillas imprimibles: quién crea lotes, numeración por campaña y quién los ve (fase 3).
 begin;
-select plan(17);
+select plan(20);
 
 -- Campaña A: 20000000-…-00000000000a. Líderes: 1 (zona 1) y 3 (zona 3) están en el territorio de la coordinadora;
 -- el 10 (zona 10) no. El líder b1 es de la campaña B.
@@ -60,6 +60,20 @@ select is((select count(*) from public.lote_planilla)::int, 0, 'Otra campaña no
 select throws_ok($$ select * from public.crear_lote_planilla('20000000-0000-4000-8000-00000000000a',
   '70000000-0000-4000-8000-000000000001', 1, array['contacto_campana'], 'Texto') $$,
   '42501', null, 'Ni imprime planillas de otra campaña');
+reset role;
+
+-- Roles sin permiso dentro de la campaña y usuarios sin campaña (el permiso no puede quedar en NULL).
+select pruebas.como('candidata_a');
+select throws_ok($$ select * from public.crear_lote_planilla('20000000-0000-4000-8000-00000000000a',
+  '70000000-0000-4000-8000-000000000001', 1, array['contacto_campana'], 'Texto') $$, '42501', null, 'La candidatura no imprime planillas');
+reset role;
+select pruebas.como('testigo_a');
+select throws_ok($$ select * from public.crear_lote_planilla('20000000-0000-4000-8000-00000000000a',
+  '70000000-0000-4000-8000-000000000001', 1, array['contacto_campana'], 'Texto') $$, '42501', null, 'Un testigo tampoco');
+reset role;
+select pruebas.como('sin_campana');
+select throws_ok($$ select * from public.crear_lote_planilla('20000000-0000-4000-8000-00000000000a',
+  '70000000-0000-4000-8000-000000000001', 1, array['contacto_campana'], 'Texto') $$, '42501', null, 'Ni alguien sin campaña');
 reset role;
 
 select pruebas.como_anonimo();
