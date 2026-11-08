@@ -411,12 +411,19 @@ function RevisarE14({ id, alCerrar, alGuardar }: { id: string; alCerrar: () => v
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
 
-  useEffect(() => {
+  const [leyendo, setLeyendo] = useState(false);
+  const cargar = useCallback(() => {
     fuente.actaE14(sesion, id).then((d) => {
       setDatos(d);
       setActa(d.lectura ? { ...d.lectura, confianza: 1 } : { ...VACIA, mesa: d.mesa });
     }).catch((e: Error) => setError(e.message));
   }, [id, sesion]);
+  useEffect(cargar, [cargar]);
+
+  async function leer() {
+    setLeyendo(true); setError("");
+    try { await fuente.leerE14(sesion, id); cargar(); } catch (e) { setError((e as Error).message); } finally { setLeyendo(false); }
+  }
 
   // Las alertas se recalculan con lo que la persona corrige; la confianza de la IA ya no aplica.
   const alertas = alertasActa({ ...acta, confianza: 1 });
@@ -455,7 +462,19 @@ function RevisarE14({ id, alCerrar, alGuardar }: { id: string; alCerrar: () => v
               : <p className="tenue">{fuente.modo === "demo" ? "En la demostración no hay foto: los números son de una lectura ficticia." : "No hay foto para mostrar."}</p>}
           </div>
           <div className="tarjeta pila">
-            {!datos.lectura && <p className="aviso">Esta foto no se ha leído con IA: digite los números tal como aparecen en el acta.</p>}
+            {!datos.lectura && (
+              <div className="aviso pila" style={{ gap: 8 }}>
+                <span>Esta foto no se ha leído. Puede leerla con IA o digitar los números tal como aparecen en el acta. En los dos casos, usted compara cada número con la foto antes de confirmar.</span>
+                {datos.estado === "recibida" && datos.foto && (
+                  <button className="btn btn-chico" style={{ justifySelf: "start" }} disabled={leyendo} onClick={leer}>
+                    {leyendo ? "Leyendo la foto…" : "Leer con IA"}
+                  </button>
+                )}
+              </div>
+            )}
+            {datos.lectura && datos.lectura.confianza < 1 && (
+              <p className="aviso">Números leídos con IA (confianza {Math.round(datos.lectura.confianza * 100)} %). Compárelos uno por uno con la foto.</p>
+            )}
             <table className="revision-tabla">
               <thead><tr><th>Candidato, lista o partido</th><th>Votos</th><th /></tr></thead>
               <tbody>

@@ -10,7 +10,7 @@ import type { ActaParaRevisar, DatosTablero, FuenteDatos, MesaTablero, NovedadTa
 
 type MetodosDiaE = Pick<FuenteDatos, "tableroDiaE" | "simulacroActivo" | "iniciarSimulacro" | "terminarSimulacro" |
   "atenderNovedad" | "escalarNovedades" | "actaE14" | "revisarE14" | "suscribirDiaE" | "relojDiaE" |
-  "cumplimientoE14" | "configurarOpcionesE14">;
+  "cumplimientoE14" | "configurarOpcionesE14" | "leerE14">;
 
 export const VELOCIDAD_SIMULACRO = 240; // minutos de jornada por minuto real (4 por segundo)
 const TIPOS = ["Fila larga, votantes se están yendo", "Testigo no admitido por el jurado", "Falta material de la mesa",
@@ -180,6 +180,11 @@ export function crearDiaEDemo(recortar: (s: Sesion) => DatosTablero, eleccion: s
         id, puesto: m.puesto, mesa: m.mesa, estado: m.acta ?? "recibida", foto: null,
         lectura: capa.actas.get(id)?.lectura ?? lecturaDe(semilla, mesaSemilla), subidaPorMi: false,
       };
+    },
+    // En la demostración las actas llegan ya leídas (lectura ficticia): no hay nada que leer.
+    async leerE14(s, id) {
+      const a = await this.actaE14(s, id);
+      return a.lectura ? alertasActa(a.lectura).length : 0;
     },
     async revisarE14(s, id, acta) {
       if (!puedeManejar(s)) throw new Error("El acta no existe o no la puede revisar.");

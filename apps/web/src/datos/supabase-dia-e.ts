@@ -1,12 +1,12 @@
 // Día E con el proyecto real: el tablero agregado por mesa (public.tablero_dia_e), las funciones de novedades,
 // simulacro y revisión del E-14, y el tiempo real de Supabase. Los permisos los pone la base.
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { FunctionsHttpError, type SupabaseClient } from "@supabase/supabase-js";
 import { alertasActa, cumplimientoDesdeTotales, jornadaBogota, type ActaLeida, type EstadoActa, type EstadoNovedad, type EstadoTestigo, type Prioridad } from "@ventaja/nucleo";
 import type { FuenteDatos, MesaTablero } from "./tipos";
 
 type MetodosDiaE = Pick<FuenteDatos, "tableroDiaE" | "simulacroActivo" | "iniciarSimulacro" | "terminarSimulacro" |
   "atenderNovedad" | "escalarNovedades" | "actaE14" | "revisarE14" | "suscribirDiaE" | "relojDiaE" |
-  "cumplimientoE14" | "configurarOpcionesE14">;
+  "cumplimientoE14" | "configurarOpcionesE14" | "leerE14">;
 
 type FilaMesa = {
   puesto_id: string; puesto: string; mesa: number; votos_historicos_puesto: number; mesas_puesto: number;
@@ -84,6 +84,16 @@ export function diaESupabase(sb: SupabaseClient): MetodosDiaE {
         id, puesto: puesto?.nombre ?? "—", mesa: data.mesa as number, estado: data.estado as string, foto,
         lectura: actaDe(data.extraccion_json), subidaPorMi: data.creado_por === s.usuarioId,
       };
+    },
+    async leerE14(_s, id) {
+      const { data, error: e } = await sb.functions.invoke<{ alertas: string[] }>("lectura", { body: { acta: id } });
+      if (!e && data) return data.alertas.length;
+      if (e instanceof FunctionsHttpError) {
+        let mensaje = "No se pudo leer el acta.";
+        try { mensaje = ((await e.context.json()) as { error?: string }).error ?? mensaje; } catch { /* sin cuerpo */ }
+        throw new Error(mensaje);
+      }
+      throw new Error("La lectura con IA no está activa todavía. Digite los números desde la foto.");
     },
     async revisarE14(_s, id, acta) {
       const { error: e } = await sb.rpc("revisar_e14", {
