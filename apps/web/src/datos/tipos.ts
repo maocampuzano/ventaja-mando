@@ -1,4 +1,4 @@
-import type { ActaLeida, Confianzas, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, Confianzas, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -122,7 +122,17 @@ export interface FuenteDatos {
   suscribirDiaE(sesion: Sesion, alCambiar: () => void): () => void;
   /** Hora y jornada con que se pinta el semáforo. En el simulacro la jornada dura una hora desde que se inicia. */
   relojDiaE(sesion: Sesion, simulacro: Simulacro | null): { ahora: Date; jornada: Jornada };
+  // Cumplimiento de los líderes contra el E-14 (agregado; dirección, candidata y coordinación)
+  cumplimientoE14(sesion: Sesion): Promise<CumplimientoE14>;
+  /** Cómo aparece el candidato en el E-14 y en los resultados históricos (solo la dirección). */
+  configurarOpcionesE14(sesion: Sesion, opcionE14: string, opcionHistorica: string): Promise<void>;
 }
+
+export type CumplimientoE14 = {
+  opcionE14: string | null; opcionHistorica: string | null;
+  /** Vacío mientras falte `opcionE14`. */
+  lideres: { liderId: string; nombre: string; resultado: CumplimientoPost }[];
+};
 
 export type NovedadTablero = NovedadDiaE & { tipo: string; responsableId: string | null };
 /** Una mesa del tablero del día E: estados y conteos, sin datos de personas. */

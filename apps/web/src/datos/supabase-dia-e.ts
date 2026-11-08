@@ -1,11 +1,12 @@
 // Día E con el proyecto real: el tablero agregado por mesa (public.tablero_dia_e), las funciones de novedades,
 // simulacro y revisión del E-14, y el tiempo real de Supabase. Los permisos los pone la base.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { alertasActa, jornadaBogota, type ActaLeida, type EstadoActa, type EstadoNovedad, type EstadoTestigo, type Prioridad } from "@ventaja/nucleo";
+import { alertasActa, cumplimientoDesdeTotales, jornadaBogota, type ActaLeida, type EstadoActa, type EstadoNovedad, type EstadoTestigo, type Prioridad } from "@ventaja/nucleo";
 import type { FuenteDatos, MesaTablero } from "./tipos";
 
 type MetodosDiaE = Pick<FuenteDatos, "tableroDiaE" | "simulacroActivo" | "iniciarSimulacro" | "terminarSimulacro" |
-  "atenderNovedad" | "escalarNovedades" | "actaE14" | "revisarE14" | "suscribirDiaE" | "relojDiaE">;
+  "atenderNovedad" | "escalarNovedades" | "actaE14" | "revisarE14" | "suscribirDiaE" | "relojDiaE" |
+  "cumplimientoE14" | "configurarOpcionesE14">;
 
 type FilaMesa = {
   puesto_id: string; puesto: string; mesa: number; votos_historicos_puesto: number; mesas_puesto: number;
@@ -98,6 +99,29 @@ export function diaESupabase(sb: SupabaseClient): MetodosDiaE {
       }
       canal.subscribe();
       return () => { void sb.removeChannel(canal); };
+    },
+    async cumplimientoE14(s) {
+      const { data: c, error: ec } = await sb.from("campana").select("opcion_e14, opcion_historica").eq("id", s.campana.id).single();
+      error("No se pudo leer la campaña", ec);
+      const base = { opcionE14: (c?.opcion_e14 as string | null) ?? null, opcionHistorica: (c?.opcion_historica as string | null) ?? null };
+      if (!base.opcionE14) return { ...base, lideres: [] };
+      const { data, error: e } = await sb.rpc("cumplimiento_lideres_e14", { p_campana: s.campana.id });
+      if (e) throw new Error(e.message);
+      return {
+        ...base,
+        lideres: (data as { lider_id: string; nombre: string; mesas: number; apoyos: number; votos: number | null;
+          votos_historicos: number | null; mesas_sin_historico: number | null }[]).map((f) => ({
+          liderId: f.lider_id, nombre: f.nombre,
+          resultado: cumplimientoDesdeTotales({
+            mesas: f.mesas, apoyos: f.apoyos, votos: f.votos ?? 0, votosHistoricos: f.votos_historicos,
+            mesasSinHistorico: f.mesas_sin_historico ?? f.mesas,
+          }),
+        })),
+      };
+    },
+    async configurarOpcionesE14(s, opcionE14, opcionHistorica) {
+      const { error: e } = await sb.rpc("configurar_opciones_e14", { p_campana: s.campana.id, p_opcion_e14: opcionE14, p_opcion_historica: opcionHistorica });
+      if (e) throw new Error(e.message);
     },
     relojDiaE(s, simulacro) {
       const ahora = new Date();

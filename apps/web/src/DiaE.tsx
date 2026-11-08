@@ -2,11 +2,11 @@
 // escalamiento, E-14 por revisar (regla 7) y modo simulacro. Todo agregado por mesa: aquí no se ven personas.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  alertasActa, estadoMesa, miles, ordenarNovedades, pct, resumenDiaE, type ActaLeida, type Semaforo,
+  ADVERTENCIA_CUMPLIMIENTO, alertasActa, estadoMesa, miles, ordenarNovedades, pct, resumenDiaE, type ActaLeida, type Semaforo,
 } from "@ventaja/nucleo";
 import { useTablero } from "./datos/contexto";
 import { fuente } from "./datos/index";
-import type { ActaParaRevisar, Miembro, MesaTablero, NovedadTablero, Simulacro } from "./datos/tipos";
+import type { ActaParaRevisar, CumplimientoE14, Miembro, MesaTablero, NovedadTablero, Simulacro } from "./datos/tipos";
 
 const horaCorta = (d: Date) =>
   new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", hour: "numeric", minute: "2-digit" }).format(d);
@@ -247,7 +247,95 @@ export function DiaE() {
           )}
         </aside>
       </div>
+      {!simulacro && <CumplimientoLideres direccion={direccion} />}
     </div>
+  );
+}
+
+// ---------- Cumplimiento de los líderes contra el E-14 (agregado) ----------
+
+const signo = (x: number) => `${x > 0 ? "+" : ""}${Math.round(x * 100)} %`;
+
+function CumplimientoLideres({ direccion }: { direccion: boolean }) {
+  const { sesion } = useTablero();
+  const [datos, setDatos] = useState<CumplimientoE14 | null>(null);
+  const [error, setError] = useState("");
+  const [opcion, setOpcion] = useState("");
+  const [historica, setHistorica] = useState("");
+  const [guardado, setGuardado] = useState("");
+
+  const cargar = useCallback(() => {
+    fuente.cumplimientoE14(sesion).then((d) => {
+      setDatos(d); setOpcion(d.opcionE14 ?? ""); setHistorica(d.opcionHistorica ?? ""); setError("");
+    }).catch((e: Error) => setError(e.message));
+  }, [sesion]);
+  useEffect(cargar, [cargar]);
+
+  async function guardar() {
+    setError(""); setGuardado("");
+    try { await fuente.configurarOpcionesE14(sesion, opcion, historica); setGuardado("Guardado."); cargar(); }
+    catch (e) { setError((e as Error).message); }
+  }
+
+  const filas = [...(datos?.lideres ?? [])].sort((a, b) =>
+    Number(b.resultado.suficiente) - Number(a.resultado.suficiente) ||
+    (b.resultado.suficiente && a.resultado.suficiente ? b.resultado.cobertura - a.resultado.cobertura : 0) ||
+    a.nombre.localeCompare(b.nombre, "es"));
+  const sinDatos = filas.filter((f) => !f.resultado.suficiente).length;
+
+  return (
+    <section className="tarjeta pila" aria-label="Cumplimiento de los líderes contra el E-14" style={{ marginTop: 24 }}>
+      <h2>Cumplimiento de los líderes contra el E-14</h2>
+      <p className="tenue">Compara los apoyos que cada líder registró en sus mesas con los votos de la candidata en los E-14 revisados de esas mesas. {ADVERTENCIA_CUMPLIMIENTO}</p>
+      {error && <p className="error" role="alert">{error}</p>}
+      {direccion && (
+        <div className="fila" style={{ gap: 10, flexWrap: "wrap", alignItems: "end" }}>
+          <label className="campo" style={{ flex: "1 1 220px" }}>Cómo aparece la candidata en el E-14
+            <input value={opcion} onChange={(e) => setOpcion(e.target.value)} placeholder="Tal como está impreso en el acta" />
+          </label>
+          <label className="campo" style={{ flex: "1 1 220px" }}>En los resultados de la elección anterior (opcional)
+            <input value={historica} onChange={(e) => setHistorica(e.target.value)} placeholder="Candidato o partido" />
+          </label>
+          <button className="btn" onClick={guardar}>Guardar</button>
+          {guardado && <span className="tenue" role="status">{guardado}</span>}
+        </div>
+      )}
+      {datos && !datos.opcionE14 && (
+        <p className="aviso">{direccion ? "Escriba cómo aparece la candidata en el E-14 para calcularlo." : "La dirección todavía no configuró cómo aparece la candidata en el E-14."}</p>
+      )}
+      {datos?.opcionE14 && (
+        <>
+          <div className="tabla-envoltura">
+            <table aria-label="Cumplimiento por líder">
+              <thead><tr>
+                <th>Líder</th><th className="num">Mesas con E-14 revisado</th><th className="num">Apoyos</th>
+                <th className="num">Votos</th><th className="num">Votos frente a apoyos</th><th className="num">Frente a la elección anterior</th>
+              </tr></thead>
+              <tbody>
+                {filas.map(({ liderId, nombre, resultado: r }) => (
+                  <tr key={liderId}>
+                    <td>{nombre}</td>
+                    <td className="num">{miles(r.mesas)}</td>
+                    <td className="num">{miles(r.apoyos)}</td>
+                    {r.suficiente ? (
+                      <>
+                        <td className="num">{miles(r.votos)}</td>
+                        <td className="num">{pct(r.cobertura)}</td>
+                        <td className="num">{r.crecimiento === null ? "—" : signo(r.crecimiento)}</td>
+                      </>
+                    ) : (
+                      <td className="num tenue" colSpan={3} title={r.motivo}>Sin datos suficientes</td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {sinDatos > 0 && <p className="etiqueta">«Sin datos suficientes»: hacen falta al menos 3 mesas con E-14 revisado y 10 apoyos para comparar sin exponer a nadie.</p>}
+          <p className="etiqueta">«Frente a la elección anterior» no prueba que el cambio se deba al líder.</p>
+        </>
+      )}
+    </section>
   );
 }
 

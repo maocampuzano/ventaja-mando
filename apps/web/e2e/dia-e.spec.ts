@@ -82,3 +82,25 @@ test("la candidata ve el tablero, pero no atiende novedades ni revisa actas", as
   await expect(page.getByRole("region", { name: "E-14 por revisar" }).getByRole("button", { name: "Revisar" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Iniciar simulacro" })).toHaveCount(0);
 });
+
+test("cumplimiento de líderes: agregado, con umbral y con su advertencia", async ({ page }) => {
+  await entrar(page, "gerente@demo.co");
+  const caja = page.getByRole("region", { name: "Cumplimiento de los líderes contra el E-14" });
+  await expect(caja).toContainText("no identifica votos individuales");
+  const tabla = caja.getByRole("table", { name: "Cumplimiento por líder" });
+  await expect(tabla.getByRole("row")).toHaveCount(23); // encabezado + 22 líderes
+  await expect(tabla.getByText("Sin datos suficientes").first()).toBeVisible();
+
+  // Sin configurar la opción del E-14, no calcula.
+  await caja.getByLabel("Cómo aparece la candidata en el E-14").fill("");
+  await caja.getByRole("button", { name: "Guardar" }).click();
+  await expect(caja.getByText("Escriba cómo aparece la candidata en el E-14 para calcularlo.")).toBeVisible();
+  await expect(tabla).toHaveCount(0);
+});
+
+test("la candidata ve el cumplimiento, pero no lo configura", async ({ page }) => {
+  await entrar(page, "candidata@demo.co");
+  const caja = page.getByRole("region", { name: "Cumplimiento de los líderes contra el E-14" });
+  await expect(caja.getByRole("table")).toBeVisible();
+  await expect(caja.getByRole("button", { name: "Guardar" })).toHaveCount(0);
+});
