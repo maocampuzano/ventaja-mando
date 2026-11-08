@@ -14,16 +14,16 @@ const SUGERIDAS = ["¿Dónde actúo esta semana?", "¿Qué líderes debo revisar
 type Turno = { id: number; pregunta: string; respuesta?: RespuestaStrategosPanel; error?: string };
 
 export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
-  const { sesion, zonas, lideres } = useTablero();
+  const { sesion, zonas, lideres, meta } = useTablero();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [texto, setTexto] = useState("");
   const ocupado = turnos.some((t) => !t.respuesta && !t.error);
   const siguiente = useRef(1);
 
   const datos = useMemo(() => armarDatosStrategos(
-    { candidato: sesion.campana.candidato, cargo: sesion.campana.cargo, metaVotos: sesion.campana.metaVotos, eleccion: sesion.campana.eleccion },
+    { candidato: sesion.campana.candidato, cargo: sesion.campana.cargo, metaVotos: meta.votos, eleccion: sesion.campana.eleccion },
     zonas, lideres,
-  ), [sesion, zonas, lideres]);
+  ), [sesion, zonas, lideres, meta.votos]);
 
   // De referencia a nombre, solo en la pantalla.
   const nombres = useMemo(() => {

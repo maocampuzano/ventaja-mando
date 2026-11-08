@@ -5,7 +5,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import {
   HERRAMIENTAS_STRATEGOS, SISTEMA_STRATEGOS, costoEstimadoUsd, ejecutarHerramienta,
   type DatosStrategos, type RespuestaStrategos, type TareaPropuesta,
-} from "./strategos";
+} from "./strategos.ts";
 
 export const MODELO_STRATEGOS_POR_DEFECTO = "claude-sonnet-5-5";
 const MAX_VUELTAS = 6;

@@ -53,16 +53,21 @@ Deno.serve(async (req) => {
     return responder(429, { error: "La campaña llegó al cupo de IA de este mes. La gerencia puede pedir una ampliación." });
   }
 
-  const [c, z, l] = await Promise.all([
+  const [c, z, l, m] = await Promise.all([
     usuario.from("campana").select("nombre, cargo, eleccion_fecha, meta_votos").eq("id", campana).single(),
     usuario.rpc("tablero_zonas", { p_campana: campana }),
     usuario.rpc("tablero_lideres", { p_campana: campana }),
+    usuario.from("membresia").select("rol").eq("campana_id", campana).eq("usuario_id", u.user.id).eq("activa", true).maybeSingle(),
   ]);
   if (c.error || z.error || l.error) return responder(502, { error: "No se pudieron leer los datos de la campaña." });
 
+  // Como en el tablero: quien ve toda la campaña se mide contra su meta; la coordinación, contra la de sus zonas.
+  const filasZonas = z.data as Record<string, unknown>[];
+  const veTodo = ["administrador", "gerente", "candidato"].includes(String(m.data?.rol ?? ""));
+  const meta = veTodo ? n(c.data.meta_votos) : filasZonas.reduce((s, f) => s + n(f.meta), 0);
   const datos = armarDatosStrategos(
-    { candidato: c.data.nombre, cargo: c.data.cargo, metaVotos: n(c.data.meta_votos), eleccion: c.data.eleccion_fecha ?? "" },
-    (z.data as Record<string, unknown>[]).map((f) => ({
+    { candidato: c.data.nombre, cargo: c.data.cargo, metaVotos: meta, eleccion: c.data.eleccion_fecha ?? "" },
+    filasZonas.map((f) => ({
       id: String(f.territorio_id), nombre: String(f.nombre), meta: n(f.meta), potencial: n(f.potencial), bruto: n(f.bruto),
       validados: n(f.validados), comprometidos: n(f.comprometidos), lideres: n(f.lideres), alcance: n(f.alcance), clics: n(f.clics), gasto: n(f.gasto),
     })),

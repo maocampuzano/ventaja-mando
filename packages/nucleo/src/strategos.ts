@@ -1,8 +1,8 @@
 // Strategos: herramientas sobre vistas agregadas (regla 6). La IA nunca recibe filas de personas: recibe cifras por
 // zona y el índice de cada líder bajo una referencia opaca («L-03»). El nombre del líder lo pone la pantalla, del lado
 // de quien consulta, con la misma tabla de referencias (refsLideres). Cada resultado dice de qué datos salió.
-import { indiceLider } from "./lider";
-import { recomendar, textoAccion, type Accion } from "./territorio";
+import { indiceLider } from "./lider.ts";
+import { recomendar, textoAccion, type Accion } from "./territorio.ts";
 
 export type ZonaAgregada = {
   id: string; nombre: string; meta: number; potencial: number; bruto: number; validados: number; comprometidos: number;
@@ -14,6 +14,7 @@ export type LiderAgregado = {
   tareasHechas: number; tareasAsignadas: number; meta: number;
 };
 export type DatosStrategos = {
+  /** metaVotos: la meta de votos según el alcance de quien pregunta (campaña completa o sus zonas). */
   campana: { candidato: string; cargo: string; metaVotos: number; eleccion: string };
   zonas: ZonaAgregada[];
   lideres: LiderAgregado[];
@@ -142,7 +143,8 @@ export function ejecutarHerramienta(
   switch (nombre) {
     case "resumen_campana": {
       const s = (k: keyof ZonaAgregada) => d.zonas.reduce((a, z) => a + (z[k] as number), 0);
-      const meta = d.zonas.length && d.zonas.every((z) => z.meta > 0) ? s("meta") : d.campana.metaVotos;
+      // La meta ya viene según el alcance de quien pregunta: la de la campaña o la de sus zonas (como en el tablero).
+      const meta = d.campana.metaVotos;
       return {
         fuente: FUENTE.resumen,
         datos: {
@@ -216,6 +218,7 @@ export const SISTEMA_STRATEGOS = [
   "Responda en español de Colombia, claro y breve (máximo 150 palabras), para un gerente de campaña.",
   "Solo conoce los datos que devuelven sus herramientas, que son agregados por zona o por líder. Consulte las herramientas antes de afirmar cifras y no invente datos.",
   "Nunca pida ni use datos de personas (nombres, cédulas, teléfonos). Los líderes vienen como «L-03»: refiérase a ellos así.",
+  "Nombre las zonas por su nombre, nunca por su código interno (como «z14»); los códigos solo van en proponer_tarea.",
   "Los pronósticos son escenarios: diga siempre el supuesto («si el ritmo se mantiene…»). Nunca presente un resultado como seguro.",
   "No sugiera condicionar ayudas, empleo ni beneficios al voto, ni consultar puestos de votación con cédulas de terceros.",
   "Si recomienda una acción concreta, propóngala con la herramienta proponer_tarea (máximo tres). Las tareas no se ejecutan hasta que la gerencia las apruebe: no diga que ya se hicieron.",

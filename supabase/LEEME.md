@@ -182,6 +182,6 @@ Modelos: `MODELO_STRATEGOS` (por defecto `claude-sonnet-5-5`). Si un clasificado
 
 ## Lo que no se pudo probar desde aquí
 
-- **Las funciones `strategos` y `lectura` no se han publicado ni ejecutado en Deno** (en el Mac no hay Deno ni Docker). Su lógica (herramientas, ciclo con Claude y costo) está en `packages/nucleo` y tiene pruebas con un cliente simulado. Hay que confirmar en la primera publicación que el empaquetado de Supabase acepta las importaciones de `packages/nucleo` (están declaradas en `functions/strategos/deno.json`).
+- **Funciones `strategos` y `lectura`:** publicadas el 08/11/2026 en el proyecto de prueba, con la clave de Anthropic cargada como secreto. Arrancan y responden; la prueba completa con un usuario real queda pendiente hasta tener cuentas y datos de prueba. Las importaciones de `packages/nucleo` que usan las funciones llevan la extensión `.ts`, porque el empaquetado de Supabase no las resuelve sin ella.
 
 Las pruebas corren sobre un Postgres 16 con PostGIS que imita a Supabase, con la parte de autenticación simulada. `aplicar-remoto.mjs verificar` confirma en el proyecto real que las migraciones quedaron, que no hay tablas sin RLS y que el Vault cifra y descifra. Falta confirmar, con un usuario real que inicie sesión, que el token de sesión trae el dato de dos factores (`aal`). Eso se prueba en la fase 2, con el inicio de sesión del panel.
