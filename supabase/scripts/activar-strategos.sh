@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Publica la función «strategos» en el proyecto de Supabase y le carga la clave de Anthropic como secreto.
+# Publica las funciones de IA («strategos» y «lectura») en el proyecto de Supabase y les carga la clave de Anthropic.
 # Uso, desde la raíz del repositorio: bash supabase/scripts/activar-strategos.sh
 #
-# Lee SUPABASE_URL, SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY y MODELO_STRATEGOS del archivo .env. La clave nunca se
+# Lee SUPABASE_URL, SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY, MODELO_STRATEGOS y MODELO_LECTURA del archivo .env. La clave nunca se
 # imprime ni queda en otro archivo: se pasa a Supabase con un archivo temporal que se borra al terminar.
 # Sin ANTHROPIC_API_KEY, publica la función igual y Strategos responde con el modelo simulado.
 set -euo pipefail
@@ -24,6 +24,8 @@ CLAVE="$(leer ANTHROPIC_API_KEY)"
 MODELO="$(leer MODELO_STRATEGOS)"
 [ -n "$CLAVE" ] && printf 'ANTHROPIC_API_KEY=%s\n' "$CLAVE" >> "$TMP"
 [ -n "$MODELO" ] && printf 'MODELO_STRATEGOS=%s\n' "$MODELO" >> "$TMP"
+LECTURA="$(leer MODELO_LECTURA)"
+[ -n "$LECTURA" ] && printf 'MODELO_LECTURA=%s\n' "$LECTURA" >> "$TMP"
 
 if [ -s "$TMP" ]; then
   echo "→ Secretos de la función (los valores no se muestran)"
@@ -34,4 +36,6 @@ fi
 
 echo "→ Publicando la función strategos en $REF"
 npx --yes "$CLI" functions deploy strategos --project-ref "$REF" --use-api
+echo "→ Publicando la función lectura en $REF"
+npx --yes "$CLI" functions deploy lectura --project-ref "$REF" --use-api
 echo "Listo. Pruebe en el panel: Mando → Strategos → «¿Dónde actúo esta semana?»."

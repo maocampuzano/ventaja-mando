@@ -1,4 +1,4 @@
-import type { DatosStrategos, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { Confianzas, DatosStrategos, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -99,7 +99,27 @@ export interface FuenteDatos {
   // Strategos. En modo demo, o si la función del servidor no está publicada, responde el modelo simulado con los
   // datos del tablero (`datos`); en modo supabase con la función publicada, el servidor lee los datos con su RLS.
   preguntarStrategos(sesion: Sesion, pregunta: string, datos: DatosStrategos): Promise<RespuestaStrategosPanel>;
+  // Lectura de planillas con revisión humana (regla 7)
+  planillasPorRevisar(sesion: Sesion): Promise<PlanillaPorRevisar[]>;
+  /** Dirección de la foto para verla (en modo supabase, un enlace firmado que vence pronto). null en el demo. */
+  fotoPlanilla(sesion: Sesion, id: string): Promise<string | null>;
+  leerPlanilla(sesion: Sesion, id: string): Promise<number>;
+  filasPlanilla(sesion: Sesion, id: string): Promise<FilaParaRevisar[]>;
+  vincularHoja(sesion: Sesion, id: string, loteImpreso: string, hoja: number): Promise<void>;
+  aprobarPlanilla(sesion: Sesion, id: string, filas: FilaAprobada[]): Promise<ResultadoAprobacion>;
 }
+
+/** Foto de planilla subida por un líder, pendiente de leer o de revisar. */
+export type PlanillaPorRevisar = {
+  id: string; lider: string; estado: "pendiente" | "leido" | "en_revision"; loteNumero: number | null; hoja: number | null;
+  filas: number; creada: string; error: string | null;
+};
+export type FilaParaRevisar = {
+  filaId: string; renglon: number; nombre: string; cedula: string; celular: string; barrio: string; firma: boolean; confianza: Confianzas;
+};
+/** Lo que decide quien revisa, fila por fila (regla 7). */
+export type FilaAprobada = { filaId: string; nombre: string; documento: string; telefono: string; firma: boolean; descartar: boolean };
+export type ResultadoAprobacion = { creadas: number; yaExistian: number; sinFirma: number; descartadas: number; rechazos: { filaId: string; motivo: string }[] };
 
 /** `aviso` explica por qué respondió el modelo simulado cuando se esperaba el real. */
 export type RespuestaStrategosPanel = RespuestaStrategos & { aviso?: string };

@@ -5,6 +5,7 @@ import { incidenciasBase, lideres as lideresSemilla, puestos as puestosSemilla, 
 import { useTablero } from "./datos/contexto";
 import { Escaner } from "./Escaner";
 import { ImprimirPlanillas } from "./ImprimirPlanillas";
+import { RevisarPlanillas } from "./RevisarPlanillas";
 import { miles, pct, porcentajeCobertura, prioridadCobertura, textoAccion } from "@ventaja/nucleo";
 import type { Tarea } from "./Strategos";
 
@@ -20,22 +21,18 @@ export function Planillas() {
       </div>
       <div className="escenario">
         <div className="pila">
-          <div className="rejilla">
-            <div className="tarjeta"><div className="etiqueta">Planillas recibidas esta semana</div><div className="dato">138</div></div>
-            <div className="tarjeta"><div className="etiqueta">Filas leídas</div><div className="dato">1.204</div></div>
-            <div className="tarjeta"><div className="etiqueta">Esperando revisión</div><div className="dato">212</div></div>
-          </div>
+          <RevisarPlanillas />
           <div className="tarjeta pila">
             <h2>Cómo funciona</h2>
             <ol className="pila" style={{ margin: 0, paddingLeft: 18 }}>
               <li>La campaña imprime la planilla de cada líder. Trae un código QR que dice de qué lote y qué hoja es (y así, de qué líder), y el texto de autorización de datos que firma cada persona.</li>
               <li>El líder toma la foto. Si no hay señal, queda guardada en el teléfono.</li>
-              <li>La lectura marca en ámbar lo que no se leyó con seguridad y en rojo las cédulas repetidas.</li>
-              <li>El líder corrige y envía. Los registros entran como «pendientes de validar» con la foto como soporte.</li>
+              <li>La IA lee la foto y marca en ámbar lo que no se leyó con seguridad y en rojo lo repetido o lo que no se puede registrar.</li>
+              <li>Una persona compara cada fila con la foto, corrige y aprueba la hoja. Solo entonces los registros entran, como «sin contactar», con la foto como soporte de su autorización.</li>
             </ol>
           </div>
           <ImprimirPlanillas />
-          <p className="aviso">La firma de autorización en la planilla es la prueba del consentimiento (Ley 1581). Sin esa columna, la fila se guarda como «sin autorización» y no se usa para contacto.</p>
+          <p className="aviso">La firma de autorización en la planilla es la prueba del consentimiento (Ley 1581). Una fila sin firma no se registra.</p>
         </div>
         <Telefono titulo="Ventaja Mando"><Escaner /></Telefono>
       </div>

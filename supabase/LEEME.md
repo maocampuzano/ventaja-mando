@@ -158,6 +158,16 @@ Strategos funciona en dos modos:
 
   La clave de Anthropic vive solo como secreto de la función, nunca en el navegador.
 
+**Lectura de planillas** (función `functions/lectura`). Cuando se pide desde el panel (**Planillas → Leer con IA**), la función hace lo siguiente:
+1. descarga la foto del bucket `evidencias`;
+2. la lee con Claude en salida JSON estricta (`MODELO_LECTURA`, por defecto `claude-sonnet-5-5`);
+3. guarda las filas con `guardar_lectura_planilla`. La cédula queda cifrada, nunca en claro.
+
+Después:
+- **No crea personas.** Una persona revisa todas las filas con `filas_planilla`, que muestra la cédula descifrada a quien puede revisar y deja auditoría. Luego vincula la foto con su hoja impresa (QR) y aprueba con `aprobar_planilla`. Solo entonces se crean las personas, con su autorización: canal `ocr`, las finalidades impresas en el lote y la foto como evidencia (reglas 3 y 7).
+- **Las filas sin firma no se registran.**
+- **Sin `ANTHROPIC_API_KEY` la función no lee.** En el proyecto real nunca se usa la lectura simulada, para que no entren datos inventados.
+
 **Cupo:** cada campaña tiene un tope de gasto de IA por mes, de USD 10 por defecto mientras no se defina el precio de los planes (V7). Se cambia en la tabla `cupo_ia`, solo con la clave de servicio: la campaña no puede subirse su propio cupo. Al llegar al tope, Strategos responde «La campaña llegó al cupo de IA de este mes».
 
 **Activarlo (cuando tenga la clave de Anthropic):**
@@ -166,12 +176,12 @@ Strategos funciona en dos modos:
 3. En **Settings → Limits**, ponga un límite mensual de gasto. Es una segunda barrera, además del cupo por campaña.
 4. En **Settings → API Keys**, pulse **Create Key**, póngale de nombre `ventaja-mando-prueba` y copie la clave (empieza por `sk-ant-`). Solo se muestra una vez.
 5. Abra el archivo `.env` del proyecto y pegue la clave después de `ANTHROPIC_API_KEY=`, sin espacios. Guarde. **No la pegue en el chat.**
-6. Avíseme. Yo corro `bash supabase/scripts/activar-strategos.sh`, que carga la clave como secreto de la función (sin mostrarla) y publica la función. Para comprobarlo: en el panel, **Mando → Strategos → «¿Dónde actúo esta semana?»** debe responder sin el aviso de «modelo simulado».
+6. Avíseme. Yo corro `bash supabase/scripts/activar-strategos.sh`, que carga la clave como secreto (sin mostrarla) y publica las funciones `strategos` y `lectura`. Para comprobarlo: en el panel, **Mando → Strategos → «¿Dónde actúo esta semana?»** debe responder sin el aviso de «modelo simulado».
 
 Modelos: `MODELO_STRATEGOS` (por defecto `claude-sonnet-5-5`). Si un clasificador de seguridad de Anthropic rechaza una pregunta, la API la reintenta sola en otro modelo adecuado (`fallbacks: "default"`).
 
 ## Lo que no se pudo probar desde aquí
 
-- **La función `strategos` no se ha publicado ni ejecutado en Deno** (en el Mac no hay Deno ni Docker). Su lógica (herramientas, ciclo con Claude y costo) está en `packages/nucleo` y tiene pruebas con un cliente simulado. Hay que confirmar en la primera publicación que el empaquetado de Supabase acepta las importaciones de `packages/nucleo` (están declaradas en `functions/strategos/deno.json`).
+- **Las funciones `strategos` y `lectura` no se han publicado ni ejecutado en Deno** (en el Mac no hay Deno ni Docker). Su lógica (herramientas, ciclo con Claude y costo) está en `packages/nucleo` y tiene pruebas con un cliente simulado. Hay que confirmar en la primera publicación que el empaquetado de Supabase acepta las importaciones de `packages/nucleo` (están declaradas en `functions/strategos/deno.json`).
 
 Las pruebas corren sobre un Postgres 16 con PostGIS que imita a Supabase, con la parte de autenticación simulada. `aplicar-remoto.mjs verificar` confirma en el proyecto real que las migraciones quedaron, que no hay tablas sin RLS y que el Vault cifra y descifra. Falta confirmar, con un usuario real que inicie sesión, que el token de sesión trae el dato de dos factores (`aal`). Eso se prueba en la fase 2, con el inicio de sesión del panel.
