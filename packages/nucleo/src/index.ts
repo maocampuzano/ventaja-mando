@@ -15,3 +15,4 @@ export * from "./planilla";
 export * from "./strategos";
 export * from "./lectura";
 export * from "./diaE";
+export * from "./mensajeria";
