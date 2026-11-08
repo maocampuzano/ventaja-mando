@@ -48,6 +48,10 @@ export type Exportacion = { referencia: string; exportadoPor: string; exportadoE
 
 export type Formulario = { id: string; nombre: string; esquema: EsquemaFormulario; version: number; creado: string };
 
+/** Lote de planillas impresas para un líder. `generado` en ISO; se muestra en hora de Colombia. */
+export type LotePlanilla = { id: string; numero: number; liderId: string; lider: string; hojas: number; generado: string };
+export type NuevoLotePlanilla = { liderId: string; hojas: number; finalidades: string[]; texto: string };
+
 /** Resultado de un intento de inicio de sesión. */
 export type Ingreso =
   | { estado: "ok"; sesion: Sesion }
@@ -88,4 +92,8 @@ export interface FuenteDatos {
   formularios(sesion: Sesion): Promise<Formulario[]>;
   /** Crea (sin id) o actualiza un formulario. La base sube la versión cuando cambian los campos. */
   guardarFormulario(sesion: Sesion, datos: { id?: string; nombre: string; esquema: EsquemaFormulario }): Promise<Formulario>;
+  // Planillas imprimibles (dirección y coordinación; la base lo hace cumplir)
+  lotesPlanilla(sesion: Sesion): Promise<LotePlanilla[]>;
+  /** Registra el lote y devuelve su id (va en el QR de cada hoja) y su número en la campaña. */
+  crearLotePlanilla(sesion: Sesion, datos: NuevoLotePlanilla): Promise<{ id: string; numero: number }>;
 }

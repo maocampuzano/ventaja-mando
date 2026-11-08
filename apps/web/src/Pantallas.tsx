@@ -4,6 +4,7 @@ import { Barra, diasParaEleccion } from "./comunes";
 import { incidenciasBase, lideres as lideresSemilla, puestos as puestosSemilla, zonaDe as zonaSemilla, type Incidencia } from "./data";
 import { useTablero } from "./datos/contexto";
 import { Escaner } from "./Escaner";
+import { ImprimirPlanillas } from "./ImprimirPlanillas";
 import { miles, pct, porcentajeCobertura, prioridadCobertura, textoAccion } from "@ventaja/nucleo";
 import type { Tarea } from "./Strategos";
 
@@ -27,13 +28,13 @@ export function Planillas() {
           <div className="tarjeta pila">
             <h2>Cómo funciona</h2>
             <ol className="pila" style={{ margin: 0, paddingLeft: 18 }}>
-              <li>La campaña imprime la planilla de cada líder. Trae un código que dice de quién es, de qué zona y el texto de autorización de datos que firma cada persona.</li>
+              <li>La campaña imprime la planilla de cada líder. Trae un código QR que dice de qué lote y qué hoja es (y así, de qué líder), y el texto de autorización de datos que firma cada persona.</li>
               <li>El líder toma la foto. Si no hay señal, queda guardada en el teléfono.</li>
               <li>La lectura marca en ámbar lo que no se leyó con seguridad y en rojo las cédulas repetidas.</li>
               <li>El líder corrige y envía. Los registros entran como «pendientes de validar» con la foto como soporte.</li>
             </ol>
-            <button className="btn" style={{ justifySelf: "start" }}>Descargar planilla en blanco</button>
           </div>
+          <ImprimirPlanillas />
           <p className="aviso">La firma de autorización en la planilla es la prueba del consentimiento (Ley 1581). Sin esa columna, la fila se guarda como «sin autorización» y no se usa para contacto.</p>
         </div>
         <Telefono titulo="Ventaja Mando"><Escaner /></Telefono>
