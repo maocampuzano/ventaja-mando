@@ -33,7 +33,7 @@ test("la coordinadora solo ve sus tres zonas y sus líderes", async ({ page }) =
   await entrar(page, "coordinadora@demo.co");
   await expect(page.locator("polygon.zona")).toHaveCount(3);
   await expect(page.getByRole("navigation").getByRole("button", { name: "Datos" })).toHaveCount(0);
-  await expect(page.getByRole("navigation").getByRole("button", { name: "Día E" })).toHaveCount(0);
+  await expect(page.getByRole("navigation").getByRole("button", { name: "Día E" })).toBeVisible();
   await page.getByRole("navigation").getByRole("button", { name: "Líderes" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(6);
 });

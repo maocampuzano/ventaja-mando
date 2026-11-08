@@ -1,4 +1,4 @@
-import type { Confianzas, DatosStrategos, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, Confianzas, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -107,7 +107,39 @@ export interface FuenteDatos {
   filasPlanilla(sesion: Sesion, id: string): Promise<FilaParaRevisar[]>;
   vincularHoja(sesion: Sesion, id: string, loteImpreso: string, hoja: number): Promise<void>;
   aprobarPlanilla(sesion: Sesion, id: string, filas: FilaAprobada[]): Promise<ResultadoAprobacion>;
+  // Día E (dirección, candidata y coordinación; la base lo hace cumplir). `simulacro` elige los datos del simulacro.
+  tableroDiaE(sesion: Sesion, simulacro: boolean): Promise<MesaTablero[]>;
+  simulacroActivo(sesion: Sesion): Promise<Simulacro | null>;
+  iniciarSimulacro(sesion: Sesion): Promise<void>;
+  terminarSimulacro(sesion: Sesion): Promise<ResumenSimulacro>;
+  /** Cambia el estado de una novedad o le asigna responsable (`null` deja lo que había). */
+  atenderNovedad(sesion: Sesion, id: string, estado: "abierta" | "atendida" | "cerrada" | null, responsableId?: string): Promise<void>;
+  escalarNovedades(sesion: Sesion): Promise<number>;
+  actaE14(sesion: Sesion, id: string): Promise<ActaParaRevisar>;
+  /** Guarda la revisión de una persona (regla 7). `acta` null = descartar la foto (ilegible, de otra mesa…). */
+  revisarE14(sesion: Sesion, id: string, acta: ActaLeida | null): Promise<void>;
+  /** Avisa cuando algo cambia en el día E (tiempo real). Devuelve la función para dejar de escuchar. */
+  suscribirDiaE(sesion: Sesion, alCambiar: () => void): () => void;
+  /** Hora y jornada con que se pinta el semáforo. En el simulacro la jornada dura una hora desde que se inicia. */
+  relojDiaE(sesion: Sesion, simulacro: Simulacro | null): { ahora: Date; jornada: Jornada };
 }
+
+export type NovedadTablero = NovedadDiaE & { tipo: string; responsableId: string | null };
+/** Una mesa del tablero del día E: estados y conteos, sin datos de personas. */
+export type MesaTablero = Omit<MesaDiaE, "novedades"> & {
+  puesto: string; votosHistoricos: number; llegadaEn: Date | null; actaId: string | null; novedades: NovedadTablero[];
+};
+/** `iniciado` en ISO. */
+export type Simulacro = { id: string; iniciado: string };
+export type ResumenSimulacro = { novedades: number; actas: number; testigos: number };
+export type ActaParaRevisar = {
+  id: string; puesto: string; mesa: number; estado: string;
+  /** Enlace para ver la foto (firmado y temporal en el proyecto real); null si no hay foto que mostrar. */
+  foto: string | null;
+  /** Lo que leyó la IA, si la foto ya se leyó. Sin lectura, quien revisa digita los números desde la foto. */
+  lectura: ActaLeida | null;
+  subidaPorMi: boolean;
+};
 
 /** Foto de planilla subida por un líder, pendiente de leer o de revisar. */
 export type PlanillaPorRevisar = {
