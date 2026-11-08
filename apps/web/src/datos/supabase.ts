@@ -255,6 +255,21 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       if (error) throw new Error(/row-level security/.test(error.message) ? "Solo la dirección de la campaña puede crear o cambiar formularios." : error.message);
       return { id: data.id, nombre: data.nombre, esquema: data.esquema_json, version: data.version, creado: fechaBogota(data.creado_en) };
     },
+    async lotesPlanilla(s) {
+      const { data, error } = await sb.rpc("lotes_planilla", { p_campana: s.campana.id, p_limite: 20 });
+      if (error) throw new Error(`No se pudieron leer los lotes de planillas: ${error.message}`);
+      return (data as { id: string; numero: number; lider_id: string; lider: string; hojas: number; generado_en: string }[])
+        .map((f) => ({ id: f.id, numero: f.numero, liderId: f.lider_id, lider: f.lider, hojas: f.hojas, generado: f.generado_en }));
+    },
+    async crearLotePlanilla(s, d) {
+      const { data, error } = await sb.rpc("crear_lote_planilla", {
+        p_campana: s.campana.id, p_lider: d.liderId, p_hojas: d.hojas, p_finalidades: d.finalidades, p_texto: d.texto,
+      });
+      if (error) throw new Error(error.message);
+      const fila = (data as { id: string; numero: number }[])[0];
+      if (!fila) throw new Error("La base no devolvió el lote creado.");
+      return { id: fila.id, numero: fila.numero };
+    },
     async cargarTablero(s): Promise<DatosTablero> {
       const [z, l] = await Promise.all([
         sb.rpc("tablero_zonas", { p_campana: s.campana.id }),
