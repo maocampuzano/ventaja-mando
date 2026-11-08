@@ -4,12 +4,13 @@
 //
 // Sin simulacro, el reloj está quieto a las 4:40 p. m. del día de la elección: las mesas ya cerraron y van llegando
 // los E-14. Con simulacro, la jornada corre de 7:50 a. m. en adelante, cuatro minutos por cada segundo real.
-import { alertasActa, jornadaBogota, lecturaSimuladaE14, type ActaLeida, type EstadoActa, type Prioridad } from "@ventaja/nucleo";
+import { alertasActa, cumplimientoDesdeTotales, jornadaBogota, lecturaSimuladaE14, type ActaLeida, type EstadoActa, type Prioridad } from "@ventaja/nucleo";
 import type { Mesa } from "@ventaja/nucleo";
 import type { ActaParaRevisar, DatosTablero, FuenteDatos, MesaTablero, NovedadTablero, Sesion, Simulacro } from "./tipos";
 
 type MetodosDiaE = Pick<FuenteDatos, "tableroDiaE" | "simulacroActivo" | "iniciarSimulacro" | "terminarSimulacro" |
-  "atenderNovedad" | "escalarNovedades" | "actaE14" | "revisarE14" | "suscribirDiaE" | "relojDiaE">;
+  "atenderNovedad" | "escalarNovedades" | "actaE14" | "revisarE14" | "suscribirDiaE" | "relojDiaE" |
+  "cumplimientoE14" | "configurarOpcionesE14">;
 
 export const VELOCIDAD_SIMULACRO = 240; // minutos de jornada por minuto real (4 por segundo)
 const TIPOS = ["Fila larga, votantes se están yendo", "Testigo no admitido por el jurado", "Falta material de la mesa",
@@ -35,6 +36,7 @@ export function crearDiaEDemo(recortar: (s: Sesion) => DatosTablero, eleccion: s
   const jornada = jornadaBogota(eleccion);
   const relojQuieto = new Date(jornada.cierre.getTime() + 40 * MIN);
   let simulacro: (Simulacro & { inicioReal: number }) | null = null;
+  let opciones = { e14: "Laura Méndez" as string | null, historica: "Partido Demo" as string | null };
   const real = capaNueva();
   let sim = capaNueva();
   const oyentes = new Set<() => void>();
@@ -191,5 +193,27 @@ export function crearDiaEDemo(recortar: (s: Sesion) => DatosTablero, eleccion: s
       return () => { oyentes.delete(alCambiar); };
     },
     relojDiaE(_s, sim) { return { ahora: ahoraDe(!!sim), jornada }; },
+    // Totales ficticios por líder, fijos: unos pasan el umbral y otros no, para mostrar los dos casos.
+    async cumplimientoE14(s) {
+      if (!puedeVer(s)) throw new Error("No tiene acceso al cumplimiento de los líderes de esta campaña.");
+      if (!opciones.e14) return { opcionE14: null, opcionHistorica: opciones.historica, lideres: [] };
+      const lideres = recortar(s).lideres.map((l) => {
+        const mesas = Math.floor(azar(l.id, "mesas") * 7);
+        const apoyos = mesas * (2 + Math.floor(azar(l.id, "apoyos") * 12));
+        const votos = Math.round(apoyos * (0.45 + azar(l.id, "votos") * 0.7));
+        return {
+          liderId: l.id, nombre: l.nombre,
+          resultado: cumplimientoDesdeTotales({
+            mesas, apoyos, votos, mesasSinHistorico: opciones.historica ? 0 : mesas,
+            votosHistoricos: opciones.historica ? Math.round(votos * (0.7 + azar(l.id, "hist") * 0.5)) : null,
+          }),
+        };
+      });
+      return { opcionE14: opciones.e14, opcionHistorica: opciones.historica, lideres };
+    },
+    async configurarOpcionesE14(s, e14, historica) {
+      if (!esDireccion(s)) throw new Error("Solo la dirección configura cómo aparece el candidato en el E-14.");
+      opciones = { e14: e14.trim() || null, historica: historica.trim() || null };
+    },
   };
 }
