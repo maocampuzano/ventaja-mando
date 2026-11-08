@@ -2,7 +2,7 @@
 // La invitación es personal: va a un correo, y solo esa persona la puede aceptar (lo verifica la base).
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { enlaceWhatsAppManual, exige2fa, fecha, nombreRol, type RolCampana } from "@ventaja/nucleo";
-import { fuente } from "./datos";
+import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
 import type { InvitacionPendiente, Miembro } from "./datos/tipos";
 import { Qr } from "./Qr";

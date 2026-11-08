@@ -35,10 +35,11 @@ Todos se corren desde la raíz del repositorio.
 | `npm run start -w apps/movil` | Abre la app del celular con Expo (ver `apps/movil/LEEME.md`). |
 | `npm run test:e2e -w apps/movil` | Exporta la app en su vista web y prueba los flujos del líder y del testigo en modo demo, incluido el registro sin señal. En el entorno de nube: `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e -w apps/movil`. |
 | `npm run test:db` | Crea una base desde cero, aplica migraciones y semilla, y corre las pruebas de RLS (necesita PostgreSQL 16 con PostGIS y pgTAP; ver `supabase/LEEME.md`). |
+| `npm run test:db:pglite` | Las mismas pruebas de la base, sin instalar PostgreSQL: usa PGlite (Postgres dentro de Node) con PostGIS y un pgTAP mínimo (`supabase/local/pgtap-minimo.sql`). Sirve para verificar en un computador; la integración continua sigue corriendo el pgTAP real. Con un filtro: `npm run test:db:pglite -- 13_planillas`. |
 | `node supabase/scripts/aplicar-remoto.mjs verificar` | Revisa el proyecto real de Supabase: migraciones, RLS, Vault y territorios cargados (necesita `SUPABASE_ACCESS_TOKEN`; ver `supabase/LEEME.md`). |
 | `npm run test -w packages/nucleo -- --watch` | Pruebas de `nucleo` en modo observación, mientras se programa. |
 
-Antes de abrir un PR deben pasar `typecheck`, `lint`, `test` y `test:db`. La integración continua (`.github/workflows/ci.yml`) los corre en cada PR, junto con la compilación de la web.
+Antes de abrir un PR deben pasar `typecheck`, `lint`, `test` y `test:db` (en un computador sin PostgreSQL, `test:db:pglite`). La integración continua (`.github/workflows/ci.yml`) los corre en cada PR, junto con la compilación de la web.
 
 ## Modo demo y modo Supabase
 

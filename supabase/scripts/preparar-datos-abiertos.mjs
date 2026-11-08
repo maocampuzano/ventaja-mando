@@ -13,6 +13,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 export const FUENTES = {
   municipios: { id: "gdxc-w37w", fuente: "DANE, DIVIPOLA - Códigos municipios (datos.gov.co gdxc-w37w)" },
@@ -176,4 +177,4 @@ async function principal([carpeta]) {
   console.error(`Listo: ${r.total.municipios} municipios y ${r.total.puestos} puestos en ${carpeta}. Revise ${join(carpeta, "informe.md")}.`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) principal(process.argv.slice(2)).catch((e) => { console.error(e.message); process.exit(1); });
+if (import.meta.url === pathToFileURL(process.argv[1]).href) principal(process.argv.slice(2)).catch((e) => { console.error(e.message); process.exit(1); });
