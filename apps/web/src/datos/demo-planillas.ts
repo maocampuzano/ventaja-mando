@@ -1,8 +1,8 @@
 // Planillas imprimibles en modo demo: los lotes viven en la pestaña (sessionStorage). Reproduce las reglas de
 // public.crear_lote_planilla (supabase/migrations/…_planillas.sql) para que la demostración sea fiel.
-import { MAX_HOJAS_POR_LOTE } from "@ventaja/nucleo";
+import { MAX_HOJAS_POR_LOTE, lecturaSimuladaPlanilla } from "@ventaja/nucleo";
 import { lideres } from "../data";
-import type { FuenteDatos, LotePlanilla, Sesion } from "./tipos";
+import type { FilaParaRevisar, FuenteDatos, LotePlanilla, PlanillaPorRevisar, ResultadoAprobacion, Sesion } from "./tipos";
 
 const LLAVE = "vm-demo-lotes-planilla";
 
@@ -44,5 +44,89 @@ export const planillasDemo: Pick<FuenteDatos, "lotesPlanilla" | "crearLotePlanil
     };
     guardar([...lista, lote]);
     return { id: lote.id, numero: lote.numero };
+  },
+};
+
+// ---------- Revisión de planillas leídas (modo demo) ----------
+// Dos fotos ficticias: una ya leída y vinculada a su hoja impresa, y otra pendiente de leer. Mismas reglas que
+// public.aprobar_planilla: hay que vincular la hoja, revisar todas las filas, y sin firma no se registra.
+type LoteOcrDemo = PlanillaPorRevisar & { liderId: string; loteImpreso: string | null };
+const LLAVE_OCR = "vm-demo-ocr";
+
+function lecturaComoFilas(prefijo: string): FilaParaRevisar[] {
+  return lecturaSimuladaPlanilla().map((f) => ({
+    filaId: `${prefijo}-${f.renglon}`, renglon: f.renglon, nombre: f.nombre, cedula: f.cedula, celular: f.celular,
+    barrio: f.barrio, firma: f.firma, confianza: f.confianza,
+  }));
+}
+function estadoOcr(): { lotes: LoteOcrDemo[]; filas: Record<string, FilaParaRevisar[]> } {
+  try {
+    const g = sessionStorage.getItem(LLAVE_OCR);
+    if (g) return JSON.parse(g);
+  } catch { /* sin almacenamiento */ }
+  const hoy = new Date().toISOString();
+  return {
+    lotes: [
+      { id: "ocr-demo-1", lider: lideres[0].nombre, liderId: lideres[0].id, estado: "leido", loteNumero: 14, hoja: 1, loteImpreso: "impreso-demo-14", filas: 6, creada: hoy, error: null },
+      { id: "ocr-demo-2", lider: lideres[1].nombre, liderId: lideres[1].id, estado: "pendiente", loteNumero: null, hoja: null, loteImpreso: null, filas: 0, creada: hoy, error: null },
+    ],
+    filas: { "ocr-demo-1": lecturaComoFilas("ocr-demo-1") },
+  };
+}
+function guardarOcr(e: ReturnType<typeof estadoOcr>) {
+  try { sessionStorage.setItem(LLAVE_OCR, JSON.stringify(e)); } catch { /* sin almacenamiento */ }
+}
+function loteVisible(s: Sesion, id: string) {
+  const e = estadoOcr();
+  const l = e.lotes.find((x) => x.id === id);
+  const zona = lideres.find((x) => x.id === l?.liderId)?.zonaId ?? "";
+  if (!l || !(puedeVerLider(s, zona) || (s.rol === "lider" && l.liderId === lideres[0].id))) {
+    throw new Error("La planilla no existe o no la puede revisar.");
+  }
+  return { e, l };
+}
+
+export const revisionDemo: Pick<FuenteDatos, "planillasPorRevisar" | "fotoPlanilla" | "leerPlanilla" | "filasPlanilla" | "vincularHoja" | "aprobarPlanilla"> = {
+  async planillasPorRevisar(s) {
+    const zonaDe = new Map(lideres.map((l) => [l.id, l.zonaId]));
+    return estadoOcr().lotes.filter((l) => l.estado !== ("aprobado" as string) && puedeVerLider(s, zonaDe.get(l.liderId) ?? ""))
+      .map((l) => ({ id: l.id, lider: l.lider, estado: l.estado, loteNumero: l.loteNumero, hoja: l.hoja, filas: l.filas, creada: l.creada, error: l.error }));
+  },
+  async fotoPlanilla() { return null; },
+  async leerPlanilla(s, id) {
+    const { e, l } = loteVisible(s, id);
+    if (l.estado !== "pendiente") throw new Error("Esta planilla ya se leyó.");
+    await new Promise((r) => setTimeout(r, 400));
+    e.filas[id] = lecturaComoFilas(id);
+    l.estado = "leido"; l.filas = e.filas[id].length;
+    guardarOcr(e);
+    return l.filas;
+  },
+  async filasPlanilla(s, id) { const { e } = loteVisible(s, id); return e.filas[id] ?? []; },
+  async vincularHoja(s, id, loteImpreso, hoja) {
+    const { e, l } = loteVisible(s, id);
+    const impreso = leer().find((x) => x.id === loteImpreso);
+    if (!impreso) throw new Error("El código QR no es de una planilla de esta campaña.");
+    if (impreso.liderId !== l.liderId) throw new Error("El código QR es de una planilla impresa para otro líder.");
+    if (!(hoja >= 1 && hoja <= impreso.hojas)) throw new Error("El número de hoja no corresponde a ese lote.");
+    l.loteImpreso = impreso.id; l.loteNumero = impreso.numero; l.hoja = hoja;
+    guardarOcr(e);
+  },
+  async aprobarPlanilla(s, id, filas) {
+    const { e, l } = loteVisible(s, id);
+    if (l.estado === "pendiente") throw new Error("Esta planilla no está lista para aprobar (estado: pendiente).");
+    if (!l.loteImpreso) throw new Error("Vincule la foto con su planilla impresa (código QR) antes de aprobar.");
+    const ids = new Set((e.filas[id] ?? []).map((f) => f.filaId));
+    if (filas.length !== ids.size || filas.some((f) => !ids.has(f.filaId))) throw new Error("Revise todas las filas leídas de la hoja antes de aprobar.");
+    const r: ResultadoAprobacion = { creadas: 0, yaExistian: 0, sinFirma: 0, descartadas: 0, rechazos: [] };
+    for (const f of filas) {
+      if (f.descartar) r.descartadas++;
+      else if (!f.firma) r.sinFirma++;
+      else if (f.nombre.trim().length < 3) r.rechazos.push({ filaId: f.filaId, motivo: "Falta el nombre." });
+      else r.creadas++;
+    }
+    e.lotes = e.lotes.filter((x) => x.id !== id);
+    guardarOcr(e);
+    return r;
   },
 };

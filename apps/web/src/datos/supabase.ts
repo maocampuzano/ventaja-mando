@@ -2,6 +2,7 @@
 // aquí solo se piden los datos. El tablero llega agregado por zona y por líder: nunca personas una por una.
 import { FunctionsHttpError, createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { exige2fa, indiceLider, responderSimulado, type RespuestaStrategos, type RolCampana } from "@ventaja/nucleo";
+import type { FilaParaRevisar, PlanillaPorRevisar } from "./tipos";
 import type { Lider, Zona } from "../data";
 import type { RolCampana as Rol } from "@ventaja/nucleo";
 import type { TipoSolicitud } from "@ventaja/nucleo";
@@ -265,6 +266,52 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       }
       // La función no está publicada o no hay conexión con ella: responde el modelo simulado con lo que ya se ve.
       return { ...responderSimulado(pregunta, datos), aviso: "Strategos con IA no está activo todavía: esta respuesta es del modelo simulado, con los datos de su tablero." };
+    },
+    async planillasPorRevisar(s) {
+      const { data, error } = await sb.rpc("planillas_por_revisar", { p_campana: s.campana.id });
+      if (error) throw new Error(`No se pudieron leer las planillas por revisar: ${error.message}`);
+      return (data as { id: string; lider: string | null; estado: PlanillaPorRevisar["estado"]; lote_numero: number | null; hoja: number | null;
+        filas: number; creado_en: string; lectura_error: string | null }[])
+        .map((f) => ({ id: f.id, lider: f.lider ?? "—", estado: f.estado, loteNumero: f.lote_numero, hoja: f.hoja, filas: Number(f.filas), creada: f.creado_en, error: f.lectura_error }));
+    },
+    async fotoPlanilla(_s, id) {
+      const { data: lote, error } = await sb.from("lote_ocr").select("archivo_url").eq("id", id).single();
+      if (error) throw new Error("No se encontró la foto de la planilla.");
+      const { data } = await sb.storage.from("evidencias").createSignedUrl(lote.archivo_url, 600);
+      return data?.signedUrl ?? null;
+    },
+    async leerPlanilla(_s, id) {
+      const { data, error } = await sb.functions.invoke<{ filas: number }>("lectura", { body: { lote: id } });
+      if (!error && data) return data.filas;
+      if (error instanceof FunctionsHttpError) {
+        let mensaje = "No se pudo leer la planilla.";
+        try { mensaje = ((await error.context.json()) as { error?: string }).error ?? mensaje; } catch { /* sin cuerpo */ }
+        throw new Error(mensaje);
+      }
+      throw new Error("La lectura con IA no está activa todavía. Puede revisar la foto y digitar los datos a mano.");
+    },
+    async filasPlanilla(_s, id) {
+      const { data, error } = await sb.rpc("filas_planilla", { p_lote: id });
+      if (error) throw new Error(error.message);
+      return (data as { fila_id: string; renglon: number | null; nombre: string | null; cedula: string | null; celular: string | null;
+        barrio: string | null; firma: boolean; confianza: FilaParaRevisar["confianza"] | null }[]).map((f, i) => ({
+        filaId: f.fila_id, renglon: f.renglon ?? i + 1, nombre: f.nombre ?? "", cedula: f.cedula ?? "", celular: f.celular ?? "",
+        barrio: f.barrio ?? "", firma: f.firma, confianza: f.confianza ?? { nombre: 0, cedula: 0, celular: 0, barrio: 0, firma: 0 },
+      }));
+    },
+    async vincularHoja(_s, id, loteImpreso, hoja) {
+      const { error } = await sb.rpc("vincular_hoja_planilla", { p_lote_ocr: id, p_lote_planilla: loteImpreso, p_hoja: hoja });
+      if (error) throw new Error(error.message);
+    },
+    async aprobarPlanilla(_s, id, filas) {
+      const { data, error } = await sb.rpc("aprobar_planilla", {
+        p_lote: id,
+        p_filas: filas.map((f) => ({ fila_id: f.filaId, nombre: f.nombre, documento: f.documento, telefono: f.telefono, firma: f.firma, descartar: f.descartar })),
+      });
+      if (error) throw new Error(error.message);
+      const d = data as { creadas: number; ya_existian: number; sin_firma: number; descartadas: number; rechazos: { fila_id: string; motivo: string }[] };
+      return { creadas: d.creadas, yaExistian: d.ya_existian, sinFirma: d.sin_firma, descartadas: d.descartadas,
+        rechazos: d.rechazos.map((r) => ({ filaId: r.fila_id, motivo: r.motivo })) };
     },
     async lotesPlanilla(s) {
       const { data, error } = await sb.rpc("lotes_planilla", { p_campana: s.campana.id, p_limite: 20 });

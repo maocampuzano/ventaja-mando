@@ -13,3 +13,4 @@ export * from "./sincronizacion";
 export * from "./autorizacion";
 export * from "./planilla";
 export * from "./strategos";
+export * from "./lectura";
