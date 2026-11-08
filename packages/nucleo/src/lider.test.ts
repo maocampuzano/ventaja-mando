@@ -68,5 +68,9 @@ describe("cumplimiento contra el E-14", () => {
     const votos = [{ opcion: "Laura  Méndez (Partido Demo)", votos: 80 }, { opcion: "Otro", votos: 3 }];
     expect(votosDeOpcion(votos, "laura mendez (partido demo)")).toBe(80);
     expect(votosDeOpcion(votos, "Nadie")).toBeNull();
+    // Las actas traen el número del tarjetón delante del nombre.
+    for (const conNumero of ["01 · Laura Méndez (Partido Demo)", "1. Laura Mendez (Partido Demo)", "001 - LAURA MÉNDEZ (PARTIDO DEMO)"]) {
+      expect(votosDeOpcion([{ opcion: conNumero, votos: 118 }], "Laura Méndez (Partido Demo)")).toBe(118);
+    }
   });
 });

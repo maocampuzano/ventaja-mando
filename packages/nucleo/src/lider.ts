@@ -65,9 +65,13 @@ export function cumplimientoPost(mesas: readonly MesaLider[]): CumplimientoPost 
   });
 }
 
-/** Votos de una opción en un acta revisada. Compara sin tildes, mayúsculas ni espacios de más. */
+/**
+ * Votos de una opción en un acta revisada. Compara sin tildes, mayúsculas ni espacios de más, y sin el número del
+ * tarjetón al comienzo («01 · Laura Méndez» es «Laura Méndez»). Misma regla que privado.normalizar_opcion en la base.
+ */
 export function votosDeOpcion(votos: readonly { opcion: string; votos: number | null }[], opcion: string): number | null {
-  const norma = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const norma = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/^\s*\d+\s*[·.\-–:)]*\s*/, "").replace(/\s+/g, " ").trim();
   const buscada = norma(opcion);
   const fila = votos.find((v) => norma(v.opcion) === buscada);
   return fila ? fila.votos : null;
