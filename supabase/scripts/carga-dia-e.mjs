@@ -42,15 +42,19 @@ async function preparar(admin) {
   await admin.query("delete from public.campana where nombre = 'Carga Día E (ficticia)'");
   await admin.query("delete from public.puesto where codigo like 'CARGA-%'");
   await admin.query(`delete from auth.users where email like 'carga\\_%@ejemplo.co'`);
+  await admin.query("delete from public.territorio where codigo_divipole = 'CARGA'");
+  // Municipio ficticio propio: el tablero muestra todos los puestos de la circunscripción, y así no se mezclan con
+  // los de la semilla de Turbaco.
+  const { rows: [t] } = await admin.query(`insert into public.territorio (codigo_divipole, nivel, nombre, fuente)
+    values ('CARGA', 'municipio', 'Municipio de carga (ficticio)', 'Prueba de carga') returning id`);
   const { rows: [c] } = await admin.query(`
     insert into public.campana (organizacion_id, nombre, cargo, circunscripcion_divipole, eleccion_fecha)
-    values ((select id from public.organizacion order by id limit 1), 'Carga Día E (ficticia)', 'Alcaldía de Turbaco', '13836', '2027-10-31')
+    values ((select id from public.organizacion order by id limit 1), 'Carga Día E (ficticia)', 'Alcaldía ficticia', 'CARGA', '2027-10-31')
     returning id`);
   const { rows: puestos } = await admin.query(`
     insert into public.puesto (codigo, nombre, territorio_id, mesas, fuente)
-    select 'CARGA-' || n, 'Puesto de carga ' || n,
-      (select id from public.territorio where codigo_divipole = '13836' and campana_id is null), $1, 'Prueba de carga'
-    from generate_series(1, $2) n returning id`, [MESAS / PUESTOS, PUESTOS]);
+    select 'CARGA-' || n, 'Puesto de carga ' || n, $3, $1, 'Prueba de carga'
+    from generate_series(1, $2) n returning id`, [MESAS / PUESTOS, PUESTOS, t.id]);
   const claves = ["carga_gerente", "carga_candidata", ...Array.from({ length: TESTIGOS }, (_, i) => `carga_testigo_${String(i + 1).padStart(2, "0")}`)];
   for (const clave of claves) {
     const { rows: [u] } = await admin.query("insert into auth.users (id, email) values (gen_random_uuid(), $1) returning id", [`${clave}@ejemplo.co`]);
