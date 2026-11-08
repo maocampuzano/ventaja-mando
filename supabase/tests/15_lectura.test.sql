@@ -1,7 +1,7 @@
 -- Lectura de planillas: vínculo con la hoja impresa, revisión humana de todas las filas y creación de personas con
 -- su autorización (reglas 3 y 7).
 begin;
-select plan(25);
+select plan(32);
 
 -- Preparación (como el servidor): un lote impreso para la líder 1, otro para el líder 3, una foto leída con tres filas.
 insert into public.lote_planilla (id, campana_id, lider_id, numero, hojas, finalidades, texto_autorizacion, generado_por) values
@@ -81,13 +81,39 @@ select ok(not exists (select 1 from public.fila_ocr where lote_id = 'd0000000-00
   'La cédula leída no queda en claro en la base');
 select is((select confianza from public.fila_ocr where lote_id = 'd0000000-0000-4000-8000-000000000002'), 0.6::numeric, 'La confianza de la fila es la del campo más dudoso');
 
+insert into public.lote_ocr (id, campana_id, lider_id, archivo_url, estado, creado_por) values
+  ('d0000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-00000000000a', '70000000-0000-4000-8000-000000000001',
+   '20000000-0000-4000-8000-00000000000a/40000000-0000-4000-8000-000000000005/hoja3.jpg', 'pendiente', pruebas.uid('lider_a1'));
+select public.guardar_lectura_planilla('d0000000-0000-4000-8000-000000000003',
+  '[{"renglon": 1, "nombre": "Dudosa Ficticia", "cedula": "11430000?7", "firma": true, "confianza": {"cedula": 0.5}}]');
+
 select pruebas.como('lider_a1');
 select is((select cedula from public.filas_planilla('d0000000-0000-4000-8000-000000000002')), '1099000002', 'Quien revisa ve la cédula para compararla con la foto');
+select is((select cedula from public.filas_planilla('d0000000-0000-4000-8000-000000000003')), '11430000?7',
+  'El dígito ilegible («?») se conserva para que quien revisa lo corrija');
 select throws_ok($$ select public.guardar_lectura_planilla('d0000000-0000-4000-8000-000000000002', '[]') $$, '42501', null,
   'Solo el servidor guarda lecturas');
 reset role;
 select pruebas.como('lider_a2');
 select throws_ok($$ select * from public.filas_planilla('d0000000-0000-4000-8000-000000000002') $$, '42501', null, 'Otro líder no ve las filas');
+reset role;
+
+-- Quien no es de la campaña o no tiene un rol que revise: el permiso nunca queda en NULL (revisión del 08/11/2026).
+select pruebas.como('gerente_b', 'aal2');
+select throws_ok($$ select * from public.filas_planilla('d0000000-0000-4000-8000-000000000002') $$, '42501', null,
+  'El gerente de otra campaña no ve las filas ni las cédulas');
+select throws_ok($$ select public.aprobar_planilla('d0000000-0000-4000-8000-000000000002', '[]') $$, '42501', null, 'Ni aprueba');
+reset role;
+select pruebas.como('candidata_a');
+select throws_ok($$ select public.vincular_hoja_planilla('d0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000001', 1) $$,
+  '42501', null, 'La candidatura no vincula hojas');
+select throws_ok($$ select * from public.filas_planilla('d0000000-0000-4000-8000-000000000002') $$, '42501', null, 'Ni ve las filas');
+reset role;
+select pruebas.como('testigo_a');
+select throws_ok($$ select public.aprobar_planilla('d0000000-0000-4000-8000-000000000002', '[]') $$, '42501', null, 'Un testigo no aprueba');
+reset role;
+select pruebas.como('sin_campana');
+select throws_ok($$ select * from public.filas_planilla('d0000000-0000-4000-8000-000000000002') $$, '42501', null, 'Alguien sin campaña tampoco');
 reset role;
 
 select * from finish();

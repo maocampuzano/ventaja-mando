@@ -69,12 +69,18 @@ Deno.serve(async (req) => {
       { base64: base64(new Uint8Array(await archivo.arrayBuffer())), mediaType },
       Deno.env.get("MODELO_LECTURA") || MODELO_LECTURA_POR_DEFECTO);
     if (r.tipo !== "planilla") throw new ErrorLectura("Respuesta inesperada.");
+    // El costo se registra aunque el guardado falle: la lectura ya se pagó.
     await servicio.from("uso_ia").insert({
       campana_id: lote.campana_id, usuario_id: u.user.id, funcion: "lectura_planilla", modelo: r.uso.modelo,
       tokens_entrada: r.uso.entrada, tokens_salida: r.uso.salida, tokens_cache_lectura: r.uso.cacheLectura, costo_usd: r.uso.costoUsd,
     });
     const { data: filas, error: eg } = await servicio.rpc("guardar_lectura_planilla", { p_lote: loteId, p_filas: r.filas });
-    if (eg) return responder(500, { error: "No se pudo guardar la lectura." });
+    if (eg) {
+      // Otra lectura simultánea de la misma foto ya la guardó, o la hoja trae más de 50 filas.
+      const mensaje = /ya se leyó/.test(eg.message) ? "Esta planilla ya se leyó." : "No se pudo guardar la lectura. Tome la foto de una sola hoja.";
+      if (!/ya se leyó/.test(eg.message)) await servicio.from("lote_ocr").update({ lectura_error: mensaje }).eq("id", loteId);
+      return responder(/ya se leyó/.test(eg.message) ? 409 : 500, { error: mensaje });
+    }
     return responder(200, { filas });
   } catch (e) {
     const mensaje = e instanceof ErrorLectura ? e.message

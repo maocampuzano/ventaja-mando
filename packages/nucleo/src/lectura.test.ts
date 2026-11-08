@@ -31,6 +31,12 @@ describe("revisión de cada fila (regla 7: señala, no decide)", () => {
     expect(r.bloqueos).toEqual([]);
     expect(r.celular).toBe("+57 300 000 4412");
   });
+  it("una cédula incompleta hay que corregirla: no basta con confirmarla", () => {
+    expect(revisarFila(fila({ cedula: "11430000?7" })).corregir).toHaveLength(1);
+    expect(revisarFila(fila({ cedula: "123" })).corregir).toHaveLength(1);
+    expect(revisarFila(fila({ cedula: "1143000017" })).corregir).toEqual([]);
+    expect(revisarFila(fila({ cedula: "" })).corregir).toEqual([]);
+  });
   it("confianza baja o formato raro: ámbar en ese campo", () => {
     expect(revisarFila(fila({ cedula: "1047000218", confianza: { ...alta, cedula: 0.6 } })).dudas).toEqual(["cedula"]);
     expect(revisarFila(fila({ celular: "30?0005521" })).dudas).toEqual(["celular"]);

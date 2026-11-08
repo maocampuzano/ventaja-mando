@@ -8,6 +8,21 @@ alter table public.lote_ocr
   add column hoja integer check (hoja > 0),
   add column lectura_error text;
 
+-- ¿Puede quien llama revisar las planillas de este líder? La dirección, la coordinación de su territorio o el propio
+-- líder. Siempre devuelve true o false: un NULL aquí haría que «if not …» no frenara a nadie en las funciones
+-- security definer de abajo (lider_actual es NULL para quien no es líder).
+create or replace function privado.puede_revisar_lote(p_campana uuid, p_lider uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select coalesce(
+    privado.es_direccion(p_campana)
+    or (p_lider is not null and p_lider is not distinct from privado.lider_actual(p_campana))
+    or privado.coordina_lider(p_campana, p_lider),
+    false)
+$$;
+revoke all on function privado.puede_revisar_lote(uuid, uuid) from public, anon;
+grant execute on function privado.puede_revisar_lote(uuid, uuid) to authenticated;
+
 -- Une la foto con su hoja impresa, a partir del QR que se lee en la pantalla de revisión.
 create or replace function public.vincular_hoja_planilla(p_lote_ocr uuid, p_lote_planilla uuid, p_hoja integer)
 returns void
@@ -21,8 +36,7 @@ declare
   v_impreso public.lote_planilla;
 begin
   select * into v_lote from public.lote_ocr where id = p_lote_ocr;
-  if v_lote.id is null or not (privado.es_direccion(v_lote.campana_id) or v_lote.lider_id = privado.lider_actual(v_lote.campana_id)
-      or privado.coordina_lider(v_lote.campana_id, v_lote.lider_id)) then
+  if v_lote.id is null or not privado.puede_revisar_lote(v_lote.campana_id, v_lote.lider_id) then
     raise exception 'La planilla no existe o no la puede revisar.' using errcode = '42501';
   end if;
   select * into v_impreso from public.lote_planilla where id = p_lote_planilla;
@@ -66,8 +80,7 @@ declare
   v_rechazos jsonb := '[]';
 begin
   select * into v_lote from public.lote_ocr where id = p_lote for update;
-  if v_lote.id is null or not (privado.es_direccion(v_lote.campana_id) or v_lote.lider_id = privado.lider_actual(v_lote.campana_id)
-      or privado.coordina_lider(v_lote.campana_id, v_lote.lider_id)) then
+  if v_lote.id is null or not privado.puede_revisar_lote(v_lote.campana_id, v_lote.lider_id) then
     raise exception 'La planilla no existe o no la puede revisar.' using errcode = '42501';
   end if;
   if v_lote.estado not in ('leido', 'en_revision') then
@@ -165,7 +178,9 @@ begin
   for f in select value from jsonb_array_elements(p_filas) loop
     insert into public.fila_ocr (lote_id, campana_id, datos, confianza)
     values (p_lote, v_lote.campana_id,
-      (f - 'cedula') || jsonb_build_object('cedula_cifrada', encode(privado.cifrar_documento(f ->> 'cedula'), 'base64')),
+      -- Se cifra tal como se leyó, con los «?» de los dígitos ilegibles: quien revisa debe verlos para corregirlos.
+      (f - 'cedula') || jsonb_build_object('cedula_cifrada', encode(extensions.pgp_sym_encrypt(
+        nullif(left(trim(coalesce(f ->> 'cedula', '')), 30), ''), privado.secreto('clave_documento')), 'base64')),
       least(1, greatest(0, coalesce((select min(value::numeric) from jsonb_each_text(f -> 'confianza')), 0))));
     n := n + 1;
   end loop;
@@ -187,8 +202,7 @@ declare
   v_lote public.lote_ocr;
 begin
   select * into v_lote from public.lote_ocr where id = p_lote;
-  if v_lote.id is null or not (privado.es_direccion(v_lote.campana_id) or v_lote.lider_id = privado.lider_actual(v_lote.campana_id)
-      or privado.coordina_lider(v_lote.campana_id, v_lote.lider_id)) then
+  if v_lote.id is null or not privado.puede_revisar_lote(v_lote.campana_id, v_lote.lider_id) then
     raise exception 'La planilla no existe o no la puede revisar.' using errcode = '42501';
   end if;
   perform privado.auditar(v_lote.campana_id, 'ver_filas_planilla', 'lote_ocr', p_lote);

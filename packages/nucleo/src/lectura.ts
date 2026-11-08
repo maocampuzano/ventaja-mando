@@ -68,25 +68,28 @@ export type FilaRevisada = {
   renglon: number; nombre: string; cedula: string | null; celular: string | null; barrio: string; firma: boolean;
   /** Campos para confirmar (ámbar): baja confianza o formato que no cuadra. */
   dudas: CampoFila[];
-  /** Motivos que impiden guardar la fila tal como está (rojo). */
+  /** Motivos por los que la fila no se registra (rojo). */
   bloqueos: string[];
+  /** Lo que hay que corregir (o borrar) antes de aprobar la hoja: no basta con confirmarlo. */
+  corregir: string[];
 };
 
 /** Revisa una fila leída. No decide por la persona: solo señala qué mirar. */
 export function revisarFila(f: FilaLeida): FilaRevisada {
   const dudas = new Set<CampoFila>();
   const bloqueos: string[] = [];
+  const corregir: string[] = [];
   for (const c of ["nombre", "cedula", "celular", "barrio", "firma"] as const) {
     if ((f.confianza?.[c] ?? 0) < UMBRAL_CONFIANZA) dudas.add(c);
   }
   const nombre = f.nombre.trim().replace(/\s+/g, " ");
   if (nombre.length < 3 || nombre.includes("?")) { dudas.add("nombre"); bloqueos.push("Falta el nombre o no se lee."); }
   const cedula = f.cedula.trim() ? normalizarCedula(f.cedula) : null;
-  if (f.cedula.trim() && !cedula) dudas.add("cedula");
+  if (f.cedula.trim() && !cedula) { dudas.add("cedula"); corregir.push("Cédula incompleta o con dígitos ilegibles: corríjala o bórrela."); }
   const celular = f.celular.trim() ? normalizarCelular(f.celular) : null;
   if (f.celular.trim() && !celular) dudas.add("celular");
   if (!f.firma) bloqueos.push("Sin firma de autorización: no se registra (regla 3).");
-  return { renglon: f.renglon, nombre, cedula, celular, barrio: f.barrio.trim(), firma: f.firma, dudas: [...dudas], bloqueos };
+  return { renglon: f.renglon, nombre, cedula, celular, barrio: f.barrio.trim(), firma: f.firma, dudas: [...dudas], bloqueos, corregir };
 }
 
 /** Cédulas o celulares repetidos dentro de la misma hoja: renglón → motivo. */

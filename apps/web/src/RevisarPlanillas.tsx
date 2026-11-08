@@ -114,6 +114,8 @@ function Revision({ planilla, alCerrar, alCambiar, alAprobar }: {
   }).filter((x): x is NonNullable<typeof x> => x !== null), [filas, ed]);
   const repetidos = useMemo(() => repetidosEnHoja(revisadas.filter((x) => !x.e.descartar).map((x) => x.r)), [revisadas]);
   const porConfirmar = revisadas.filter((x) => !x.e.descartar && !x.e.confirmada && (x.r.dudas.length > 0 || repetidos.has(x.r.renglon)));
+  // Lo que no se puede aprobar ni confirmando (por ejemplo, una cédula con «?»): hay que corregirlo o descartar la fila.
+  const porCorregir = revisadas.filter((x) => !x.e.descartar && x.r.corregir.length > 0);
   const seRegistran = revisadas.filter((x) => !x.e.descartar && x.r.bloqueos.length === 0).length;
   const vinculada = planilla.loteNumero !== null;
 
@@ -191,7 +193,8 @@ function Revision({ planilla, alCerrar, alCambiar, alAprobar }: {
             <tbody>
               {revisadas.map(({ fila, e, r }) => {
                 const rep = repetidos.get(r.renglon);
-                const pendiente = !e.descartar && !e.confirmada && (r.dudas.length > 0 || !!rep);
+                // La casilla queda visible mientras haya algo dudoso, para poder desmarcarla.
+                const conDuda = !e.descartar && (r.dudas.length > 0 || !!rep);
                 return (
                   <tr key={fila.filaId} className={e.descartar ? "descartada" : r.bloqueos.length ? "bloqueada" : undefined} aria-label={`Renglón ${r.renglon}`}>
                     <td className="num">{r.renglon}</td>
@@ -203,7 +206,8 @@ function Revision({ planilla, alCerrar, alCambiar, alAprobar }: {
                     <td className="pila" style={{ gap: 4 }}>
                       {rep && !e.descartar && <span className="sello rojo">{rep}</span>}
                       {r.bloqueos.map((b) => !e.descartar && <span key={b} className="etiqueta">{b}</span>)}
-                      {pendiente && <label className="fila"><input type="checkbox" checked={e.confirmada} onChange={(x) => cambiar(fila.filaId, { confirmada: x.target.checked })} /> Ya lo comparé con la foto</label>}
+                      {r.corregir.map((c) => !e.descartar && <span key={c} className="sello ambar">{c}</span>)}
+                      {conDuda && <label className="fila"><input type="checkbox" checked={e.confirmada} onChange={(x) => cambiar(fila.filaId, { confirmada: x.target.checked })} /> Ya lo comparé con la foto</label>}
                       <label className="fila"><input type="checkbox" checked={e.descartar} onChange={(x) => cambiar(fila.filaId, { descartar: x.target.checked })} /> Descartar</label>
                     </td>
                   </tr>
@@ -216,9 +220,9 @@ function Revision({ planilla, alCerrar, alCambiar, alAprobar }: {
       {error && <p className="error" role="alert">{error}</p>}
       <div className="fila entre">
         <span className="tenue">
-          {!vinculada ? "Falta vincular la hoja impresa." : porConfirmar.length ? `${porConfirmar.length} ${porConfirmar.length === 1 ? "fila por confirmar" : "filas por confirmar"} (en ámbar o rojo).` : "Todo revisado."}
+          {!vinculada ? "Falta vincular la hoja impresa." : porCorregir.length ? `${porCorregir.length} ${porCorregir.length === 1 ? "fila por corregir" : "filas por corregir"}: una cédula incompleta no se puede aprobar.` : porConfirmar.length ? `${porConfirmar.length} ${porConfirmar.length === 1 ? "fila por confirmar" : "filas por confirmar"} (en ámbar o rojo).` : "Todo revisado."}
         </span>
-        <button className="btn btn-primario" disabled={!filas || !vinculada || porConfirmar.length > 0 || ocupado} onClick={() => void aprobar()}>
+        <button className="btn btn-primario" disabled={!filas || !vinculada || porConfirmar.length > 0 || porCorregir.length > 0 || ocupado} onClick={() => void aprobar()}>
           {ocupado ? "Aprobando…" : `Aprobar la hoja (${seRegistran} ${seRegistran === 1 ? "registro" : "registros"})`}
         </button>
       </div>
