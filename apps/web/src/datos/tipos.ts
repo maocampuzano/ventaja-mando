@@ -116,6 +116,8 @@ export interface FuenteDatos {
   atenderNovedad(sesion: Sesion, id: string, estado: "abierta" | "atendida" | "cerrada" | null, responsableId?: string): Promise<void>;
   escalarNovedades(sesion: Sesion): Promise<number>;
   actaE14(sesion: Sesion, id: string): Promise<ActaParaRevisar>;
+  /** Lee la foto del acta con IA y devuelve cuántas alertas aritméticas encontró. Igual la revisa una persona. */
+  leerE14(sesion: Sesion, id: string): Promise<number>;
   /** Guarda la revisión de una persona (regla 7). `acta` null = descartar la foto (ilegible, de otra mesa…). */
   revisarE14(sesion: Sesion, id: string, acta: ActaLeida | null): Promise<void>;
   /** Avisa cuando algo cambia en el día E (tiempo real). Devuelve la función para dejar de escuchar. */
