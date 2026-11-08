@@ -12,7 +12,7 @@
 // CLI de Supabase, para que después «supabase db push» no las repita.
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const CARPETA_MIGRACIONES = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 const SECRETOS = ["clave_documento", "pepper_documento"];
@@ -180,4 +180,4 @@ async function principal([orden, archivo, ...resto]) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) principal(process.argv.slice(2)).catch((e) => { console.error(e.message); process.exit(1); });
+if (import.meta.url === pathToFileURL(process.argv[1]).href) principal(process.argv.slice(2)).catch((e) => { console.error(e.message); process.exit(1); });

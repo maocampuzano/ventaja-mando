@@ -9,6 +9,7 @@
 // --columna clave=NombreEnElArchivo (por ejemplo --columna cod_mpio="Código Municipio").
 // Es idempotente: volver a cargar el mismo archivo actualiza en vez de duplicar.
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 const COLUMNAS = {
   municipios: { cod_dpto: "cod_dpto", dpto: "dpto", cod_mpio: "cod_mpio", mpio: "mpio" },
@@ -109,4 +110,4 @@ function principal(args) {
   process.stdout.write(tipo === "municipios" ? sqlMunicipios(filas, col, fuente, fecha) : sqlPuestos(filas, col, fuente, fecha));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) principal(process.argv.slice(2));
+if (import.meta.url === pathToFileURL(process.argv[1]).href) principal(process.argv.slice(2));
