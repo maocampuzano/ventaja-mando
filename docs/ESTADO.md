@@ -29,6 +29,7 @@ Proyecto `ventaja-mando-prueba`, Postgres 17. Revisado el 23/10/2026.
 | Migraciones de la fase 3 | `20261026000100_sincronizacion` aplicada el 24/10/2026. `20261026000200_app_movil` aplicada el 24/10/2026: bucket `evidencias` privado con sus 3 políticas y `actualizar_tarea_movil`. |
 | Migraciones de las fases 3 y 4 | `20261027000100_planillas`, `20261028000100_ia` y `20261029000100_lectura` aplicadas el 08/11/2026: 33 tablas, todas con RLS, 64 políticas. `guardar_lectura_planilla` y `gasto_ia_mes_servicio` solo para la clave de servicio. Las funciones `strategos` y `lectura` aún no están publicadas (falta la clave de Anthropic). |
 | Migraciones de la fase 2 | Aplicadas: tablero, importación y peso del celular en duplicados (24/10/2026). |
+| Migración del día E | `20261030000100_dia_e` aplicada el 08/11/2026: 34 tablas, todas con RLS, y 65 políticas. Sin sesión, `tablero_dia_e`, `iniciar_simulacro` y `escalar_incidencias` responden 401 y la tabla `simulacro` no muestra nada. |
 | Versión de prueba publicada | `https://ventaja-mando-prueba.pages.dev` (proyecto de prueba de Supabase) y `https://demo.ventaja-mando-prueba.pages.dev` (datos ficticios), en Cloudflare Pages. Republicada el 08/11/2026 con las fases 3 y 4 y el mapa real de MapTiler (verificado en el navegador). |
 | Registro de cuentas | Abierto solo para correos con invitación vigente (hook `before user created`); contraseña de mínimo 12 caracteres. Verificado: un correo sin invitación recibe 403. |
 | Semilla ficticia de Turbaco | No cargada; solo con autorización expresa. |
