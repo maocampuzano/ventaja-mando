@@ -1,7 +1,7 @@
 // Fuente «supabase»: el proyecto real. La seguridad la pone la base (RLS y funciones con alcance por rol);
 // aquí solo se piden los datos. El tablero llega agregado por zona y por líder: nunca personas una por una.
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { exige2fa, indiceLider, type RolCampana } from "@ventaja/nucleo";
+import { FunctionsHttpError, createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { exige2fa, indiceLider, responderSimulado, type RespuestaStrategos, type RolCampana } from "@ventaja/nucleo";
 import type { Lider, Zona } from "../data";
 import type { RolCampana as Rol } from "@ventaja/nucleo";
 import type { TipoSolicitud } from "@ventaja/nucleo";
@@ -254,6 +254,17 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       const { data, error } = await q.select("id, nombre, esquema_json, version, creado_en").single();
       if (error) throw new Error(/row-level security/.test(error.message) ? "Solo la dirección de la campaña puede crear o cambiar formularios." : error.message);
       return { id: data.id, nombre: data.nombre, esquema: data.esquema_json, version: data.version, creado: fechaBogota(data.creado_en) };
+    },
+    async preguntarStrategos(s, pregunta, datos) {
+      const { data, error } = await sb.functions.invoke<RespuestaStrategos>("strategos", { body: { campana: s.campana.id, pregunta } });
+      if (!error && data) return data;
+      if (error instanceof FunctionsHttpError) {
+        let mensaje = "Strategos no pudo responder.";
+        try { mensaje = ((await error.context.json()) as { error?: string }).error ?? mensaje; } catch { /* sin cuerpo */ }
+        throw new Error(mensaje);
+      }
+      // La función no está publicada o no hay conexión con ella: responde el modelo simulado con lo que ya se ve.
+      return { ...responderSimulado(pregunta, datos), aviso: "Strategos con IA no está activo todavía: esta respuesta es del modelo simulado, con los datos de su tablero." };
     },
     async lotesPlanilla(s) {
       const { data, error } = await sb.rpc("lotes_planilla", { p_campana: s.campana.id, p_limite: 20 });

@@ -165,23 +165,3 @@ export const incidenciasBase: Incidencia[] = [
   { id: "i3", puestoId: "p6", mesa: mesaConTestigo(puestos[5], 1), tipo: "Falta material de la mesa", hora: "07:55", prioridad: "media" },
 ];
 
-export const preguntasStrategos = [
-  {
-    q: "¿Dónde actúo esta semana?",
-    a: "Las zonas en ámbar tienen la brecha más grande entre lo que vemos en redes y lo que tenemos en tierra: la pauta ya generó atención, pero hay pocos simpatizantes validados. Propongo una brigada de fin de semana en las dos con mayor brecha. Además, la zona de oportunidad con más votos en juego no tiene ni pauta ni estructura: ahí empezaría con una cola de llamadas.",
-    tareas: ["brigada", "llamadas"],
-    fuentes: ["Pauta Meta y Google, últimos 14 días, por zona", "Simpatizantes validados por zona", "Votación histórica 2023 por puesto (datos abiertos)"],
-  },
-  {
-    q: "¿Qué líderes debo revisar?",
-    a: "Tres líderes tienen más de un 20 % de registros que coinciden con los de otros líderes y menos de la mitad de sus registros validados. No significa fraude: puede ser que estén cargando listas compartidas. Sugiero una reunión de depuración antes de asignarles nuevas metas.",
-    tareas: ["revision"],
-    fuentes: ["Índice del líder (calidad, limpieza, ejecución, meta)", "Coincidencias de documento y teléfono entre líderes"],
-  },
-  {
-    q: "¿Cómo vamos frente a la meta?",
-    a: "Con los comprometidos de hoy cubrimos cerca de un tercio de la meta de votos. Si el ritmo de validación de las últimas cuatro semanas se mantiene, la base comprometida llegaría a la mitad de la meta en junio. Es un escenario, no una predicción: asume el mismo ritmo de captación y la misma tasa de validación.",
-    tareas: [],
-    fuentes: ["Comprometidos por semana", "Meta de votos configurada por la campaña"],
-  },
-];

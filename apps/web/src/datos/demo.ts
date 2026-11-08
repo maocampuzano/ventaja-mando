@@ -1,7 +1,7 @@
 // Fuente «demo»: la semilla ficticia de Turbaco, en el navegador. Recorta los datos con la misma regla de alcance
 // que la base (packages/nucleo/src/alcance.ts), para que la demostración se comporte como el producto real.
 // Aquí no hay seguridad real: todo vive en el navegador y es ficticio.
-import { exige2fa, territoriosVisibles, type RolCampana } from "@ventaja/nucleo";
+import { exige2fa, responderSimulado, territoriosVisibles, type RolCampana } from "@ventaja/nucleo";
 import { campana as campanaSemilla, lideres, puestos, zonas } from "../data";
 import { cumplimientoDemo, formulariosDemo } from "./demo-cumplimiento";
 import { planillasDemo } from "./demo-planillas";
@@ -94,6 +94,10 @@ export function crearFuenteDemo(): FuenteDatos {
     async sesionActual() { return actual; },
     async cerrarSesion() { actual = null; pendiente = null; guardar(null); },
     async cargarTablero(s) { return datosDemo(s); },
+    async preguntarStrategos(_s, pregunta, datos) {
+      await new Promise((r) => setTimeout(r, 500)); // que se note que «piensa»
+      return responderSimulado(pregunta, datos);
+    },
     // En la demostración no se guarda nada: se responde como si todas las filas listas hubieran entrado.
     async importarPersonas(_s, filas, _a, avance) {
       avance?.(filas.length, filas.length);
