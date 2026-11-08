@@ -72,3 +72,10 @@ jobs:
           sudo -u postgres psql -c "alter user postgres password 'postgres'"
       - name: Migraciones desde cero, semilla y pruebas
         run: npm run test:db
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Prueba de carga del día E (100 mesas, 20 usuarios simultáneos)
+        run: npm run test:carga
