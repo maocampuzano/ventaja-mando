@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   nombreTipoCampo, nuevoIdCampo, revisarEsquema, validarRespuesta, type Campo, type TipoCampo, type ValorRespuesta,
 } from "@ventaja/nucleo";
-import { fuente } from "./datos";
+import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
 import type { Formulario } from "./datos/tipos";
 

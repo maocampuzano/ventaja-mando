@@ -5,7 +5,7 @@ import {
   camposImportacion, leerCsv, miles, prepararImportacion, reconocerColumnas, veTodaLaCampana,
   type CampoImportacion, type Importacion, type MapaColumnas,
 } from "@ventaja/nucleo";
-import { fuente } from "./datos";
+import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
 import type { ResultadoImportacion } from "./datos/tipos";
 

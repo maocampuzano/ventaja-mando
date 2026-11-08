@@ -2,7 +2,7 @@
 // Autorizaciones en cifras, solicitudes de los titulares con su plazo legal y exportaciones con marca y auditoría.
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { diasHabilesRestantes, fecha, miles, pct, plazoSolicitud, semaforoPlazo, type TipoSolicitud } from "@ventaja/nucleo";
-import { fuente } from "./datos";
+import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
 import { csvExportacion, nombreArchivoExportacion } from "./datos/exportacion";
 import type { EstadoSolicitud, PersonaEncontrada, ResumenCumplimiento, Solicitud } from "./datos/tipos";
