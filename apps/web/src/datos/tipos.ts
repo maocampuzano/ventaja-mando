@@ -1,4 +1,4 @@
-import type { ActaLeida, CanalMasivo, Confianzas, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, CanalMasivo, Confianzas, FilaLibro, FuenteProhibida, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -149,7 +149,31 @@ export interface FuenteDatos {
   /** La llamada que el operador tiene en curso o la siguiente de la cola; null si no queda nadie por llamar. */
   siguienteLlamada(sesion: Sesion, colaId: string): Promise<LlamadaEnCurso | null>;
   registrarLlamada(sesion: Sesion, itemId: string, resultado: ResultadoLlamada): Promise<void>;
+  // Finanzas (la dirección registra; la candidata, responsable legal, solo ve). Reglas de la Ley 1475 en la base.
+  finanzas(sesion: Sesion): Promise<Finanzas>;
+  configurarTope(sesion: Sesion, tope: number): Promise<void>;
+  /** Busca o crea el tercero por su documento y devuelve su id. */
+  registrarTercero(sesion: Sesion, datos: NuevoTercero): Promise<string>;
+  registrarMovimiento(sesion: Sesion, datos: NuevoMovimiento): Promise<void>;
+  anularMovimiento(sesion: Sesion, id: string): Promise<void>;
+  /** El libro para el contador, con los documentos completos. Queda en la auditoría. */
+  exportarLibro(sesion: Sesion): Promise<{ referencia: string; exportadoPor: string; exportadoEn: string; filas: FilaLibro[] }>;
+  /** Enlace temporal para ver el soporte de un movimiento; null en el demo. */
+  verSoporte(sesion: Sesion, id: string): Promise<string | null>;
 }
+
+export type MovimientoPanel = {
+  id: string; tipo: TipoMovimiento; codigo: number; fecha: string; valor: number; concepto: string; forma: "dinero" | "especie";
+  terceroId: string | null; tercero: string | null; soporte: boolean;
+};
+export type TerceroPanel = { id: string; nombre: string; tipoPersona: "natural" | "juridica" };
+export type Finanzas = { tope: number | null; movimientos: MovimientoPanel[]; terceros: TerceroPanel[] };
+export type NuevoTercero = { tipoPersona: "natural" | "juridica"; nombre: string; documento: string };
+export type NuevoMovimiento = {
+  codigo: number; fecha: string; valor: number; concepto: string; forma: "dinero" | "especie";
+  terceroId?: string | null; parentesco?: string; acta?: string; verificacion?: Partial<Record<FuenteProhibida, boolean>>;
+  soporte?: File | null;
+};
 
 export type EstadoCola = "activa" | "pausada" | "cerrada";
 export type ColaLlamadas = {

@@ -18,3 +18,4 @@ export * from "./diaE";
 export * from "./mensajeria";
 export * from "./envio";
 export * from "./telemarketing";
+export * from "./finanzas";
