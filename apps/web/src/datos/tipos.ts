@@ -1,4 +1,4 @@
-import type { ActaLeida, Confianzas, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, CanalMasivo, Confianzas, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -128,7 +128,29 @@ export interface FuenteDatos {
   cumplimientoE14(sesion: Sesion): Promise<CumplimientoE14>;
   /** Cómo aparece el candidato en el E-14 y en los resultados históricos (solo la dirección). */
   configurarOpcionesE14(sesion: Sesion, opcionE14: string, opcionHistorica: string): Promise<void>;
+  // Mensajes por SMS y correo (solo la dirección; la candidata ve los envíos). Nunca WhatsApp (regla 1).
+  envios(sesion: Sesion): Promise<Envio[]>;
+  /** Personas del segmento con autorización vigente para contacto, sin baja y con celular o correo. */
+  contarDestinatarios(sesion: Sesion, canal: CanalMasivo, segmento: SegmentoEnvio): Promise<number>;
+  crearEnvio(sesion: Sesion, datos: NuevoEnvio): Promise<string>;
+  /** Fija los destinatarios y devuelve cuántos son. */
+  aprobarEnvio(sesion: Sesion, id: string): Promise<number>;
+  cancelarEnvio(sesion: Sesion, id: string): Promise<void>;
+  /** Envía el siguiente lote. Sin proveedor, o fuera de horario, no envía nada y lo dice. */
+  enviarLote(sesion: Sesion, id: string): Promise<ResultadoLoteEnvio>;
+  /** Baja en un paso desde el enlace del mensaje (sin sesión). Devuelve el nombre de la campaña. */
+  darseDeBaja(token: string): Promise<string>;
 }
+
+export type EstadoEnvio = "borrador" | "aprobado" | "enviando" | "terminado" | "cancelado";
+export type ResumenEnvio = { total: number; pendientes: number; enviados: number; fallidos: number; omitidos: number };
+export type Envio = {
+  id: string; canal: CanalMasivo; nombre: string; asunto: string | null; cuerpo: string; segmento: SegmentoEnvio;
+  estado: EstadoEnvio; creado: string; resumen: ResumenEnvio;
+};
+export type NuevoEnvio = { canal: CanalMasivo; nombre: string; asunto?: string; cuerpo: string; segmento: SegmentoEnvio };
+/** `demostracion`: en el modo demo no sale ningún mensaje de verdad. */
+export type ResultadoLoteEnvio = { enviados: number; fallidos: number; pendientes: number; demostracion?: boolean };
 
 export type CumplimientoE14 = {
   opcionE14: string | null; opcionHistorica: string | null;

@@ -4,7 +4,7 @@
 //
 // BORRADOR LEGAL (V3): el horario de envío y los textos de pie los revisa el abogado antes de usarlos con personas
 // reales. El horario sigue, por prudencia, el de la Ley 2300 de 2023 («dejen de fregar»).
-import { festivosColombia } from "./plazos";
+import { festivosColombia } from "./plazos.ts";
 
 export type CanalMasivo = "sms" | "email";
 
@@ -37,13 +37,16 @@ export const MAX_SEGMENTOS_SMS = 3;
 
 // ---------- Armar y validar el mensaje ----------
 
-/** Lo que reemplaza la base al enviar: el enlace de baja tiene unos 60 caracteres. */
-export const LARGO_ENLACE_BAJA = 60;
+/**
+ * El enlace de baja: dirección del panel + «/#b/» + número del destinatario + «.» + firma (12). Unos 63 caracteres
+ * con la dirección de prueba; en producción conviene un dominio corto para dejar más espacio al texto del SMS.
+ */
+export const LARGO_ENLACE_BAJA = 63;
 
 export const piePagina = (canal: CanalMasivo, campana: string, enlaceBaja: string) =>
   canal === "sms"
     // Sin tildes fuera de GSM («más» costaría el doble en cada SMS).
-    ? `\n${campana}. Para dejar de recibir mensajes: ${enlaceBaja}`
+    ? `\n${campana}. Dejar de recibir: ${enlaceBaja}`
     : `\n\n—\nEste mensaje es de la campaña ${campana}, porque usted autorizó que la campaña lo contactara. ` +
       `Para no recibir más mensajes por ningún medio, abra este enlace: ${enlaceBaja}`;
 

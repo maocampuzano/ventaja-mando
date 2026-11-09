@@ -10,6 +10,7 @@ const trazos: Record<string, ReactNode> = {
   formularios: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h3M8 12h3M8 16h3" /><path d="M14 8l1.5 1.5L18 7M14 12h4M14 16h4" /></>,
   importar: <><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></>,
   datos: <><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /><path d="M9 12l2 2 4-4" /></>,
+  mensajes: <><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" /><path d="M8 10h8M8 13h5" /></>,
   movil: <><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></>,
 };
 
