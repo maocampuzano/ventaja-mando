@@ -40,8 +40,8 @@ select ok(not has_table_privilege('authenticated', 'public.auditoria', 'insert, 
   'Nadie escribe ni borra la auditoría desde la API');
 
 select pruebas.como_anonimo();
-select is((select count(*) from public.persona)::int, 0, 'Un anónimo no ve ninguna persona');
-select is((select count(*) from public.campana)::int, 0, 'Un anónimo no ve ninguna campaña');
+select throws_ok($$ select count(*) from public.persona $$, '42501', null, 'Un anónimo no puede ni consultar las personas');
+select throws_ok($$ select count(*) from public.campana $$, '42501', null, 'Ni las campañas');
 reset role;
 
 select * from finish();
