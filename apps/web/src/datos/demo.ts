@@ -8,6 +8,7 @@ import { crearDiaEDemo } from "./demo-dia-e";
 import { crearMensajesDemo } from "./demo-mensajes";
 import { crearLlamadasDemo } from "./demo-llamadas";
 import { crearFinanzasDemo } from "./demo-finanzas";
+import { crearErroresDemo } from "./demo-errores";
 import { planillasDemo, revisionDemo } from "./demo-planillas";
 import type { Campana, DatosTablero, FuenteDatos, Ingreso, InvitacionPendiente, Sesion } from "./tipos";
 
@@ -88,6 +89,7 @@ export function crearFuenteDemo(): FuenteDatos {
     ...crearMensajesDemo(datosDemo),
     ...crearLlamadasDemo(datosDemo),
     ...crearFinanzasDemo(),
+    ...crearErroresDemo(),
     async iniciarSesion(correo, clave): Promise<Ingreso> {
       const s = sesionDe(correo);
       if (!s || clave !== claveDe(correo)) return { estado: "error", mensaje: "El correo o la contraseña no coinciden." };

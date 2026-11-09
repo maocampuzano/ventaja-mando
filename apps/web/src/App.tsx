@@ -19,6 +19,7 @@ import { Mensajes } from "./Mensajes";
 import { Llamadas } from "./Llamadas";
 import { Llamar } from "./Llamar";
 import { Finanzas } from "./Finanzas";
+import { AtrapaErrores, useRegistroDeErrores } from "./Errores";
 import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
 import { DiaE } from "./DiaE";
 import type { Tarea } from "./Strategos";
@@ -88,6 +89,7 @@ export default function App() {
 }
 
 function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
+  useRegistroDeErrores(sesion);
   const vistas = vistasPorRol[sesion.rol];
   const vistaInicial = (): Vista => {
     const v = leerHash().vista as Vista | undefined;
@@ -168,6 +170,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
       </nav>
       <main className="lienzo">
         {contenido ?? (
+          <AtrapaErrores sesion={sesion} vista={vista}>
           <ContextoTablero.Provider value={datos}>
             {vista !== "mando" && <div className="rol-flotante">{usuario}</div>}
             {vista === "mando" && <Mando barra={barraMando} aprobadas={aprobadas.map((t) => t.id)} alAprobar={aprobar} />}
@@ -186,6 +189,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "bandeja" && <BandejaLider />}
             {vista === "mimesa" && <MiMesa />}
           </ContextoTablero.Provider>
+          </AtrapaErrores>
         )}
       </main>
     </div>
