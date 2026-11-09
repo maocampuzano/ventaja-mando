@@ -38,4 +38,7 @@ echo "→ Publicando la función strategos en $REF"
 npx --yes "$CLI" functions deploy strategos --project-ref "$REF" --use-api
 echo "→ Publicando la función lectura en $REF"
 npx --yes "$CLI" functions deploy lectura --project-ref "$REF" --use-api
+# «enviar» no manda nada mientras no haya proveedor de SMS o correo configurado (ver supabase/functions/enviar).
+echo "→ Publicando la función enviar en $REF"
+npx --yes "$CLI" functions deploy enviar --project-ref "$REF" --use-api
 echo "Listo. Pruebe en el panel: Mando → Strategos → «¿Dónde actúo esta semana?»."

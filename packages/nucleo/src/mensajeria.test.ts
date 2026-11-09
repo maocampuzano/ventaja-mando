@@ -20,7 +20,7 @@ describe("segmentos de SMS", () => {
 describe("armar y revisar el mensaje", () => {
   it("pone el primer nombre y el pie con el enlace de baja", () => {
     const sms = armarMensaje("sms", "Hola {nombre}, te esperamos el sábado.", { nombre: "MARÍA JOSÉ PEÑA", campana: "Laura Méndez", enlaceBaja: "https://x.co/b/1" });
-    expect(sms).toBe("Hola María, te esperamos el sábado.\nLaura Méndez. Para dejar de recibir mensajes: https://x.co/b/1");
+    expect(sms).toBe("Hola María, te esperamos el sábado.\nLaura Méndez. Dejar de recibir: https://x.co/b/1");
     expect(armarMensaje("sms", "Hola {nombre}, hola.", { nombre: "", campana: "C", enlaceBaja: "e" })).toMatch(/^Hola, hola\./);
     expect(armarMensaje("email", "Texto", { nombre: "Ana", campana: "C", enlaceBaja: "https://e" })).toMatch(/no recibir más mensajes por ningún medio, abra este enlace: https:\/\/e$/);
   });

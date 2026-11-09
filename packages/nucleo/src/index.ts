@@ -16,3 +16,4 @@ export * from "./strategos";
 export * from "./lectura";
 export * from "./diaE";
 export * from "./mensajeria";
+export * from "./envio";

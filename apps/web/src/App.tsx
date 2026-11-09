@@ -14,17 +14,19 @@ import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
 import { Datos } from "./Datos";
+import { Baja } from "./Baja";
+import { Mensajes } from "./Mensajes";
 import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
 import { DiaE } from "./DiaE";
 import type { Tarea } from "./Strategos";
 
-type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "diae" | "datos" | "bandeja" | "mimesa";
+type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "diae" | "datos" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "diae", "datos"],
-  gerente: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "diae", "datos"],
-  candidato: ["resumen", "mando", "diae"],
+  administrador: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "diae", "datos"],
+  gerente: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "diae", "datos"],
+  candidato: ["resumen", "mando", "mensajes", "diae"],
   coordinador: ["mando", "lideres", "importar", "planillas", "diae"],
   lider: ["bandeja"],
   testigo: ["mimesa"],
@@ -38,6 +40,7 @@ const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n
   importar: { nombre: "Importar", icono: "importar" },
   formularios: { nombre: "Formularios", icono: "formularios" },
   planillas: { nombre: "Planillas", icono: "planillas" },
+  mensajes: { nombre: "Mensajes", icono: "mensajes" },
   diae: { nombre: "Día E", icono: "diae" },
   datos: { nombre: "Datos", icono: "datos" },
   bandeja: { nombre: "Celular", icono: "movil" },
@@ -64,6 +67,9 @@ export default function App() {
     fuente.sesionActual().then(setSesion).catch(() => setSesion(null));
   }, []);
 
+  // El enlace de baja de un SMS o correo funciona sin sesión y antes que todo lo demás.
+  const baja = /^#(?:b|baja)\/(.+)$/.exec(location.hash);
+  if (baja) return <Baja fuente={fuente} token={decodeURIComponent(baja[1])} />;
   if (sesion === undefined) return <main className="ingreso"><p className="tenue">Cargando…</p></main>;
   if (!sesion && invitacion) {
     return <AceptarInvitacion fuente={fuente} codigo={invitacion}
@@ -164,6 +170,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "importar" && <Importar />}
             {vista === "formularios" && <Formularios />}
             {vista === "planillas" && <Planillas />}
+            {vista === "mensajes" && <Mensajes />}
             {vista === "diae" && <DiaE />}
             {vista === "datos" && <Datos />}
             {vista === "bandeja" && <BandejaLider />}

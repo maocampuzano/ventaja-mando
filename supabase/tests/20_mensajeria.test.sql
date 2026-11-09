@@ -1,7 +1,7 @@
 -- Mensajes masivos: solo a personas con autorización vigente para contacto y sin baja (regla 3), nunca WhatsApp
 -- (regla 1), segmentos sin opinión política (regla 2), baja en un paso con enlace firmado, y nueva verificación al enviar.
 begin;
-select plan(32);
+select plan(33);
 
 create temporary table esperado as
 select
@@ -75,12 +75,12 @@ select is((select estado from public.envio where nombre = 'Invitación'), 'envia
 
 -- Baja en un paso con el enlace firmado -----------------------------------------------------------------------
 create temporary table token as
-select d.id || '.' || privado.firma_baja(d.id) t, d.persona_id from public.envio_destinatario d where d.estado = 'pendiente' order by d.id limit 1;
+select d.n || '.' || privado.firma_baja_n(d.n) t, d.persona_id from public.envio_destinatario d where d.estado = 'pendiente' order by d.n limit 1;
 grant select on token to anon;
 select pruebas.como_anonimo();
 select is(public.darse_de_baja((select t from token)), 'Laura Méndez', 'Sin cuenta, el enlace da de baja y dice de qué campaña');
 select lives_ok($$ select public.darse_de_baja((select t from token)) $$, 'Repetir el enlace no falla');
-select throws_ok($$ select public.darse_de_baja((select split_part(t, '.', 1) || '.000000000000000000000000' from token)) $$,
+select throws_ok($$ select public.darse_de_baja((select split_part(t, '.', 1) || '.000000000000' from token)) $$,
   '22023', 'El enlace no es válido.', 'Una firma inventada no da de baja a nadie');
 select throws_ok($$ select public.darse_de_baja('cualquier cosa') $$, '22023', 'El enlace no es válido.', 'Ni un texto cualquiera');
 select throws_ok($$ select * from public.lote_para_enviar((select id from public.envio limit 1)) $$, '42501', null, 'Un anónimo no pide lotes');
@@ -88,6 +88,7 @@ reset role;
 select is((select estado from public.envio_destinatario where persona_id = (select persona_id from token)), 'omitido',
   'Lo pendiente de quien se dio de baja queda omitido');
 select ok(not privado.contactable((select persona_id from token), 'email'), 'La baja vale para todos los canales');
+select ok((select length(t) <= 25 from token), 'El token de baja es corto (cabe en el SMS sin duplicar el costo)');
 
 -- Resultados del proveedor y fin del envío
 select public.registrar_resultado_envio(id, true, 'prov-' || left(id::text, 4), null) from public.envio_destinatario where estado = 'pendiente';

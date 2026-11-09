@@ -3,6 +3,7 @@
 import { FunctionsHttpError, createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { exige2fa, indiceLider, responderSimulado, type RespuestaStrategos, type RolCampana } from "@ventaja/nucleo";
 import { diaESupabase } from "./supabase-dia-e";
+import { mensajesSupabase } from "./supabase-mensajes";
 import type { FilaParaRevisar, PlanillaPorRevisar } from "./tipos";
 import type { Lider, Zona } from "../data";
 import type { RolCampana as Rol } from "@ventaja/nucleo";
@@ -103,6 +104,7 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
   return {
     modo: "supabase",
     ...diaESupabase(sb),
+    ...mensajesSupabase(sb),
     async iniciarSesion(correo, clave) {
       const { error } = await sb.auth.signInWithPassword({ email: correo.trim(), password: clave });
       if (error) return { estado: "error", mensaje: mensajeError(error.message) };
