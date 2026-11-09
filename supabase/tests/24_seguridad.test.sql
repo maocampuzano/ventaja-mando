@@ -11,6 +11,8 @@ select is((select string_agg(c.relname, ', ' order by c.relname) from pg_class c
   'Todas las tablas tienen al menos una política (sin política nadie la lee, pero tampoco se nota el olvido)');
 select is((select string_agg(c.relname, ', ' order by c.relname) from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public' and c.relkind in ('r', 'v', 'm')
+    -- Las vistas de extensiones (pgTAP en la integración continua) no son de la aplicación.
+    and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e')
     and (has_table_privilege('anon', c.oid, 'select') or has_table_privilege('anon', c.oid, 'insert')
       or has_table_privilege('anon', c.oid, 'update') or has_table_privilege('anon', c.oid, 'delete'))), null,
   'Quien no inició sesión no tiene ningún permiso sobre las tablas');
