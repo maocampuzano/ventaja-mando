@@ -1,0 +1,86 @@
+# Respaldo diario de la base de datos (fase 8), cifrado. Corre a las 3:00 a. m. de Bogotá y también a mano
+# (Actions → «Respaldo diario» → «Run workflow»). Ver docs/RESPALDOS.md.
+#
+# El repositorio es PÚBLICO: cualquier persona con cuenta de GitHub puede descargar los archivos que deja una tarea.
+# Por eso el respaldo se cifra ANTES de guardarse, con una clave que solo tiene Mauricio (secreto RESPALDO_CLAVE).
+# Nada de la base se escribe en el registro de la tarea: solo cuántas tablas y filas tiene el respaldo.
+name: Respaldo diario
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # 8:00 UTC = 3:00 a. m. en Bogotá
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: respaldo
+  cancel-in-progress: false
+
+jobs:
+  respaldo:
+    name: Copia cifrada de la base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RESPALDO_DB_URL: ${{ secrets.RESPALDO_DB_URL }}
+      RESPALDO_CLAVE: ${{ secrets.RESPALDO_CLAVE }}
+    steps:
+      - name: ¿Está configurado?
+        id: listo
+        run: |
+          if [ -z "$RESPALDO_DB_URL" ] || [ -z "$RESPALDO_CLAVE" ]; then
+            echo "::notice::El respaldo no está configurado: faltan los secretos RESPALDO_DB_URL y RESPALDO_CLAVE (ver docs/RESPALDOS.md). No se hizo copia."
+            echo "listo=no" >> "$GITHUB_OUTPUT"
+          elif [ "${#RESPALDO_CLAVE}" -lt 24 ]; then
+            echo "::error::La clave del respaldo (RESPALDO_CLAVE) debe tener al menos 24 caracteres."
+            exit 1
+          else
+            echo "listo=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar el cliente de PostgreSQL 17
+        if: steps.listo.outputs.listo == 'si'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-17
+
+      - name: Copiar y cifrar
+        if: steps.listo.outputs.listo == 'si'
+        run: |
+          set -euo pipefail
+          umask 077
+          fecha=$(TZ=America/Bogota date +%Y-%m-%d)
+          echo "FECHA=$fecha" >> "$GITHUB_ENV"
+          # Esquemas de la aplicación y las cuentas (auth). Los archivos (fotos, soportes) van aparte: ver docs/RESPALDOS.md.
+          /usr/lib/postgresql/17/bin/pg_dump "$RESPALDO_DB_URL" --format=custom --compress=9 --no-owner \
+            --schema=public --schema=privado --schema=auth --file="$RUNNER_TEMP/respaldo.dump" 2> "$RUNNER_TEMP/pg_dump.log" \
+            || { echo "::error::pg_dump falló (el detalle no se muestra para no exponer datos de conexión)."; exit 1; }
+          # Cifrado simétrico AES-256 con la clave de Mauricio; la clave entra por un descriptor, nunca por la línea de comandos.
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 \
+            --output "$RUNNER_TEMP/ventaja-mando-$fecha.dump.gpg" "$RUNNER_TEMP/respaldo.dump" 3<<<"$RESPALDO_CLAVE"
+          shred -u "$RUNNER_TEMP/respaldo.dump" "$RUNNER_TEMP/pg_dump.log"
+
+      - name: Verificar que el respaldo se puede abrir
+        if: steps.listo.outputs.listo == 'si'
+        run: |
+          set -euo pipefail
+          umask 077
+          gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 --decrypt \
+            --output "$RUNNER_TEMP/prueba.dump" "$RUNNER_TEMP/ventaja-mando-$FECHA.dump.gpg" 3<<<"$RESPALDO_CLAVE"
+          tablas=$(/usr/lib/postgresql/17/bin/pg_restore --list "$RUNNER_TEMP/prueba.dump" | grep -c " TABLE DATA " || true)
+          shred -u "$RUNNER_TEMP/prueba.dump"
+          if [ "$tablas" -lt 30 ]; then echo "::error::El respaldo trae solo $tablas tablas con datos: algo salió mal."; exit 1; fi
+          echo "::notice::Respaldo del $FECHA verificado: $tablas tablas con datos, cifrado con AES-256."
+
+      - name: Guardar el respaldo cifrado (30 días)
+        if: steps.listo.outputs.listo == 'si'
+        uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-${{ env.FECHA }}
+          path: ${{ runner.temp }}/ventaja-mando-${{ env.FECHA }}.dump.gpg
+          retention-days: 30
+          if-no-files-found: error
