@@ -7,7 +7,7 @@ import { useTablero } from "./datos/contexto";
 import type { InvitacionPendiente, Miembro } from "./datos/tipos";
 import { Qr } from "./Qr";
 
-const ROLES: RolCampana[] = ["administrador", "gerente", "candidato", "coordinador", "lider", "testigo"];
+const ROLES: RolCampana[] = ["administrador", "gerente", "candidato", "coordinador", "lider", "testigo", "operador"];
 const conZonas = (r: RolCampana) => r === "coordinador" || r === "lider" || r === "testigo";
 
 const enlaceInvitacion = (codigo: string) => `${location.origin}${location.pathname}?invitacion=${encodeURIComponent(codigo)}`;
@@ -72,7 +72,7 @@ export function Equipo() {
                   <tbody>
                     {equipo.miembros.map((m) => (
                       <tr key={m.id}><td>{m.nombre}{!m.activa && <span className="tenue"> (inactivo)</span>}</td><td>{nombreRol[m.rol]}</td>
-                        <td className="tenue">{conZonas(m.rol) ? nombresZonas(m.territorioIds) : "Toda la campaña"}</td></tr>
+                        <td className="tenue">{conZonas(m.rol) ? nombresZonas(m.territorioIds) : m.rol === "operador" ? "Sus colas de llamadas" : "Toda la campaña"}</td></tr>
                     ))}
                   </tbody>
                 </table>

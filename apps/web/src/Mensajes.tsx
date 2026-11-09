@@ -1,15 +1,12 @@
 // Mensajes por SMS y correo (fase 6). La dirección arma el envío, ve a cuántas personas llega (solo con autorización
 // vigente para contacto y sin baja), lo aprueba y lo envía por lotes. Nunca por WhatsApp (regla 1).
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { dentroDeHorario, fecha, miles, revisarPlantilla, type CanalMasivo, type SegmentoEnvio } from "@ventaja/nucleo";
 import { useTablero } from "./datos/contexto";
 import { fuente } from "./datos/index";
 import type { Envio, EstadoEnvio } from "./datos/tipos";
+import { SelectorSegmento } from "./SelectorSegmento";
 
-const ESTADOS_CONTACTO = [
-  { id: "sin_contactar", nombre: "Sin contactar" }, { id: "contactado", nombre: "Contactados" },
-  { id: "validado", nombre: "Validados" }, { id: "comprometido", nombre: "Comprometidos" },
-] as const;
 const NOMBRE_ESTADO: Record<EstadoEnvio, { texto: string; clase: string }> = {
   borrador: { texto: "Borrador", clase: "" }, aprobado: { texto: "Aprobado", clase: "azul" },
   enviando: { texto: "Enviando", clase: "ambar" }, terminado: { texto: "Terminado", clase: "verde" }, cancelado: { texto: "Cancelado", clase: "rojo" },
@@ -107,21 +104,17 @@ export function Mensajes() {
 }
 
 function NuevoEnvio({ alCerrar, alGuardar }: { alCerrar: () => void; alGuardar: () => void }) {
-  const { sesion, zonas, lideres } = useTablero();
+  const { sesion } = useTablero();
   const [canal, setCanal] = useState<CanalMasivo>("sms");
   const [nombre, setNombre] = useState("");
   const [asunto, setAsunto] = useState("");
   const [cuerpo, setCuerpo] = useState("");
-  const [zonasSel, setZonasSel] = useState<string[]>([]);
-  const [lideresSel, setLideresSel] = useState<string[]>([]);
-  const [estados, setEstados] = useState<NonNullable<SegmentoEnvio["estados"]>>([]);
+  const [segmento, setSegmento] = useState<SegmentoEnvio>({});
   const [conteo, setConteo] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
 
-  const segmento = useMemo<SegmentoEnvio>(() => ({ territorioIds: zonasSel, liderIds: lideresSel, estados }), [zonasSel, lideresSel, estados]);
   const revision = revisarPlantilla(canal, cuerpo, sesion.campana.candidato, asunto);
-  const lideresVisibles = zonasSel.length ? lideres.filter((l) => zonasSel.includes(l.zonaId)) : lideres;
 
   useEffect(() => {
     let vigente = true;
@@ -130,8 +123,6 @@ function NuevoEnvio({ alCerrar, alGuardar }: { alCerrar: () => void; alGuardar: 
     }, 250);
     return () => { vigente = false; clearTimeout(t); };
   }, [canal, segmento, sesion]);
-
-  const alternar = <T,>(lista: T[], x: T) => (lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x]);
 
   async function guardar() {
     setGuardando(true); setError("");
@@ -161,32 +152,7 @@ function NuevoEnvio({ alCerrar, alGuardar }: { alCerrar: () => void; alGuardar: 
       {revision.errores.map((e) => <p key={e} className="error">{e}</p>)}
       {revision.advertencias.map((a) => <p key={a} className="sello ambar" style={{ whiteSpace: "normal" }}>{a}</p>)}
 
-      <fieldset className="campo-formulario">
-        <legend>A quién (vacío = toda su campaña)</legend>
-        <span className="etiqueta">Zonas</span>
-        <div className="fila" style={{ gap: 10, flexWrap: "wrap" }}>
-          {zonas.map((z) => (
-            <label key={z.id} className="fila" style={{ gap: 6, fontSize: 13 }}>
-              <input type="checkbox" checked={zonasSel.includes(z.id)} onChange={() => setZonasSel(alternar(zonasSel, z.id))} />{z.nombre}
-            </label>
-          ))}
-        </div>
-        <label className="campo">Líderes
-          <select multiple size={Math.min(6, lideresVisibles.length || 1)} value={lideresSel} aria-label="Líderes"
-            onChange={(e) => setLideresSel([...e.target.selectedOptions].map((o) => o.value))}>
-            {lideresVisibles.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
-          </select>
-        </label>
-        <span className="etiqueta">Para elegir varios líderes, mantenga oprimida la tecla Ctrl (o Cmd en Mac) al hacer clic.</span>
-        <span className="etiqueta">Estado del contacto</span>
-        <div className="fila" style={{ gap: 10, flexWrap: "wrap" }}>
-          {ESTADOS_CONTACTO.map((x) => (
-            <label key={x.id} className="fila" style={{ gap: 6, fontSize: 13 }}>
-              <input type="checkbox" checked={estados.includes(x.id)} onChange={() => setEstados(alternar(estados, x.id))} />{x.nombre}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <SelectorSegmento segmento={segmento} alCambiar={setSegmento} />
       <p role="status"><strong>{conteo === null ? "…" : miles(conteo)}</strong> {conteo === 1 ? "persona" : "personas"} con autorización vigente para contacto, sin baja y con {canal === "sms" ? "celular" : "correo"}.</p>
       {error && <p className="error" role="alert">{error}</p>}
       <div className="fila" style={{ gap: 8 }}>

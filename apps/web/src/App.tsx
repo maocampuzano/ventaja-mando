@@ -16,20 +16,23 @@ import { Mando } from "./Mando";
 import { Datos } from "./Datos";
 import { Baja } from "./Baja";
 import { Mensajes } from "./Mensajes";
+import { Llamadas } from "./Llamadas";
+import { Llamar } from "./Llamar";
 import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
 import { DiaE } from "./DiaE";
 import type { Tarea } from "./Strategos";
 
-type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "diae" | "datos" | "bandeja" | "mimesa";
+type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "llamadas" | "llamar" | "diae" | "datos" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "diae", "datos"],
-  gerente: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "diae", "datos"],
+  administrador: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "diae", "datos"],
+  gerente: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "diae", "datos"],
   candidato: ["resumen", "mando", "mensajes", "diae"],
   coordinador: ["mando", "lideres", "importar", "planillas", "diae"],
   lider: ["bandeja"],
   testigo: ["mimesa"],
+  operador: ["llamar"],
 };
 
 const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n"] }> = {
@@ -41,6 +44,8 @@ const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n
   formularios: { nombre: "Formularios", icono: "formularios" },
   planillas: { nombre: "Planillas", icono: "planillas" },
   mensajes: { nombre: "Mensajes", icono: "mensajes" },
+  llamadas: { nombre: "Llamadas", icono: "llamadas" },
+  llamar: { nombre: "Llamar", icono: "llamadas" },
   diae: { nombre: "Día E", icono: "diae" },
   datos: { nombre: "Datos", icono: "datos" },
   bandeja: { nombre: "Celular", icono: "movil" },
@@ -171,6 +176,8 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "formularios" && <Formularios />}
             {vista === "planillas" && <Planillas />}
             {vista === "mensajes" && <Mensajes />}
+            {vista === "llamadas" && <Llamadas />}
+            {vista === "llamar" && <Llamar />}
             {vista === "diae" && <DiaE />}
             {vista === "datos" && <Datos />}
             {vista === "bandeja" && <BandejaLider />}
