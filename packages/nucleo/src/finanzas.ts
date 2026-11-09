@@ -105,7 +105,20 @@ export type FilaLibro = {
   fecha: string; tipo: TipoMovimiento; codigo: number; concepto: string; forma: "dinero" | "especie"; valor: number;
   tercero?: string | null; tipoPersona?: string | null; documento?: string | null; parentesco?: string | null;
   acta?: string | null; soporte: boolean;
+  /** Número de la factura o del recibo. */
+  numeroSoporte?: string | null;
+  /** Solo propaganda (208): por qué medio. */
+  medio?: MedioPropaganda | null;
 };
+
+/** Medios de la propaganda electoral (código 208, anexo 5.7 B). */
+export const MEDIOS_PROPAGANDA = [
+  { id: "radio", nombre: "Radio" }, { id: "prensa", nombre: "Prensa y revistas" }, { id: "television", nombre: "Televisión" },
+  { id: "internet", nombre: "Internet y redes sociales" }, { id: "vallas", nombre: "Vallas" },
+  { id: "pasacalles", nombre: "Pasacalles y pendones" }, { id: "impresos", nombre: "Impresos (afiches, volantes)" }, { id: "otro", nombre: "Otro" },
+] as const;
+export type MedioPropaganda = (typeof MEDIOS_PROPAGANDA)[number]["id"];
+export const nombreMedio = (m: string | null | undefined) => MEDIOS_PROPAGANDA.find((x) => x.id === m)?.nombre ?? "";
 
 const celda = (v: string | number | null | undefined) => {
   const s = v === null || v === undefined ? "" : String(v);

@@ -19,3 +19,5 @@ export * from "./mensajeria";
 export * from "./envio";
 export * from "./telemarketing";
 export * from "./finanzas";
+export * from "./xlsx";
+export * from "./plantillaCuentasClaras";

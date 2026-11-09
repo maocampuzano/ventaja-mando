@@ -48,14 +48,14 @@ test("una persona jurídica necesita el acta", async ({ page }) => {
   await expect(caja.getByText(/necesita el número del acta/)).toHaveCount(0);
 });
 
-test("el tope muestra el avance y la exportación para el contador sale en CSV con su marca", async ({ page }) => {
+test("el tope muestra el avance y la exportación para el contador sale en Excel", async ({ page }) => {
   await entrar(page, "gerente@demo.co");
   await expect(page.getByText("Tope de gastos del CNE")).toBeVisible();
   await expect(page.getByRole("complementary", { name: "Resumen por código" })).toContainText("208 Propaganda electoral");
   const descarga = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar para el contador" }).click();
   const archivo = await descarga;
-  expect(archivo.suggestedFilename()).toMatch(/^(libro-ingresos-gastos|resumen-5B)-DEMO\.csv$/);
+  expect(archivo.suggestedFilename()).toBe("cuentas-claras-DEMO.xlsx");
   await expect(page.getByRole("status").filter({ hasText: "queda registrada en la auditoría" })).toBeVisible();
 });
 
@@ -69,4 +69,28 @@ test("la candidata ve las finanzas pero no registra; la coordinación no las ve"
   await page.getByLabel("Contraseña").fill("demo2027");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("navigation").getByRole("button", { name: "Finanzas" })).toHaveCount(0);
+});
+
+test("la propaganda pide el medio y cualquiera con acceso baja la plantilla vacía", async ({ page }) => {
+  await entrar(page, "candidata@demo.co");
+  const descarga = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Plantilla vacía" }).click();
+  expect((await descarga).suggestedFilename()).toBe("plantilla-cuentas-claras.xlsx");
+  await page.getByRole("button", { name: "Salir" }).click();
+
+  await page.getByLabel("Correo").fill("gerente@demo.co");
+  await page.getByLabel("Contraseña").fill("demo2027");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await page.getByLabel("Código").fill("123456");
+  await page.getByRole("button", { name: "Verificar" }).click();
+  await page.getByRole("navigation").getByRole("button", { name: "Finanzas" }).click();
+  await page.getByRole("button", { name: "Registrar movimiento" }).click();
+  const caja = page.getByRole("region", { name: "Registrar movimiento" });
+  await caja.getByLabel("Código del CNE").selectOption("208");
+  await caja.getByLabel("Valor", { exact: true }).fill("800000");
+  await expect(caja.getByRole("button", { name: "Registrar" })).toBeDisabled();
+  await caja.getByLabel("Medio de la propaganda").selectOption("radio");
+  await caja.getByLabel("Factura o recibo No. (opcional)").fill("FE-77");
+  await caja.getByRole("button", { name: "Registrar" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Movimiento registrado." })).toBeVisible();
 });

@@ -2,8 +2,8 @@
 // gastos, alertas y exportación para el contador. La dirección registra; la candidata (responsable legal) ve.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  CODIGOS_FINANZAS, FUENTES_PROHIBIDAS, codigoFinanzas, fecha, libroCsv, moneda, pct, resumenCsv, resumenFinanzas, revisarAporte,
-  type FuenteProhibida, type TipoMovimiento,
+  CODIGOS_FINANZAS, FUENTES_PROHIBIDAS, MEDIOS_PROPAGANDA, codigoFinanzas, fecha, moneda, pct, plantillaCuentasClaras, resumenFinanzas,
+  revisarAporte, type FuenteProhibida, type MedioPropaganda, type TipoMovimiento,
 } from "@ventaja/nucleo";
 import { Barra } from "./comunes";
 import { useTablero } from "./datos/contexto";
@@ -13,8 +13,9 @@ import type { Finanzas as DatosFinanzas } from "./datos/tipos";
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
 const numero = (s: string) => Number(s.replace(/\D/g, "")) || 0;
 
-function descargar(nombre: string, contenido: string) {
-  const url = URL.createObjectURL(new Blob([contenido], { type: "text/csv;charset=utf-8" }));
+const TIPO_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+function descargar(nombre: string, contenido: Uint8Array) {
+  const url = URL.createObjectURL(new Blob([contenido as BlobPart], { type: TIPO_XLSX }));
   const a = document.createElement("a");
   a.href = url; a.download = nombre; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -46,8 +47,9 @@ export function Finanzas() {
     try {
       const r = await fuente.exportarLibro(sesion);
       const marca = `${sesion.campana.candidato} · Exportado por ${r.exportadoPor} el ${fecha(r.exportadoEn)} · ref. ${r.referencia} · Uso exclusivo del contador de la campaña`;
-      descargar(`libro-ingresos-gastos-${r.referencia}.csv`, libroCsv(r.filas, marca));
-      if (resumen) descargar(`resumen-5B-${r.referencia}.csv`, resumenCsv(resumen, marca));
+      descargar(`cuentas-claras-${r.referencia}.xlsx`, plantillaCuentasClaras({
+        campana: sesion.campana.candidato, cargo: sesion.campana.cargo, tope: datos?.tope ?? null, marca, filas: r.filas,
+      }));
       setAviso(`Exportado con la referencia ${r.referencia}. La exportación queda registrada en la auditoría.`);
     } catch (e) { setError((e as Error).message); }
   }
@@ -60,14 +62,15 @@ export function Finanzas() {
       <div className="pagina-cabeza">
         <div>
           <h1>Finanzas</h1>
-          <p className="tenue">Libro de ingresos y gastos con los códigos del formulario 5B del CNE. El informe oficial se presenta en Cuentas Claras: aquí la campaña lleva sus cuentas al día y le entrega el libro al contador.</p>
+          <p className="tenue">Libro de ingresos y gastos con los códigos del formulario 5B del CNE. El informe oficial se presenta en Cuentas Claras: aquí la campaña lleva sus cuentas al día y le entrega al contador la plantilla en Excel (ingresos, gastos, propaganda, obligaciones y resumen 5B).</p>
         </div>
-        {direccion && (
-          <div className="fila" style={{ gap: 8 }}>
-            <button className="btn" onClick={exportar}>Exportar para el contador</button>
-            {!nuevo && <button className="btn btn-primario" onClick={() => setNuevo(true)}>Registrar movimiento</button>}
-          </div>
-        )}
+        <div className="fila" style={{ gap: 8, flexWrap: "wrap" }}>
+          <button className="btn" onClick={() => descargar("plantilla-cuentas-claras.xlsx", plantillaCuentasClaras())}>Plantilla vacía</button>
+          {direccion && <button className="btn" onClick={exportar}>Exportar para el contador</button>}
+          {direccion && (
+            !nuevo && <button className="btn btn-primario" onClick={() => setNuevo(true)}>Registrar movimiento</button>
+          )}
+        </div>
       </div>
       {error && <p className="error" role="alert">{error}</p>}
       {aviso && <p className="aviso" role="status">{aviso}</p>}
@@ -152,6 +155,8 @@ function NuevoMovimiento({ datos, alCerrar, alGuardar }: { datos: DatosFinanzas;
   const [acta, setActa] = useState("");
   const [verif, setVerif] = useState<Partial<Record<FuenteProhibida, boolean>>>({});
   const [soporte, setSoporte] = useState<File | null>(null);
+  const [numeroSoporte, setNumeroSoporte] = useState("");
+  const [medio, setMedio] = useState<MedioPropaganda | "">("");
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
 
@@ -177,7 +182,7 @@ function NuevoMovimiento({ datos, alCerrar, alGuardar }: { datos: DatosFinanzas;
       await fuente.registrarMovimiento(sesion, {
         codigo, fecha: fechaMov, valor: numero(valor), concepto, forma, terceroId: id,
         parentesco: codigo === 101 ? parentesco : undefined, acta: esAporte && tipoPersona === "juridica" ? acta : undefined,
-        verificacion: esAporte ? verif : undefined, soporte,
+        verificacion: esAporte ? verif : undefined, soporte, numeroSoporte, medio: codigo === 208 ? medio || null : null,
       });
       alGuardar();
     } catch (e) { setError((e as Error).message); } finally { setGuardando(false); }
@@ -203,7 +208,15 @@ function NuevoMovimiento({ datos, alCerrar, alGuardar }: { datos: DatosFinanzas;
           <select value={forma} onChange={(e) => setForma(e.target.value as "dinero" | "especie")}><option value="dinero">Dinero</option><option value="especie">En especie (a valor comercial)</option></select>
         </label>
       </div>
-      <label className="campo">Concepto<input value={concepto} onChange={(e) => setConcepto(e.target.value)} placeholder="Qué fue, en pocas palabras" /></label>
+      <label className="campo">Concepto<input value={concepto} onChange={(e) => setConcepto(e.target.value)} placeholder={codigo === 208 ? "Qué se compró: cantidad, tamaño o duración" : "Qué fue, en pocas palabras"} /></label>
+      {codigo === 208 && (
+        <label className="campo">Medio de la propaganda
+          <select value={medio} onChange={(e) => setMedio(e.target.value as MedioPropaganda | "")}>
+            <option value="">Elija el medio…</option>
+            {MEDIOS_PROPAGANDA.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+          </select>
+        </label>
+      )}
       {codigo === 101 && <label className="campo">De quién son los recursos<input value={parentesco} onChange={(e) => setParentesco(e.target.value)} placeholder="La candidata, su cónyuge, su hermano…" /></label>}
 
       {usaTercero && (
@@ -243,12 +256,13 @@ function NuevoMovimiento({ datos, alCerrar, alGuardar }: { datos: DatosFinanzas;
         </fieldset>
       )}
 
+      <label className="campo">Factura o recibo No. (opcional)<input value={numeroSoporte} onChange={(e) => setNumeroSoporte(e.target.value)} /></label>
       <label className="campo">Soporte (factura, recibo o acta en PDF, JPG o PNG)
         <input type="file" accept="application/pdf,image/jpeg,image/png" onChange={(e) => setSoporte(e.target.files?.[0] ?? null)} />
       </label>
       {erroresAporte.map((e) => <p key={e} className="error">{e}</p>)}
       {error && <p className="error" role="alert">{error}</p>}
-      <div><button className="btn btn-primario" disabled={guardando || !numero(valor) || erroresAporte.length > 0} onClick={guardar}>Registrar</button></div>
+      <div><button className="btn btn-primario" disabled={guardando || !numero(valor) || erroresAporte.length > 0 || (codigo === 208 && !medio)} onClick={guardar}>Registrar</button></div>
     </section>
   );
 }

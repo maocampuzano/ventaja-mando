@@ -225,7 +225,7 @@ insert into public.finanza_tope (id, campana_id, rubro, valor) values
   ('90000000-0000-4000-8000-000000000001', pg_temp.id('campana_a'), 'Propaganda electoral', 120000000);
 -- Tope de gastos ficticio (el real lo fija el CNE para cada campaña) y un gasto de propaganda (código 208).
 update public.campana set tope_gastos = 450000000 where id = pg_temp.id('campana_a');
-insert into public.finanza_movimiento (campana_id, tipo, codigo, concepto, valor, tope_id, fecha, creado_por) values
-  (pg_temp.id('campana_a'), 'gasto', 208, 'Pendones y afiches (ficticio)', 4500000, '90000000-0000-4000-8000-000000000001', '2026-10-15', pg_temp.id('u_gerente_a'));
+insert into public.finanza_movimiento (campana_id, tipo, codigo, concepto, valor, tope_id, fecha, medio, creado_por) values
+  (pg_temp.id('campana_a'), 'gasto', 208, 'Pendones y afiches (ficticio)', 4500000, '90000000-0000-4000-8000-000000000001', '2026-10-15', 'pasacalles', pg_temp.id('u_gerente_a'));
 
 commit;

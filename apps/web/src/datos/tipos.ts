@@ -1,4 +1,4 @@
-import type { ActaLeida, CanalMasivo, Confianzas, FilaLibro, FuenteProhibida, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, CanalMasivo, Confianzas, FilaLibro, FuenteProhibida, MedioPropaganda, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -173,6 +173,10 @@ export type NuevoMovimiento = {
   codigo: number; fecha: string; valor: number; concepto: string; forma: "dinero" | "especie";
   terceroId?: string | null; parentesco?: string; acta?: string; verificacion?: Partial<Record<FuenteProhibida, boolean>>;
   soporte?: File | null;
+  /** Número de la factura o del recibo. */
+  numeroSoporte?: string;
+  /** Solo propaganda (208). */
+  medio?: MedioPropaganda | null;
 };
 
 export type EstadoCola = "activa" | "pausada" | "cerrada";
