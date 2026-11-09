@@ -257,13 +257,14 @@ function MiGente() {
       ))}
       {personas.map((p) => {
         const [et, tono] = ETIQUETA_ESTADO[p.estado];
-        const puedeEscribir = !!p.telefono && p.autorizacionVigente;
+        const puedeEscribir = !!p.telefono && p.autorizacionVigente && !p.dadaDeBaja;
         return (
           <View key={p.id} style={s.persona}>
             <View style={{ flex: 1, gap: 4 }}>
               <Texto>{p.nombre}</Texto>
               <Pildora texto={et} tono={tono} />
               {!p.autorizacionVigente && <Tenue>Retiró su autorización: no se le puede contactar.</Tenue>}
+              {p.autorizacionVigente && p.dadaDeBaja && <Tenue>Pidió no recibir más mensajes: no le escriba.</Tenue>}
             </View>
             {puedeEscribir && (
               <Pressable onPress={() => escribir(p)} accessibilityRole="link" accessibilityLabel={`Escribir por WhatsApp a ${p.nombre}`}

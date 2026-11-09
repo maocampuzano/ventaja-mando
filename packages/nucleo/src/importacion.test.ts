@@ -38,7 +38,15 @@ describe("validar filas", () => {
   it("una fila completa queda lista, con la cédula y el celular normalizados", () => {
     const r = preparar([["Ana Peña", "1.047.000.218", "+57 300 000 1234", "La Ceiba", "Yesenia Barrios", "Sí", "05/03/2026"]]);
     expect(r.rechazadas).toEqual([]);
-    expect(r.listas[0]).toEqual({ numero: 2, nombre: "Ana Peña", documento: "1047000218", telefono: "3000001234", zonaId: "z2", liderId: "l1", fechaAutorizacion: "2026-03-05" });
+    expect(r.listas[0]).toEqual({ numero: 2, nombre: "Ana Peña", documento: "1047000218", telefono: "3000001234", correo: undefined, zonaId: "z2", liderId: "l1", fechaAutorizacion: "2026-03-05" });
+  });
+
+  it("importa el correo en minúsculas y avisa si no es válido", () => {
+    const mapa = reconocerColumnas(["Nombre", "Correo electrónico", "Autoriza"]);
+    expect(mapa.correo).toBe(1);
+    const r = prepararImportacion([["Ana Peña", "Ana.Pena@Ejemplo.CO", "Sí"], ["Luis Díaz", "luis-sin-arroba", "Sí"]], mapa, opciones);
+    expect(r.listas.map((l) => l.correo)).toEqual(["ana.pena@ejemplo.co", undefined]);
+    expect(r.advertencias[0].mensaje).toMatch(/correo «luis-sin-arroba» no es válido/);
   });
 
   it("sin autorización no entra (regla 3)", () => {

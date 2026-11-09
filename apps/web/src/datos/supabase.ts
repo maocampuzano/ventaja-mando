@@ -134,7 +134,7 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       const r: ResultadoImportacion = { creadas: 0, yaExistian: 0, rechazos: [], guardado: true };
       for (let i = 0; i < filas.length; i += LOTE) {
         const lote = filas.slice(i, i + LOTE).map((f) => ({
-          numero: f.numero, nombre: f.nombre, documento: f.documento ?? null, telefono: f.telefono ?? null,
+          numero: f.numero, nombre: f.nombre, documento: f.documento ?? null, telefono: f.telefono ?? null, correo: f.correo ?? null,
           zona_id: f.zonaId ?? null, lider_id: f.liderId ?? null, fecha_autorizacion: f.fechaAutorizacion ?? null,
         }));
         const { data, error } = await sb.rpc("importar_personas", {

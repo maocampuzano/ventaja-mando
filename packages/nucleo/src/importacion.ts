@@ -3,12 +3,13 @@
 // filas del mismo archivo; en la base se guarda cifrada y con HMAC (supabase/migrations/…_importacion.sql).
 import { buscarDuplicados, normaliza, normalizaTelefono, type Coincidencia } from "./duplicados";
 
-export type CampoImportacion = "nombre" | "documento" | "telefono" | "zona" | "lider" | "autoriza" | "fecha_autorizacion";
+export type CampoImportacion = "nombre" | "documento" | "telefono" | "correo" | "zona" | "lider" | "autoriza" | "fecha_autorizacion";
 
 export const camposImportacion: { campo: CampoImportacion; nombre: string; ayuda: string; sinonimos: string[] }[] = [
   { campo: "nombre", nombre: "Nombre", ayuda: "Obligatorio.", sinonimos: ["nombre", "nombres", "nombre completo", "nombres y apellidos", "simpatizante", "persona"] },
   { campo: "documento", nombre: "Cédula", ayuda: "Opcional. Solo números.", sinonimos: ["cedula", "cc", "documento", "numero de documento", "no documento", "identificacion", "doc"] },
   { campo: "telefono", nombre: "Celular", ayuda: "Opcional. 10 dígitos.", sinonimos: ["celular", "telefono", "tel", "movil", "whatsapp", "numero celular", "cel"] },
+  { campo: "correo", nombre: "Correo", ayuda: "Opcional. Para enviarle correos de la campaña.", sinonimos: ["correo", "correo electronico", "email", "e mail", "mail"] },
   { campo: "zona", nombre: "Zona", ayuda: "Zona de la campaña donde trabaja la persona.", sinonimos: ["zona", "barrio", "sector", "territorio", "comuna", "vereda"] },
   { campo: "lider", nombre: "Líder", ayuda: "Opcional. Nombre del líder a cargo.", sinonimos: ["lider", "referido por", "responsable", "lider a cargo", "coordinador"] },
   { campo: "autoriza", nombre: "Autoriza datos", ayuda: "Obligatorio: «Sí» si la persona firmó la autorización.", sinonimos: ["autoriza", "autorizacion", "autoriza datos", "acepta", "consentimiento", "habeas data", "firma autorizacion"] },
@@ -99,6 +100,7 @@ export type FilaLista = {
   nombre: string;
   documento?: string;
   telefono?: string;
+  correo?: string;
   zonaId?: string;
   liderId?: string;
   fechaAutorizacion?: string;
@@ -150,6 +152,13 @@ export function prepararImportacion(filas: readonly (readonly string[])[], mapa:
       telefono = undefined;
     }
 
+    const textoCorreo = celda(f, "correo").toLowerCase();
+    let correo: string | undefined = textoCorreo || undefined;
+    if (correo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+      advertencias.push({ numero, mensaje: `el correo «${celda(f, "correo")}» no es válido: se importa sin correo` });
+      correo = undefined;
+    }
+
     const textoFecha = celda(f, "fecha_autorizacion");
     const fecha = textoFecha ? leerFecha(textoFecha) : undefined;
     if (textoFecha && !fecha) motivos.push(`la fecha de autorización «${textoFecha}» no se entiende (use dd/mm/aaaa)`);
@@ -165,7 +174,7 @@ export function prepararImportacion(filas: readonly (readonly string[])[], mapa:
     if (textoLider && !liderId) advertencias.push({ numero, mensaje: `no se encontró al líder «${textoLider}»: se importa sin líder` });
 
     if (motivos.length) { rechazadas.push({ numero, mensaje: motivos.join("; ") }); return; }
-    listas.push({ numero, nombre, documento: documento || undefined, telefono, zonaId, liderId, fechaAutorizacion: fecha ?? undefined });
+    listas.push({ numero, nombre, documento: documento || undefined, telefono, correo, zonaId, liderId, fechaAutorizacion: fecha ?? undefined });
   });
 
   // Duplicados dentro del archivo. La cédula repetida se rechaza (queda la primera); lo demás se marca para revisar.
