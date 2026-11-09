@@ -2,7 +2,7 @@
 // En modo «supabase» la seguridad la hace la RLS; esta función solo sirve para que el modo demo se comporte
 // igual y para decidir qué mostrar. Ocultar en la interfaz no cuenta como seguridad (regla 8).
 
-export type RolCampana = "administrador" | "gerente" | "candidato" | "coordinador" | "lider" | "testigo";
+export type RolCampana = "administrador" | "gerente" | "candidato" | "coordinador" | "lider" | "testigo" | "operador";
 export type NodoTerritorio = { id: string; padreId?: string | null };
 
 export const nombreRol: Record<RolCampana, string> = {
@@ -12,6 +12,7 @@ export const nombreRol: Record<RolCampana, string> = {
   coordinador: "Coordinador",
   lider: "Líder",
   testigo: "Testigo",
+  operador: "Operador de llamadas",
 };
 
 /** Administradores y gerentes solo ven datos con sesión de dos factores. */
@@ -39,7 +40,7 @@ export function territoriosPermitidos(asignados: readonly string[], arbol: reado
   return vistos;
 }
 
-/** Territorios del tablero que el rol puede ver. Líder y testigo no usan el tablero: no ven ninguno. */
+/** Territorios del tablero que el rol puede ver. Líder, testigo y operador no usan el tablero: no ven ninguno. */
 export function territoriosVisibles(
   rol: RolCampana,
   asignados: readonly string[],

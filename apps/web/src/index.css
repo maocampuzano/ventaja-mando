@@ -234,6 +234,8 @@ button.mesa[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--texto); }
   .riel { order: 2; flex-direction: row; padding: 6px; border-right: 0; border-top: 1px solid var(--linea); overflow-x: auto; }
   .marca { display: none; }
   .pagina { padding: 20px 16px 32px; }
+  /* En el celular el recuadro de quien inició sesión va arriba, en su propia fila, sin tapar el título. */
+  .rol-flotante { position: static; display: flex; justify-content: flex-end; padding: 10px 16px 0; }
   .solo-escritorio { display: none !important; }
   .barra { flex-wrap: nowrap; }
   .barra .espacio { display: none; }

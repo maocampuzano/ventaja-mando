@@ -1,4 +1,4 @@
-import type { ActaLeida, CanalMasivo, Confianzas, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, CanalMasivo, Confianzas, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -140,7 +140,24 @@ export interface FuenteDatos {
   enviarLote(sesion: Sesion, id: string): Promise<ResultadoLoteEnvio>;
   /** Baja en un paso desde el enlace del mensaje (sin sesión). Devuelve el nombre de la campaña. */
   darseDeBaja(token: string): Promise<string>;
+  // Telemarketing. La dirección arma y maneja las colas; el operador recibe una persona a la vez.
+  colas(sesion: Sesion): Promise<ColaLlamadas[]>;
+  crearCola(sesion: Sesion, datos: NuevaCola): Promise<{ id: string; personas: number }>;
+  asignarOperadores(sesion: Sesion, colaId: string, operadores: string[]): Promise<void>;
+  cambiarEstadoCola(sesion: Sesion, colaId: string, estado: EstadoCola): Promise<void>;
+  misColas(sesion: Sesion): Promise<MiCola[]>;
+  /** La llamada que el operador tiene en curso o la siguiente de la cola; null si no queda nadie por llamar. */
+  siguienteLlamada(sesion: Sesion, colaId: string): Promise<LlamadaEnCurso | null>;
+  registrarLlamada(sesion: Sesion, itemId: string, resultado: ResultadoLlamada): Promise<void>;
 }
+
+export type EstadoCola = "activa" | "pausada" | "cerrada";
+export type ColaLlamadas = {
+  id: string; nombre: string; guion: string | null; estado: EstadoCola; creado: string; operadores: string[]; resumen: ResumenCola;
+};
+export type NuevaCola = { nombre: string; guion: string; segmento: SegmentoEnvio };
+export type MiCola = { id: string; nombre: string; estado: EstadoCola; porLlamar: number };
+export type LlamadaEnCurso = { itemId: string; nombre: string; telefono: string; intentos: number; guion: string | null };
 
 export type EstadoEnvio = "borrador" | "aprobado" | "enviando" | "terminado" | "cancelado";
 export type ResumenEnvio = { total: number; pendientes: number; enviados: number; fallidos: number; omitidos: number };

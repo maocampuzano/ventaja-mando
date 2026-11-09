@@ -6,6 +6,7 @@ import { campana as campanaSemilla, lideres, puestos, zonas } from "../data";
 import { cumplimientoDemo, formulariosDemo } from "./demo-cumplimiento";
 import { crearDiaEDemo } from "./demo-dia-e";
 import { crearMensajesDemo } from "./demo-mensajes";
+import { crearLlamadasDemo } from "./demo-llamadas";
 import { planillasDemo, revisionDemo } from "./demo-planillas";
 import type { Campana, DatosTablero, FuenteDatos, Ingreso, InvitacionPendiente, Sesion } from "./tipos";
 
@@ -20,6 +21,7 @@ export const usuariosDemo: { correo: string; nombre: string; rol: RolCampana; te
   { correo: "coordinadora@demo.co", nombre: "Coordinadora Demo", rol: "coordinador", territorioIds: ["z1", "z2", "z3"], descripcion: "Solo sus tres zonas." },
   { correo: "lider@demo.co", nombre: lideres[0].nombre, rol: "lider", territorioIds: [lideres[0].zonaId], descripcion: "Su bandeja en el celular." },
   { correo: "testigo@demo.co", nombre: "Testigo Demo", rol: "testigo", territorioIds: [], descripcion: "Su mesa el día E." },
+  { correo: "operador@demo.co", nombre: "Operadora Demo", rol: "operador", territorioIds: [], descripcion: "Llama, una persona a la vez, a la gente de sus colas." },
 ];
 
 const arbol = [{ id: MUNICIPIO }, ...zonas.map((z) => ({ id: z.id, padreId: MUNICIPIO }))];
@@ -83,6 +85,7 @@ export function crearFuenteDemo(): FuenteDatos {
     ...revisionDemo,
     ...crearDiaEDemo(datosDemo, campanaSemilla.eleccion),
     ...crearMensajesDemo(datosDemo),
+    ...crearLlamadasDemo(datosDemo),
     async iniciarSesion(correo, clave): Promise<Ingreso> {
       const s = sesionDe(correo);
       if (!s || clave !== claveDe(correo)) return { estado: "error", mensaje: "El correo o la contraseña no coinciden." };

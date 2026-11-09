@@ -17,3 +17,4 @@ export * from "./lectura";
 export * from "./diaE";
 export * from "./mensajeria";
 export * from "./envio";
+export * from "./telemarketing";
