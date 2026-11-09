@@ -6,6 +6,7 @@ import { diaESupabase } from "./supabase-dia-e";
 import { mensajesSupabase } from "./supabase-mensajes";
 import { llamadasSupabase } from "./supabase-llamadas";
 import { finanzasSupabase } from "./supabase-finanzas";
+import { erroresSupabase } from "./supabase-errores";
 import type { FilaParaRevisar, PlanillaPorRevisar } from "./tipos";
 import type { Lider, Zona } from "../data";
 import type { RolCampana as Rol } from "@ventaja/nucleo";
@@ -109,6 +110,7 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
     ...mensajesSupabase(sb),
     ...llamadasSupabase(sb),
     ...finanzasSupabase(sb),
+    ...erroresSupabase(sb),
     async iniciarSesion(correo, clave) {
       const { error } = await sb.auth.signInWithPassword({ email: correo.trim(), password: clave });
       if (error) return { estado: "error", mensaje: mensajeError(error.message) };

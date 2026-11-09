@@ -6,6 +6,7 @@ import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
 import { csvExportacion, nombreArchivoExportacion } from "./datos/exportacion";
 import type { EstadoSolicitud, PersonaEncontrada, ResumenCumplimiento, Solicitud } from "./datos/tipos";
+import { Auditoria, ErroresDelPanel } from "./Auditoria";
 
 const hoyBogota = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
 const nombreTipo: Record<TipoSolicitud, string> = { conocer: "Conocer sus datos", actualizar: "Actualizar o corregir", suprimir: "Suprimir sus datos", revocar: "Revocar la autorización" };
@@ -83,6 +84,8 @@ export function Datos() {
           <Exportar hacer={hacer} />
         </aside>
       </div>
+      <Auditoria />
+      <ErroresDelPanel />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { ActaLeida, CanalMasivo, Confianzas, FilaLibro, FuenteProhibida, MedioPropaganda, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, CanalMasivo, Confianzas, ErrorPanel, FilaLibro, FuenteProhibida, MedioPropaganda, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -160,7 +160,18 @@ export interface FuenteDatos {
   exportarLibro(sesion: Sesion): Promise<{ referencia: string; exportadoPor: string; exportadoEn: string; filas: FilaLibro[] }>;
   /** Enlace temporal para ver el soporte de un movimiento; null en el demo. */
   verSoporte(sesion: Sesion, id: string): Promise<string | null>;
+  // Errores del panel y auditoría (fase 8)
+  /** Guarda un error ya limpio de datos personales. Nunca lanza: si no se puede guardar, se pierde en silencio. */
+  registrarError(sesion: Sesion, error: ErrorPanel): Promise<void>;
+  erroresRecientes(sesion: Sesion): Promise<ErrorAgrupado[]>;
+  auditoria(sesion: Sesion, filtro: FiltroAuditoria): Promise<FilaAuditoria[]>;
 }
+
+export type ErrorAgrupado = { mensaje: string; veces: number; personas: number; ultima: string; ruta: string; version: string; pila: string };
+export type FiltroAuditoria = { accion?: string; desde?: string; hasta?: string; antes?: number };
+export type FilaAuditoria = {
+  id: number; en: string; usuario: string; accion: string; entidad: string; entidadId: string | null; detalle: Record<string, unknown>;
+};
 
 export type MovimientoPanel = {
   id: string; tipo: TipoMovimiento; codigo: number; fecha: string; valor: number; concepto: string; forma: "dinero" | "especie";

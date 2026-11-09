@@ -21,3 +21,4 @@ export * from "./telemarketing";
 export * from "./finanzas";
 export * from "./xlsx";
 export * from "./plantillaCuentasClaras";
+export * from "./errores";
