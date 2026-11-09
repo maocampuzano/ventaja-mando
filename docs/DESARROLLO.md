@@ -41,6 +41,16 @@ Todos se corren desde la raíz del repositorio.
 
 Antes de abrir un PR deben pasar `typecheck`, `lint`, `test` y `test:db` (en un computador sin PostgreSQL, `test:db:pglite`). La integración continua (`.github/workflows/ci.yml`) los corre en cada PR, junto con la compilación de la web.
 
+## Permisos de la base (desde la fase 8)
+
+- **Quien no inició sesión (`anon`) no tiene permisos sobre ninguna tabla** y solo puede usar `darse_de_baja`. No le dé permisos nuevos.
+- Las funciones nuevas **no** quedan abiertas por defecto (`alter default privileges … revoke … from public`). En cada migración:
+  `revoke all on function … from public, anon;` y `grant execute on function … to authenticated;` solo si quien inició sesión debe usarla.
+  Las funciones del esquema `privado` que usan las políticas o las funciones `security invoker` también necesitan ese `grant`.
+- Toda función `security definer` lleva `set search_path = ''` y, si decide permisos, devuelve siempre `true` o `false`
+  (`coalesce(…, false)`): un `NULL` en un `if not …` deja pasar a todos.
+- `supabase/tests/24_seguridad.test.sql` revisa todo esto en la base completa: si falla, no relaje la prueba; arregle la migración.
+
 ## Modo demo y modo Supabase
 
 El panel tiene dos fuentes de datos con la misma interfaz (`apps/web/src/datos/`):

@@ -77,7 +77,7 @@ select throws_ok($$ select * from public.crear_lote_planilla('20000000-0000-4000
 reset role;
 
 select pruebas.como_anonimo();
-select is((select count(*) from public.lote_planilla)::int, 0, 'Un anónimo no ve nada');
+select throws_ok($$ select count(*) from public.lote_planilla $$, '42501', null, 'Un anónimo no puede ni consultar');
 reset role;
 
 select * from finish();
