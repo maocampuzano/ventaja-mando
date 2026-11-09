@@ -1,6 +1,7 @@
 // Finanzas con el proyecto real. Las reglas de la Ley 1475 las aplica la base al registrar; los soportes van al bucket
 // privado «soportes» (<campaña>/<archivo>), que solo la dirección escribe y la candidata puede ver.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { FilaLibro } from "@ventaja/nucleo";
 import type { FuenteDatos, MovimientoPanel } from "./tipos";
 
 type Metodos = Pick<FuenteDatos, "finanzas" | "configurarTope" | "registrarTercero" | "registrarMovimiento" | "anularMovimiento" | "exportarLibro" | "verSoporte">;
@@ -43,6 +44,7 @@ export function finanzasSupabase(sb: SupabaseClient): Metodos {
       falla((await sb.rpc("registrar_movimiento", {
         p_campana: s.campana.id, p_codigo: d.codigo, p_fecha: d.fecha, p_valor: d.valor, p_concepto: d.concepto, p_forma: d.forma,
         p_tercero: d.terceroId ?? null, p_parentesco: d.parentesco ?? null, p_acta: d.acta ?? null, p_verificacion: d.verificacion ?? null, p_soporte: ruta,
+        p_numero_soporte: d.numeroSoporte ?? null, p_medio: d.codigo === 208 ? d.medio ?? null : null,
       })).error);
     },
     async anularMovimiento(_s, id) { falla((await sb.rpc("anular_movimiento", { p_id: id })).error); },
@@ -56,6 +58,7 @@ export function finanzasSupabase(sb: SupabaseClient): Metodos {
           fecha: String(f.fecha), tipo: f.tipo as "ingreso" | "gasto", codigo: Number(f.codigo), concepto: String(f.concepto ?? ""),
           forma: f.forma as "dinero" | "especie", valor: Number(f.valor), tercero: (f.tercero as string) ?? null, tipoPersona: (f.tipo_persona as string) ?? null,
           documento: (f.documento as string) ?? null, parentesco: (f.parentesco as string) ?? null, acta: (f.acta as string) ?? null, soporte: !!f.soporte,
+          numeroSoporte: (f.numero_soporte as string) ?? null, medio: (f.medio as FilaLibro["medio"]) ?? null,
         })),
       };
     },

@@ -2,7 +2,7 @@
 -- prohibidas, acta de personas jurídicas), terceros con documento cifrado, alcance por rol y exportación auditada.
 -- Tope ficticio de la semilla: $ 450.000.000 (10 % = $ 45.000.000). Ya hay un gasto 208 de $ 4.500.000.
 begin;
-select plan(27);
+select plan(29);
 
 create temporary table v (k text primary key, id uuid);
 grant select, insert on v to authenticated;
@@ -55,9 +55,17 @@ select throws_ok($$ insert into public.finanza_movimiento (campana_id, tipo, cod
   'Directo en la tabla no se registra: solo con las funciones');
 reset role;
 
+-- Propaganda (208): el medio es obligatorio y viaja al libro del contador.
+select pruebas.como('gerente_a', 'aal2');
+select throws_ok($$ select public.registrar_movimiento('20000000-0000-4000-8000-00000000000a', 208, '2027-08-10', 800000, 'Cuñas de radio',
+  'dinero', null, null, null, null, null, 'FE-77') $$, '22023', null, 'La propaganda sin medio no se registra');
+select lives_ok($$ select public.registrar_movimiento('20000000-0000-4000-8000-00000000000a', 208, '2027-08-10', 800000, 'Cuñas de radio',
+  'dinero', null, null, null, null, null, 'FE-77', 'radio') $$, 'Con el medio, sí');
+reset role;
+
 -- Alcance por rol -------------------------------------------------------------------------------------------------
 select pruebas.como('candidata_a');
-select is((select count(*) from public.finanza_movimiento)::int, 6, 'La candidata (responsable legal) ve los movimientos');
+select is((select count(*) from public.finanza_movimiento)::int, 7, 'La candidata (responsable legal) ve los movimientos');
 select throws_ok($$ select public.registrar_movimiento('20000000-0000-4000-8000-00000000000a', 211, '2027-08-08', 1000, 'x', 'dinero', null, null, null, null, null) $$,
   '42501', null, 'Pero no registra');
 select throws_ok($$ select public.exportar_libro_finanzas('20000000-0000-4000-8000-00000000000a') $$, '42501', null, 'Ni exporta');
