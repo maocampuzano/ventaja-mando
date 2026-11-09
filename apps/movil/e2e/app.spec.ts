@@ -37,13 +37,16 @@ test("el líder registra sin señal y se envía al volver la señal", async ({ p
   await expect(page.getByText(/0 por enviar · 2 enviados/)).toBeVisible();
 });
 
-test("WhatsApp: solo un enlace que el líder abre, y nunca para quien retiró la autorización", async ({ page }) => {
+test("WhatsApp: solo un enlace que el líder abre, y nunca para quien retiró la autorización o se dio de baja", async ({ page }) => {
   // Sin salir a internet: se responde aquí la página de WhatsApp para ver a dónde lleva el enlace.
   await page.context().route(/https:\/\/(wa\.me|api\.whatsapp\.com)\/.*/, (r) => r.fulfill({ body: "WhatsApp" }));
   await entrar(page, "lider@demo.co");
   await page.getByRole("tab", { name: "Mi gente" }).click();
   await expect(page.getByText("Retiró su autorización: no se le puede contactar.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Escribir por WhatsApp a Yulieth Julio" })).toHaveCount(0);
+  // Quien se dio de baja (de mensajes y llamadas) tampoco: el líder ve por qué.
+  await expect(page.getByText("Pidió no recibir más mensajes: no le escriba.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Escribir por WhatsApp a Carlos Díaz" })).toHaveCount(0);
   const [popup] = await Promise.all([
     page.waitForEvent("popup"),
     page.getByRole("link", { name: "Escribir por WhatsApp a Ana Ruiz" }).click(),

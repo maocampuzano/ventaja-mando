@@ -89,7 +89,7 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
         sb.from("territorio").select("id, nombre").in("id", l!.territorio_ids ?? []).order("nombre"),
         sb.from("tarea").select("id, titulo, tipo, estado, vence_en").eq("campana_id", s.campanaId).eq("asignado_a", s.usuarioId)
           .in("estado", ["pendiente", "en_curso", "hecha"]).order("creado_en"),
-        sb.from("persona").select("id, nombre, telefono, territorio_trabajo_id, estado_contacto, autorizacion(revocada_en)")
+        sb.from("persona").select("id, nombre, telefono, territorio_trabajo_id, estado_contacto, autorizacion(revocada_en), baja_contacto(persona_id)")
           .eq("campana_id", s.campanaId).eq("lider_id", l!.id).order("creado_en", { ascending: false }).limit(2000),
       ]);
       lanzar(zonas.error, "sus zonas");
@@ -105,6 +105,8 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
         personas: (personas.data ?? []).map((p): PersonaMovil => ({
           id: p.id, nombre: p.nombre, telefono: p.telefono, zonaId: p.territorio_trabajo_id, estado: p.estado_contacto,
           autorizacionVigente: ((p.autorizacion ?? []) as { revocada_en: string | null }[]).some((a) => !a.revocada_en),
+          // Una sola fila por persona (la llave es persona_id): llega como objeto o como lista según la relación.
+          dadaDeBaja: Array.isArray(p.baja_contacto) ? p.baja_contacto.length > 0 : !!p.baja_contacto,
         })),
       };
     },
