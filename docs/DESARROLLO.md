@@ -60,6 +60,11 @@ El panel tiene dos fuentes de datos con la misma interfaz (`apps/web/src/datos/`
 
 En la página compilada en modo demo no queda nada del proyecto real; en modo supabase queda la URL y la clave publicable (que es pública por diseño), nunca la secreta.
 
+## Respaldos e incidentes
+
+- Respaldo diario cifrado de la base: `.github/workflows/respaldo.yml`. Cómo se activa y cómo se restaura: `docs/RESPALDOS.md`.
+- Qué hacer si hay una fuga o un acceso indebido: `docs/PLAN-INCIDENTES.md`.
+
 ## Publicar la versión de prueba
 
 `bash scripts/publicar-prueba.sh` publica dos versiones del panel en Cloudflare Pages:
