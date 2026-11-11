@@ -1,4 +1,4 @@
-// Tipos y lógica compartida de Ventaja Mando (web, app y funciones del servidor).
+// Tipos y lógica compartida de Comando (web, app y funciones del servidor).
 export * from "./alcance";
 export * from "./cobertura";
 export * from "./duplicados";
@@ -12,7 +12,7 @@ export * from "./formularios";
 export * from "./sincronizacion";
 export * from "./autorizacion";
 export * from "./planilla";
-export * from "./strategos";
+export * from "./asesor";
 export * from "./lectura";
 export * from "./diaE";
 export * from "./mensajeria";

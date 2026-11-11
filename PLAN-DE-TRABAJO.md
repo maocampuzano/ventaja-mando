@@ -42,7 +42,7 @@ Solo estos puntos me detienen. Si uno de ellos llega en mitad de una fase, sigo 
 | 1 | Base de datos, seguridad y cuentas | No | Aplicar las migraciones a su proyecto de Supabase y activar el 2FA. |
 | 2 | Panel web con datos | No | Datos reales de Supabase y teselas del mapa. |
 | 3 | App del líder y del testigo | No | Builds de prueba en Android e iOS (Expo). |
-| 4 | IA: lectura de planillas y E-14, y Strategos | No | Respuestas reales de Claude. |
+| 4 | IA: lectura de planillas y E-14, y Asesor IA | No | Respuestas reales de Claude. |
 | 5 | Día E | No | — |
 | 6 | Comunicaciones, telemarketing y finanzas | No | Envíos reales de SMS y correo. |
 | 7 | Tierra + pauta | No | Métricas reales de Meta y Google Ads. |
@@ -91,12 +91,12 @@ La sincronización se prueba con pruebas automáticas que simulan quedarse sin s
 ### Fase 4: IA
 
 - Lectura de planillas y del E-14 con visión, con revisión humana obligatoria.
-- Strategos con *tool use* sobre vistas agregadas, con fuentes en cada respuesta y tareas aprobables con un clic.
+- Asesor IA con *tool use* sobre vistas agregadas, con fuentes en cada respuesta y tareas aprobables con un clic.
 - Registro de uso y costo por campaña, y cupos por plan.
 
 Sin clave, un modelo simulado devuelve respuestas fijas para las pruebas.
 
-✅ Una prueba automática verifica que ninguna herramienta de Strategos devuelve filas de personas. Con la clave, Strategos responde «¿dónde actúo esta semana?» con la semilla y sus fuentes.
+✅ Una prueba automática verifica que ninguna herramienta del Asesor IA devuelve filas de personas. Con la clave, Asesor IA responde «¿dónde actúo esta semana?» con la semilla y sus fuentes.
 
 ### Fase 5: Día E
 

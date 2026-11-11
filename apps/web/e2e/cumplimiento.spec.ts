@@ -35,7 +35,7 @@ test("solicitudes de titulares con plazo legal y exportación con marca", async 
   const descarga = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar CSV" }).click();
   const archivo = await descarga;
-  expect(archivo.suggestedFilename()).toMatch(/^ventaja-mando-exportacion-[0-9a-f]{8}\.csv$/);
+  expect(archivo.suggestedFilename()).toMatch(/^comando-exportacion-[0-9a-f]{8}\.csv$/);
   const csv = readFileSync((await archivo.path())!, "utf8");
   expect(csv).toContain("EXPORTACIÓN CONFIDENCIAL");
   expect(csv).toMatch(/Referencia [0-9a-f-]{36} · Exportado por Gerente Demo/);

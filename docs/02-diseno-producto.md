@@ -1,6 +1,6 @@
 # Nuestra versión: diseño de producto y arquitectura
 
-Versión 2, 23 de octubre de 2026. Nombre de trabajo: **Ventaja Mando**, el centro de mando de campaña de la familia Ventaja Electoral; el nombre final está por definir.
+Versión 2, 23 de octubre de 2026. Nombre: **Comando**, de la familia Ventaja Electoral (decidido el 10/11/2026; antes «Ventaja Mando»). El asistente se llama **Asesor IA**.
 
 Es un diseño propio, escrito desde cero a partir del análisis funcional del mercado (ver `01-analisis-mercado.md`). No reutiliza código, textos, pantallas ni recursos de VOTOMAP.
 
@@ -65,7 +65,7 @@ Esto se vende como **tranquilidad**: «su número no se cae el día 20 de octubr
 - **Sin consulta masiva de cédulas** en fuentes de la Registraduría. El puesto lo informa el titular, o este lo consulta en un enlace oficial.
 - **Auditoría** de exportaciones y accesos, y exportaciones con marca de agua.
 
-### 3.4 Strategos con herramientas, no solo chat
+### 3.4 Asesor IA con herramientas, no solo chat
 
 El asistente (Claude) consulta **vistas agregadas** con herramientas controladas (cobertura, metas, histórico, pauta, llamadas) y **propone tareas concretas** que el gerente aprueba con un clic: asignar una brigada, abrir una cola de llamadas o programar un SMS. Cada respuesta muestra **de qué datos salió** y nunca presenta un pronóstico como certeza.
 
@@ -76,7 +76,7 @@ En vez de 24 opciones en una barra lateral, **cinco espacios** según quién ent
 | Rol | Ve |
 |---|---|
 | **Candidato** | Un tablero de una sola pantalla: cómo vamos, dónde actuar y qué aprobé hoy. |
-| **Gerente** | El centro de mando con mapa, equipo, tareas, pauta y Strategos. |
+| **Gerente** | El centro de mando con mapa, equipo, tareas, pauta y Asesor IA. |
 | **Coordinador** | Su territorio, sus líderes, metas y alertas. |
 | **Líder (celular)** | Mis tareas de hoy, registrar persona, escanear planilla y mis metas. |
 | **Testigo (celular, día E)** | Mi mesa, la foto del E-14 y reportar una incidencia. |
@@ -105,7 +105,7 @@ En vez de 24 opciones en una barra lateral, **cinco espacios** según quién ent
   3. Bandeja del líder (celular).
   4. Escáner de planillas (celular).
   5. Día E (cuadrícula de mesas con semáforo).
-  6. Strategos (chat lateral con tarjetas de «tarea propuesta»).
+  6. Asesor IA (chat lateral con tarjetas de «tarea propuesta»).
 - **Movimiento:** 150 a 250 ms, vuelos suaves en el mapa y respeto por la opción de reducir movimiento.
 
 ## 5. Arquitectura propuesta
@@ -276,8 +276,8 @@ export function enlaceWhatsAppManual(telefonoE164: string, texto: string) {
 | Plan | Para quién | Incluye | Precio de referencia* |
 |---|---|---|---|
 | **Local** | Edil (JAL) o concejo | CRM, app sin conexión, OCR (cupo), mapa, 10 líderes | Precio público mensual, alta en el mismo día |
-| **Municipal** | Alcaldía o concejo grande | + testigos y E-14, telemarketing, SMS y correo, Strategos básico | Precio público mensual |
-| **Regional** | Gobernación, asamblea o Cámara | + pauta Meta/Google integrada, finanzas, Strategos completo | Cotización con base pública |
+| **Municipal** | Alcaldía o concejo grande | + testigos y E-14, telemarketing, SMS y correo, Asesor IA básico | Precio público mensual |
+| **Regional** | Gobernación, asamblea o Cámara | + pauta Meta/Google integrada, finanzas, Asesor IA completo | Cotización con base pública |
 | **Partido** | Directivas | + panel multicandidato, cruce entre candidatos, auditoría | Licencia institucional |
 
 \* Fijar los valores después de hablar con 5 a 10 campañas reales. **Publicar el precio de los dos primeros planes**, que es donde VOTOMAP es opaco.
@@ -290,7 +290,7 @@ export function enlaceWhatsAppManual(telefonoE164: string, texto: string) {
 |---|---|---|
 | 0. Validación | Nov 2026 | 5 a 10 entrevistas con gerentes de campaña y prototipo navegable del centro de mando |
 | 1. MVP | Ene-Feb 2027 | CRM, importación, duplicados, territorio, roles, mapa, app del líder sin conexión y **OCR de planillas** |
-| 2. Campaña | Mar-May 2027 | Formularios, tareas, índice de líder, telemarketing, SMS y correo, Strategos con herramientas |
+| 2. Campaña | Mar-May 2027 | Formularios, tareas, índice de líder, telemarketing, SMS y correo, Asesor IA con herramientas |
 | 3. Diferencial | May-Jul 2027 | Conectores Meta/Google Ads, recomendación tierra + pauta, panel de partido y finanzas |
 | 4. Día E | Ago-Sep 2027 | Testigos, incidencias, E-14 asistido, cumplimiento contra el E-14 y simulacros |
 | 5. Jornada | Oct 2027 | Soporte en vivo y análisis poselectoral |

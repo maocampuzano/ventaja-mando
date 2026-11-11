@@ -1,4 +1,4 @@
-# Traspaso: seguir Ventaja Mando en su computador
+# Traspaso: seguir Comando en su computador
 
 Este documento explica cómo pasar el trabajo de la sesión en la nube (claude.ai/code) a una sesión de **Claude Code
 en su computador**, con otra cuenta de Claude. Todo lo hecho hasta ahora está en GitHub, en
@@ -56,7 +56,7 @@ Estado al 24/10/2026: fases 0, 1 y 2 terminadas y la fase 3 casi cerrada (PR #15
 2. Copie y pegue el mensaje del recuadro de abajo, completo.
 
 ```
-Sigue con Ventaja Mando según PLAN-DE-TRABAJO.md (versión 2, aprobada), docs/ESTADO.md y docs/TRASPASO.md.
+Sigue con Comando según PLAN-DE-TRABAJO.md (versión 2, aprobada), docs/ESTADO.md y docs/TRASPASO.md.
 Vienes de una sesión en la nube (claude.ai/code) con otra cuenta; ahora trabajas en mi computador.
 
 Contexto que debes leer primero, en este orden: CLAUDE.md (reglas que no se negocian y forma de trabajar),
@@ -78,7 +78,7 @@ Qué sigue:
    verificar). Si falta algo, dime el paso a paso para conseguirlo.
 2. Cierra la fase 3 con su último PR: planilla imprimible en PDF con QR que identifica al líder y al lote
    (rama fase-3-planilla-pdf). Actualiza docs/ESTADO.md al cerrar la fase.
-3. Luego sigue con la fase 4 (IA: lectura de planillas y E-14 con revisión humana obligatoria, y Strategos con
+3. Luego sigue con la fase 4 (IA: lectura de planillas y E-14 con revisión humana obligatoria, y Asesor IA con
    herramientas sobre vistas agregadas). Sin ANTHROPIC_API_KEY, deja el modelo simulado y dime cómo activarla.
 
 Pendientes que no debes olvidar:

@@ -11,7 +11,7 @@ const celda = (v: unknown) => {
 export function csvExportacion(e: Exportacion, campana: string): string {
   const ref = e.referencia.slice(0, 8).toUpperCase();
   const lineas = [
-    [`EXPORTACIÓN CONFIDENCIAL · Ventaja Mando · ${campana}`],
+    [`EXPORTACIÓN CONFIDENCIAL · Comando · ${campana}`],
     [`Referencia ${e.referencia} · Exportado por ${e.exportadoPor || "(sin nombre)"} el ${e.exportadoEn} · Finalidad: ${e.finalidad}`],
     ["Uso exclusivo para la finalidad autorizada por cada titular (Ley 1581 de 2012). No se comparte ni se vende. Esta exportación quedó registrada en la auditoría."],
     [],
@@ -21,4 +21,4 @@ export function csvExportacion(e: Exportacion, campana: string): string {
   return "﻿" + lineas.map((l) => l.map(celda).join(";")).join("\r\n") + "\r\n";
 }
 
-export const nombreArchivoExportacion = (e: Exportacion) => `ventaja-mando-exportacion-${e.referencia.slice(0, 8)}.csv`;
+export const nombreArchivoExportacion = (e: Exportacion) => `comando-exportacion-${e.referencia.slice(0, 8)}.csv`;

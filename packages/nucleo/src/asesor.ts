@@ -1,4 +1,4 @@
-// Strategos: herramientas sobre vistas agregadas (regla 6). La IA nunca recibe filas de personas: recibe cifras por
+// Asesor IA: herramientas sobre vistas agregadas (regla 6). La IA nunca recibe filas de personas: recibe cifras por
 // zona y el índice de cada líder bajo una referencia opaca («L-03»). El nombre del líder lo pone la pantalla, del lado
 // de quien consulta, con la misma tabla de referencias (refsLideres). Cada resultado dice de qué datos salió.
 import { indiceLider } from "./lider.ts";
@@ -8,12 +8,12 @@ export type ZonaAgregada = {
   id: string; nombre: string; meta: number; potencial: number; bruto: number; validados: number; comprometidos: number;
   lideres: number; alcance: number; clics: number; gasto: number;
 };
-/** Un líder visto por Strategos: sin nombre, sin teléfono, sin ids de la base. */
+/** Un líder visto por el Asesor IA: sin nombre, sin teléfono, sin ids de la base. */
 export type LiderAgregado = {
   ref: string; zonaId: string; registrados: number; validados: number; duplicadosConOtros: number;
   tareasHechas: number; tareasAsignadas: number; meta: number;
 };
-export type DatosStrategos = {
+export type DatosAsesor = {
   /** metaVotos: la meta de votos según el alcance de quien pregunta (campaña completa o sus zonas). */
   campana: { candidato: string; cargo: string; metaVotos: number; eleccion: string };
   zonas: ZonaAgregada[];
@@ -35,14 +35,14 @@ export function refsLideres(ids: readonly string[]): Map<string, string> {
 }
 
 /**
- * Arma los datos de Strategos a partir del tablero. Copia campo por campo, a propósito: aunque el líder de entrada
+ * Arma los datos del Asesor IA a partir del tablero. Copia campo por campo, a propósito: aunque el líder de entrada
  * traiga nombre o teléfono, no pasan.
  */
-export function armarDatosStrategos(
-  campana: DatosStrategos["campana"],
+export function armarDatosAsesor(
+  campana: DatosAsesor["campana"],
   zonas: readonly ZonaAgregada[],
   lideres: readonly (Omit<LiderAgregado, "ref"> & { id: string })[],
-): DatosStrategos {
+): DatosAsesor {
   const refs = refsLideres(lideres.map((l) => l.id));
   return {
     campana: { candidato: campana.candidato, cargo: campana.cargo, metaVotos: campana.metaVotos, eleccion: campana.eleccion },
@@ -60,7 +60,7 @@ export function armarDatosStrategos(
 const r2 = (x: number) => Math.round(x * 100) / 100;
 
 // Definiciones para la API de Claude (JSON Schema estricto). Se mantienen en un orden fijo para no romper la caché.
-export const HERRAMIENTAS_STRATEGOS = [
+export const HERRAMIENTAS_ASESOR = [
   {
     name: "resumen_campana",
     description: "Totales de la campaña dentro del alcance de quien pregunta: meta de votos, simpatizantes en bruto, validados y comprometidos, líderes, pauta (alcance, clics y gasto) y fecha de la elección. Úsela para preguntas de avance frente a la meta.",
@@ -114,7 +114,7 @@ export const HERRAMIENTAS_STRATEGOS = [
   },
 ];
 
-export type NombreHerramienta = (typeof HERRAMIENTAS_STRATEGOS)[number]["name"];
+export type NombreHerramienta = (typeof HERRAMIENTAS_ASESOR)[number]["name"];
 
 const FUENTE = {
   resumen: "Totales de la campaña: simpatizantes por estado, líderes y pauta, dentro de su alcance",
@@ -133,7 +133,7 @@ function limite(x: unknown) {
  * Nunca lanza por una entrada mala: devuelve { error } para que el modelo pueda corregirse.
  */
 export function ejecutarHerramienta(
-  nombre: string, entrada: unknown, d: DatosStrategos, propuestas: TareaPropuesta[],
+  nombre: string, entrada: unknown, d: DatosAsesor, propuestas: TareaPropuesta[],
 ): ResultadoHerramienta {
   const e = (entrada ?? {}) as Record<string, unknown>;
   const recs = new Map(recomendar(d.zonas.map((z) => ({
@@ -204,7 +204,7 @@ export function ejecutarHerramienta(
   }
 }
 
-export type RespuestaStrategos = {
+export type RespuestaAsesor = {
   texto: string;
   fuentes: string[];
   tareas: TareaPropuesta[];
@@ -213,8 +213,8 @@ export type RespuestaStrategos = {
   uso: { entrada: number; salida: number; cacheLectura: number; costoUsd: number } | null;
 };
 
-export const SISTEMA_STRATEGOS = [
-  "Usted es Strategos, el asesor estratégico de una campaña electoral en Colombia, dentro del producto Ventaja Mando.",
+export const SISTEMA_ASESOR = [
+  "Usted es el Asesor IA, el asesor estratégico de una campaña electoral en Colombia, dentro del producto Comando.",
   "Responda en español de Colombia, claro y breve (máximo 150 palabras), para un gerente de campaña.",
   "Solo conoce los datos que devuelven sus herramientas, que son agregados por zona o por líder. Consulte las herramientas antes de afirmar cifras y no invente datos.",
   "Nunca pida ni use datos de personas (nombres, cédulas, teléfonos). Los líderes vienen como «L-03»: refiérase a ellos así.",
@@ -240,7 +240,7 @@ export function costoEstimadoUsd(modelo: string, u: { entrada: number; salida: n
  * Modelo simulado: responde sin IA, con las mismas herramientas y los mismos datos. Sirve para el modo demo, para
  * las pruebas y para cuando no hay ANTHROPIC_API_KEY.
  */
-export function responderSimulado(pregunta: string, d: DatosStrategos): RespuestaStrategos {
+export function responderSimulado(pregunta: string, d: DatosAsesor): RespuestaAsesor {
   const p = pregunta.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
   const tareas: TareaPropuesta[] = [];
   const fuentes = new Set<string>();
@@ -249,7 +249,7 @@ export function responderSimulado(pregunta: string, d: DatosStrategos): Respuest
     fuentes.add(r.fuente);
     return r.datos;
   };
-  const fin = (texto: string): RespuestaStrategos => ({ texto, fuentes: [...fuentes], tareas, modelo: "simulado", uso: null });
+  const fin = (texto: string): RespuestaAsesor => ({ texto, fuentes: [...fuentes], tareas, modelo: "simulado", uso: null });
 
   if (/lider|depur|revis/.test(p)) {
     type F = { ref: string; zonaId: string; total: number; coincidenciasConOtros: number };

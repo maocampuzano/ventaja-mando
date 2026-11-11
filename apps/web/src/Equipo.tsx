@@ -49,7 +49,7 @@ export function Equipo() {
   }
 
   const textoWhatsApp = creada &&
-    `Hola. Te invito al equipo de la campaña ${sesion.campana.candidato} en Ventaja Mando, como ${nombreRol[creada.rol].toLowerCase()}. ` +
+    `Hola. Te invito al equipo de la campaña ${sesion.campana.candidato} en Comando, como ${nombreRol[creada.rol].toLowerCase()}. ` +
     `Entra con tu correo ${creada.correo} desde este enlace (vence en ${dias} días): ${creada.enlace}`;
 
   return (

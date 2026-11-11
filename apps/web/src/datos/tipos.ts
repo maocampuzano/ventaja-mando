@@ -1,4 +1,4 @@
-import type { ActaLeida, CanalMasivo, Confianzas, ErrorPanel, FilaLibro, FuenteProhibida, MedioPropaganda, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosStrategos, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaStrategos, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaLeida, CanalMasivo, Confianzas, ErrorPanel, FilaLibro, FuenteProhibida, MedioPropaganda, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosAsesor, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaAsesor, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -96,9 +96,9 @@ export interface FuenteDatos {
   lotesPlanilla(sesion: Sesion): Promise<LotePlanilla[]>;
   /** Registra el lote y devuelve su id (va en el QR de cada hoja) y su número en la campaña. */
   crearLotePlanilla(sesion: Sesion, datos: NuevoLotePlanilla): Promise<{ id: string; numero: number }>;
-  // Strategos. En modo demo, o si la función del servidor no está publicada, responde el modelo simulado con los
+  // Asesor IA. En modo demo, o si la función del servidor no está publicada, responde el modelo simulado con los
   // datos del tablero (`datos`); en modo supabase con la función publicada, el servidor lee los datos con su RLS.
-  preguntarStrategos(sesion: Sesion, pregunta: string, datos: DatosStrategos): Promise<RespuestaStrategosPanel>;
+  preguntarAsesor(sesion: Sesion, pregunta: string, datos: DatosAsesor): Promise<RespuestaAsesorPanel>;
   // Lectura de planillas con revisión humana (regla 7)
   planillasPorRevisar(sesion: Sesion): Promise<PlanillaPorRevisar[]>;
   /** Dirección de la foto para verla (en modo supabase, un enlace firmado que vence pronto). null en el demo. */
@@ -244,4 +244,4 @@ export type FilaAprobada = { filaId: string; nombre: string; documento: string; 
 export type ResultadoAprobacion = { creadas: number; yaExistian: number; sinFirma: number; descartadas: number; rechazos: { filaId: string; motivo: string }[] };
 
 /** `aviso` explica por qué respondió el modelo simulado cuando se esperaba el real. */
-export type RespuestaStrategosPanel = RespuestaStrategos & { aviso?: string };
+export type RespuestaAsesorPanel = RespuestaAsesor & { aviso?: string };

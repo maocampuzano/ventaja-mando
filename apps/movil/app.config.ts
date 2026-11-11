@@ -6,7 +6,7 @@ const supabase = process.env.MODO_DATOS === "supabase";
 const url = supabase ? (process.env.SUPABASE_URL ?? "").replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/$/, "") : "";
 
 const config: ExpoConfig = {
-  name: "Ventaja Mando",
+  name: "Comando",
   slug: "ventaja-mando",
   scheme: "ventajamando",
   version: "0.1.0",
@@ -19,7 +19,7 @@ const config: ExpoConfig = {
   plugins: [
     "expo-sqlite",
     ["expo-image-picker", {
-      cameraPermission: "Ventaja Mando usa la cámara para tomar la foto de las planillas, del E-14 y de la autorización firmada.",
+      cameraPermission: "Comando usa la cámara para tomar la foto de las planillas, del E-14 y de la autorización firmada.",
       photosPermission: false,
     }],
   ],

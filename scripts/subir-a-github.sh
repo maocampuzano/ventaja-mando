@@ -19,6 +19,6 @@ if [ ! -d .git ]; then
 fi
 
 gh repo create "$NOMBRE" --private --source . --remote origin --push \
-  --description "Ventaja Mando: centro de mando para campañas electorales (privado)"
+  --description "Comando: centro de mando para campañas electorales (privado)"
 
 echo "Listo. Repositorio privado: $(gh repo view "$NOMBRE" --json url -q .url)"

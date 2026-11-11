@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
-  HERRAMIENTAS_STRATEGOS, armarDatosStrategos, costoEstimadoUsd, ejecutarHerramienta, refsLideres, responderSimulado,
-  type DatosStrategos, type TareaPropuesta,
-} from "./strategos";
+  HERRAMIENTAS_ASESOR, armarDatosAsesor, costoEstimadoUsd, ejecutarHerramienta, refsLideres, responderSimulado,
+  type DatosAsesor, type TareaPropuesta,
+} from "./asesor";
 
-// Datos ficticios. Los nombres de los líderes NO entran a DatosStrategos: solo sirven para comprobar que no se filtran.
+// Datos ficticios. Los nombres de los líderes NO entran a DatosAsesor: solo sirven para comprobar que no se filtran.
 const NOMBRES = { a: "Yesenia Barrios", b: "Rafael Pérez", c: "Luz Marina Julio", d: "Edwin Cassiani" };
 const refs = refsLideres(Object.keys(NOMBRES));
 const z = (id: string, nombre: string, validados: number, alcance: number, potencial: number) => ({
   id, nombre, meta: 1000, potencial, bruto: validados * 2, validados, comprometidos: Math.round(validados / 2), lideres: 2, alcance, clics: alcance / 10, gasto: alcance * 3,
 });
-const datos: DatosStrategos = {
+const datos: DatosAsesor = {
   campana: { candidato: "Laura Méndez", cargo: "Alcaldía de Turbaco", metaVotos: 4000, eleccion: "2027-10-31" },
   zonas: [
     z("z1", "Centro", 900, 1000, 500),       // tierra alta, digital alto
@@ -42,12 +42,12 @@ const ENTRADAS: Record<string, unknown[]> = {
   proponer_tarea: [{ tipo: "brigada", titulo: "Brigada", detalle: "Sábado", zonas: ["z2"], lideres: [refs.get("b")] }],
 };
 
-describe("regla 6: ninguna herramienta de Strategos devuelve filas de personas", () => {
+describe("regla 6: ninguna herramienta del Asesor IA devuelve filas de personas", () => {
   it("todas las herramientas definidas tienen casos de prueba", () => {
-    expect(HERRAMIENTAS_STRATEGOS.map((h) => h.name).sort()).toEqual(Object.keys(ENTRADAS).sort());
+    expect(HERRAMIENTAS_ASESOR.map((h) => h.name).sort()).toEqual(Object.keys(ENTRADAS).sort());
   });
 
-  for (const h of HERRAMIENTAS_STRATEGOS) {
+  for (const h of HERRAMIENTAS_ASESOR) {
     it(`«${h.name}» no trae campos de personas ni nombres de líderes`, () => {
       for (const entrada of ENTRADAS[h.name]) {
         const r = ejecutarHerramienta(h.name, entrada, datos, []);
@@ -71,7 +71,7 @@ describe("armar los datos desde el tablero", () => {
   it("no deja pasar nombres, teléfonos ni ids aunque vengan en la entrada", () => {
     const conDatos = [{ id: "uuid-1", nombre: "Yesenia Barrios", telefono: "+57 300 000 0001", zonaId: "z1", registrados: 1,
       validados: 1, duplicadosConOtros: 0, tareasHechas: 0, tareasAsignadas: 0, meta: 5 }];
-    const d = armarDatosStrategos({ ...datos.campana, correo: "x@y.co" } as DatosStrategos["campana"],
+    const d = armarDatosAsesor({ ...datos.campana, correo: "x@y.co" } as DatosAsesor["campana"],
       datos.zonas.map((zz) => ({ ...zz, telefono: "300" })), conDatos);
     const texto = JSON.stringify(d);
     expect(texto).not.toMatch(/Yesenia|\+57|uuid-1|telefono|correo/);
@@ -111,7 +111,7 @@ describe("herramientas", () => {
   });
 
   it("las definiciones son estrictas (sin propiedades extra)", () => {
-    for (const h of HERRAMIENTAS_STRATEGOS) {
+    for (const h of HERRAMIENTAS_ASESOR) {
       expect(h.strict).toBe(true);
       expect(h.input_schema.additionalProperties).toBe(false);
     }

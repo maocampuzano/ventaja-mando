@@ -6,7 +6,7 @@ const CLAVE_MAPAS = import.meta.env.VITE_MAPTILER_KEY ?? "";
 import { Barra } from "./comunes";
 import { useTablero } from "./datos/contexto";
 import { miles, pct, porcentajeCobertura, textoAccion } from "@ventaja/nucleo";
-import { Strategos, type Tarea } from "./Strategos";
+import { Asesor, type Tarea } from "./Asesor";
 
 const capas: { id: Capa; nombre: string; leyenda: ReactNode }[] = [
   {
@@ -85,10 +85,10 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
       <aside className="flota panel-lado">
         <div className="pestanas" role="tablist">
           <button role="tab" className="pestana" aria-selected={pest === "zona"} onClick={() => setPest("zona")}>Zona</button>
-          <button role="tab" className="pestana" aria-selected={pest === "ia"} onClick={() => setPest("ia")}>Strategos</button>
+          <button role="tab" className="pestana" aria-selected={pest === "ia"} onClick={() => setPest("ia")}>Asesor IA</button>
         </div>
         <div className="cuerpo">
-          {pest === "ia" ? <Strategos aprobadas={aprobadas} alAprobar={alAprobar} /> : sel ? <PerfilZona id={sel} /> : (
+          {pest === "ia" ? <Asesor aprobadas={aprobadas} alAprobar={alAprobar} /> : sel ? <PerfilZona id={sel} /> : (
             <p className="tenue">Toque una zona del mapa o una recomendación para ver su detalle.</p>
           )}
         </div>

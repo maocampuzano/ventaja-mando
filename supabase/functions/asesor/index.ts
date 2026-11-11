@@ -1,15 +1,15 @@
-// Función de Supabase «strategos» (Deno). Recibe { campana, pregunta } con la sesión de quien pregunta y devuelve una
-// RespuestaStrategos. La clave de Anthropic vive solo aquí (secreto de la función), nunca en el navegador.
+// Función de Supabase «asesor» (Deno). Recibe { campana, pregunta } con la sesión de quien pregunta y devuelve una
+// RespuestaAsesor. La clave de Anthropic vive solo aquí (secreto de la función), nunca en el navegador.
 //
-// 1. Verifica la sesión, el rol y el cupo del mes (estado_strategos).
+// 1. Verifica la sesión, el rol y el cupo del mes (estado_asesor).
 // 2. Lee el tablero con la sesión de quien pregunta: la RLS y las funciones del tablero recortan a su alcance.
 // 3. Arma los datos agregados (sin nombres de líderes: referencias L-…) y pregunta a Claude con herramientas.
 //    Sin ANTHROPIC_API_KEY, responde el modelo simulado.
 // 4. Registra el uso y el costo con la clave de servicio.
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import { armarDatosStrategos, responderSimulado, type RespuestaStrategos } from "../../../packages/nucleo/src/strategos.ts";
-import { MODELO_STRATEGOS_POR_DEFECTO, responderConClaude } from "../../../packages/nucleo/src/strategosClaude.ts";
+import { armarDatosAsesor, responderSimulado, type RespuestaAsesor } from "../../../packages/nucleo/src/asesor.ts";
+import { MODELO_ASESOR_POR_DEFECTO, responderConClaude } from "../../../packages/nucleo/src/asesorClaude.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -41,9 +41,9 @@ Deno.serve(async (req) => {
   const { data: u } = await usuario.auth.getUser();
   if (!u.user) return responder(401, { error: "La sesión venció. Vuelva a iniciar sesión." });
 
-  const { data: estado, error: ee } = await usuario.rpc("estado_strategos", { p_campana: campana }).single<{ permitido: boolean }>();
-  if (ee || !estado?.permitido) return responder(403, { error: "Strategos no está disponible para su rol en esta campaña." });
-  // El cupo se mide con la clave de servicio: la coordinación usa Strategos pero no ve el gasto.
+  const { data: estado, error: ee } = await usuario.rpc("estado_asesor", { p_campana: campana }).single<{ permitido: boolean }>();
+  if (ee || !estado?.permitido) return responder(403, { error: "El Asesor IA no está disponible para su rol en esta campaña." });
+  // El cupo se mide con la clave de servicio: la coordinación usa el Asesor IA pero no ve el gasto.
   const [{ data: gasto }, { data: cupo }] = await Promise.all([
     servicio.rpc("gasto_ia_mes_servicio", { p_campana: campana }),
     servicio.from("cupo_ia").select("usd_mes").eq("campana_id", campana).maybeSingle(),
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   const filasZonas = z.data as Record<string, unknown>[];
   const veTodo = ["administrador", "gerente", "candidato"].includes(String(m.data?.rol ?? ""));
   const meta = veTodo ? n(c.data.meta_votos) : filasZonas.reduce((s, f) => s + n(f.meta), 0);
-  const datos = armarDatosStrategos(
+  const datos = armarDatosAsesor(
     { candidato: c.data.nombre, cargo: c.data.cargo, metaVotos: meta, eleccion: c.data.eleccion_fecha ?? "" },
     filasZonas.map((f) => ({
       id: String(f.territorio_id), nombre: String(f.nombre), meta: n(f.meta), potencial: n(f.potencial), bruto: n(f.bruto),
@@ -79,26 +79,26 @@ Deno.serve(async (req) => {
   );
 
   const clave = Deno.env.get("ANTHROPIC_API_KEY");
-  let respuesta: RespuestaStrategos;
+  let respuesta: RespuestaAsesor;
   if (!clave) {
     respuesta = responderSimulado(pregunta, datos);
   } else {
     try {
       respuesta = await responderConClaude(new Anthropic({ apiKey: clave }), pregunta, datos,
-        Deno.env.get("MODELO_STRATEGOS") || MODELO_STRATEGOS_POR_DEFECTO);
+        Deno.env.get("MODELO_ASESOR") || MODELO_ASESOR_POR_DEFECTO);
     } catch (e) {
-      if (e instanceof Anthropic.RateLimitError) return responder(503, { error: "Strategos está muy ocupado. Intente en un minuto." });
+      if (e instanceof Anthropic.RateLimitError) return responder(503, { error: "El Asesor IA está muy ocupado. Intente en un minuto." });
       if (e instanceof Anthropic.AuthenticationError) {
         console.error("ANTHROPIC_API_KEY no es válida");
-        return responder(503, { error: "Strategos no está bien configurado. Avise al administrador." });
+        return responder(503, { error: "El Asesor IA no está bien configurado. Avise al administrador." });
       }
       if (e instanceof Anthropic.APIError) console.error(`Error de la API de Claude: ${e.status}`);
-      else console.error("Error inesperado en Strategos");
-      return responder(502, { error: "Strategos no pudo responder. Intente de nuevo." });
+      else console.error("Error inesperado en el Asesor IA");
+      return responder(502, { error: "El Asesor IA no pudo responder. Intente de nuevo." });
     }
     if (respuesta.uso) {
       const { error } = await servicio.from("uso_ia").insert({
-        campana_id: campana, usuario_id: u.user.id, funcion: "strategos", modelo: respuesta.modelo,
+        campana_id: campana, usuario_id: u.user.id, funcion: "asesor", modelo: respuesta.modelo,
         tokens_entrada: respuesta.uso.entrada, tokens_salida: respuesta.uso.salida,
         tokens_cache_lectura: respuesta.uso.cacheLectura, costo_usd: respuesta.uso.costoUsd,
       });
