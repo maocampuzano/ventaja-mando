@@ -1,4 +1,4 @@
-# Cómo correr Ventaja Mando en local
+# Cómo correr Comando en local
 
 ## Requisitos
 

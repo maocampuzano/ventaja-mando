@@ -156,7 +156,7 @@ tr[aria-selected="true"] td { background: #1c2742; }
 .comp { display: grid; gap: 3px; font-size: 11px; color: var(--tenue); }
 .comp .barra-h { height: 5px; }
 
-/* Strategos */
+/* Asesor IA */
 .mensaje { border-radius: var(--radio-m); padding: 12px 14px; }
 .mensaje.yo { background: var(--acento-suave); margin-left: 28px; }
 .mensaje.ia { background: var(--panel-2); }

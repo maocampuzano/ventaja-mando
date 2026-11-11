@@ -20,6 +20,6 @@ describe("exportación con marca", () => {
   });
 
   it("el nombre del archivo lleva la referencia", () => {
-    expect(nombreArchivoExportacion(e)).toBe("ventaja-mando-exportacion-abcd1234.csv");
+    expect(nombreArchivoExportacion(e)).toBe("comando-exportacion-abcd1234.csv");
   });
 });

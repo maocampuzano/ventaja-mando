@@ -145,13 +145,13 @@ En **Authentication → Sign In / Providers → Email**, suba **Minimum password
 
 Correo de confirmación: Supabase confirma cada cuenta nueva con un correo. Su servicio de correo incluido tiene límites estrictos de envío y no sirve para una campaña real; en la fase 6 se conecta el proveedor de correo propio. Mientras tanto, para pruebas, la cuenta se puede confirmar a mano en **Authentication → Users**.
 
-## Strategos con IA (fase 4)
+## Asesor IA con IA (fase 4)
 
-Strategos funciona en dos modos:
+Asesor IA funciona en dos modos:
 
 - **Simulado** (por defecto): responde sin IA, con las mismas herramientas y los mismos datos. Es el del modo demo y el que usa el panel mientras la función no esté publicada.
-- **Con Claude**: la función `functions/strategos` (Deno) recibe la pregunta y hace lo siguiente:
-  1. revisa el rol y el cupo del mes (`estado_strategos`);
+- **Con Claude**: la función `functions/asesor` (Deno) recibe la pregunta y hace lo siguiente:
+  1. revisa el rol y el cupo del mes (`estado_asesor`);
   2. lee el tablero con la sesión de quien pregunta, así que cada rol ve solo su alcance;
   3. le pregunta a Claude con herramientas que devuelven solo agregados. Los líderes van como «L-03», sin nombre (regla 6);
   4. registra los tokens y el costo en `uso_ia`.
@@ -168,7 +168,7 @@ Después:
 - **Las filas sin firma no se registran.**
 - **Sin `ANTHROPIC_API_KEY` la función no lee.** En el proyecto real nunca se usa la lectura simulada, para que no entren datos inventados.
 
-**Cupo:** cada campaña tiene un tope de gasto de IA por mes, de USD 10 por defecto mientras no se defina el precio de los planes (V7). Se cambia en la tabla `cupo_ia`, solo con la clave de servicio: la campaña no puede subirse su propio cupo. Al llegar al tope, Strategos responde «La campaña llegó al cupo de IA de este mes».
+**Cupo:** cada campaña tiene un tope de gasto de IA por mes, de USD 10 por defecto mientras no se defina el precio de los planes (V7). Se cambia en la tabla `cupo_ia`, solo con la clave de servicio: la campaña no puede subirse su propio cupo. Al llegar al tope, Asesor IA responde «La campaña llegó al cupo de IA de este mes».
 
 **Activarlo (cuando tenga la clave de Anthropic):**
 1. Entre a https://console.anthropic.com e inicie sesión (o cree la cuenta de la empresa).
@@ -176,12 +176,12 @@ Después:
 3. En **Settings → Limits**, ponga un límite mensual de gasto. Es una segunda barrera, además del cupo por campaña.
 4. En **Settings → API Keys**, pulse **Create Key**, póngale de nombre `ventaja-mando-prueba` y copie la clave (empieza por `sk-ant-`). Solo se muestra una vez.
 5. Abra el archivo `.env` del proyecto y pegue la clave después de `ANTHROPIC_API_KEY=`, sin espacios. Guarde. **No la pegue en el chat.**
-6. Avíseme. Yo corro `bash supabase/scripts/activar-strategos.sh`, que carga la clave como secreto (sin mostrarla) y publica las funciones `strategos` y `lectura`. Para comprobarlo: en el panel, **Mando → Strategos → «¿Dónde actúo esta semana?»** debe responder sin el aviso de «modelo simulado».
+6. Avíseme. Yo corro `bash supabase/scripts/activar-ia.sh`, que carga la clave como secreto (sin mostrarla) y publica las funciones `asesor` y `lectura`. Para comprobarlo: en el panel, **Mando → Asesor IA → «¿Dónde actúo esta semana?»** debe responder sin el aviso de «modelo simulado».
 
-Modelos: `MODELO_STRATEGOS` (por defecto `claude-sonnet-5-5`). Si un clasificador de seguridad de Anthropic rechaza una pregunta, la API la reintenta sola en otro modelo adecuado (`fallbacks: "default"`).
+Modelos: `MODELO_ASESOR` (por defecto `claude-sonnet-5-5`). Si un clasificador de seguridad de Anthropic rechaza una pregunta, la API la reintenta sola en otro modelo adecuado (`fallbacks: "default"`).
 
 ## Lo que no se pudo probar desde aquí
 
-- **Funciones `strategos` y `lectura`:** publicadas el 08/11/2026 en el proyecto de prueba, con la clave de Anthropic cargada como secreto. Arrancan y responden; la prueba completa con un usuario real queda pendiente hasta tener cuentas y datos de prueba. Las importaciones de `packages/nucleo` que usan las funciones llevan la extensión `.ts`, porque el empaquetado de Supabase no las resuelve sin ella.
+- **Funciones `asesor` y `lectura`:** publicadas el 08/11/2026 en el proyecto de prueba, con la clave de Anthropic cargada como secreto. Arrancan y responden; la prueba completa con un usuario real queda pendiente hasta tener cuentas y datos de prueba. Las importaciones de `packages/nucleo` que usan las funciones llevan la extensión `.ts`, porque el empaquetado de Supabase no las resuelve sin ella.
 
 Las pruebas corren sobre un Postgres 16 con PostGIS que imita a Supabase, con la parte de autenticación simulada. `aplicar-remoto.mjs verificar` confirma en el proyecto real que las migraciones quedaron, que no hay tablas sin RLS y que el Vault cifra y descifra. Falta confirmar, con un usuario real que inicie sesión, que el token de sesión trae el dato de dos factores (`aal`). Eso se prueba en la fase 2, con el inicio de sesión del panel.

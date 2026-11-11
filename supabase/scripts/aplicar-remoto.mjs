@@ -130,7 +130,7 @@ async function estado(ref, token) {
     return (await consulta(ref, token, SQL_VERIFICAR))[0].estado;
   } catch {
     // Antes de la primera migración las tablas no existen y la verificación completa no aplica.
-    return { migraciones, nota: "Las tablas de Ventaja Mando todavía no existen en el proyecto." };
+    return { migraciones, nota: "Las tablas de Comando todavía no existen en el proyecto." };
   }
 }
 

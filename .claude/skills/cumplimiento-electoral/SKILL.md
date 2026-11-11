@@ -1,6 +1,6 @@
 ---
 name: cumplimiento-electoral
-description: Revisa un cambio de Ventaja Mando contra las reglas de datos personales (Ley 1581 de 2012), las políticas de WhatsApp y el riesgo penal electoral antes de abrir un PR. Úsela siempre que el cambio toque datos de personas, autorizaciones, mensajería, exportaciones, solicitudes ciudadanas, la IA o el día electoral.
+description: Revisa un cambio de Comando contra las reglas de datos personales (Ley 1581 de 2012), las políticas de WhatsApp y el riesgo penal electoral antes de abrir un PR. Úsela siempre que el cambio toque datos de personas, autorizaciones, mensajería, exportaciones, solicitudes ciudadanas, la IA o el día electoral.
 ---
 
 # Revisión de cumplimiento electoral
@@ -21,7 +21,7 @@ Recorra esta lista contra el diff. Por cada punto que falle, corríjalo o expliq
 
 - [ ] No hay envío automático por WhatsApp, ni conexión por QR ni librerías no oficiales. Solo enlaces `wa.me` que la persona envía a mano.
 - [ ] SMS y correo solo a contactos con autorización vigente para esa finalidad, con baja en un paso, y la baja se respeta en todos los canales.
-- [ ] Los textos generados por IA se revisan antes de enviarse; no hay envío directo desde Strategos.
+- [ ] Los textos generados por IA se revisan antes de enviarse; no hay envío directo desde Asesor IA.
 
 ## Riesgo penal electoral
 
@@ -32,7 +32,7 @@ Recorra esta lista contra el diff. Por cada punto que falle, corríjalo o expliq
 
 ## IA
 
-- [ ] Las herramientas de Strategos devuelven agregados, nunca filas de personas. Hay una prueba que lo verifica.
+- [ ] Las herramientas de Asesor IA devuelven agregados, nunca filas de personas. Hay una prueba que lo verifica.
 - [ ] Las respuestas citan sus fuentes de datos y presentan los escenarios con sus supuestos.
 - [ ] La lectura de planillas y del E-14 exige revisión humana antes de guardar.
 

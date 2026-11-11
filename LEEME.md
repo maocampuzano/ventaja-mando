@@ -1,4 +1,4 @@
-# Ventaja Mando: paquete para construir en la nube
+# Comando: paquete para construir en la nube
 
 Este paquete tiene todo lo necesario para que Claude construya el producto en sesiones de nube (claude.ai/code), fase por fase:
 
@@ -31,7 +31,7 @@ Vienen dentro de `.claude/skills/`, así que cualquier sesión que abra este rep
 | `break-ui` | Probar cada pantalla con datos extremos. |
 | `superdesign` | Explorar variantes de pantallas en el lienzo de Superdesign (superdesign.dev). Es un servicio externo: necesita cuenta, ingreso por navegador y los dominios `superdesign.dev` y `api.superdesign.dev` permitidos en la red del entorno. Envía código del proyecto a sus servidores. |
 
-La skill `claude-api`, para integrar Strategos con la API de Claude, viene incluida en Claude Code y no hay que agregarla. Las skills de terceros son de uso personal: **mantenga el repositorio privado**.
+La skill `claude-api`, para integrar Asesor IA con la API de Claude, viene incluida en Claude Code y no hay que agregarla. Las skills de terceros son de uso personal: **mantenga el repositorio privado**.
 
 ## Paso a paso
 

@@ -1,4 +1,4 @@
-# Ventaja Mando: prototipo navegable
+# Comando: prototipo navegable
 
 Prototipo para mostrar en las entrevistas con gerentes de campaña (ver `../../docs/02-diseno-producto.md`). **Todos los datos son ficticios**: una campaña inventada a la Alcaldía de Turbaco, con zonas hexagonales ilustrativas que no son barrios ni límites oficiales.
 
@@ -21,7 +21,7 @@ Arriba a la derecha, **«Ver como»** cambia de rol. Cada rol ve solo lo suyo:
 
 | Rol | Pantallas |
 |---|---|
-| **Gerente** | Mando (mapa + Strategos), Líderes, Planillas, Día E, Datos |
+| **Gerente** | Mando (mapa + Asesor IA), Líderes, Planillas, Día E, Datos |
 | **Coordinador** | Mando, Líderes, Planillas |
 | **Candidata** | Resumen de una pantalla, Mando, Día E |
 | **Líder** | Su celular: tareas de hoy, escanear planilla, su meta |
@@ -29,7 +29,7 @@ Arriba a la derecha, **«Ver como»** cambia de rol. Cada rol ve solo lo suyo:
 
 **Recorrido sugerido para una demo (5 minutos):**
 1. **Mando:** cambie las capas del mapa («Qué hacer en cada zona», «Alcance de la pauta», «Cobertura de testigos»). Toque una zona para ver su detalle.
-2. **Strategos** (panel derecho): pregunte «¿Dónde actúo esta semana?» y apruebe una tarea. Aparece arriba como «tarea aprobada» y en el Resumen de la candidata.
+2. **Asesor IA** (panel derecho): pregunte «¿Dónde actúo esta semana?» y apruebe una tarea. Aparece arriba como «tarea aprobada» y en el Resumen de la candidata.
 3. **Líderes:** ordene de menor a mayor y abra uno con índice bajo. Se ve por qué está bajo (calidad, limpieza, tareas, meta) y el botón de WhatsApp de persona a persona.
 4. **Planillas:** en el celular, «Tomar foto». Muestra la lectura, las dudas en ámbar, la cédula repetida en rojo y que no deja enviar hasta corregir.
 5. **Día E:** «Iniciar simulacro de jornada». Las mesas se van poniendo azules a medida que llegan los E-14; las novedades se marcan como atendidas.
@@ -41,10 +41,10 @@ Arriba a la derecha, **«Ver como»** cambia de rol. Cada rol ve solo lo suyo:
 - `npm run build` genera un solo archivo, `dist/index.html`, con todo el código adentro.
 - `src/data.ts`: datos ficticios generados con semilla fija; siempre salen iguales.
 - La lógica del documento de diseño (índice del líder, recomendación tierra + pauta, cobertura de mesas, enlace de WhatsApp manual, duplicados y formatos) vive en `packages/nucleo` y se importa como `@ventaja/nucleo`.
-- No hay backend: Strategos responde con textos de ejemplo y nada se guarda, salvo las tareas aprobadas, que duran mientras la pestaña esté abierta.
+- No hay backend: Asesor IA responde con textos de ejemplo y nada se guarda, salvo las tareas aprobadas, que duran mientras la pestaña esté abierta.
 
 ## Pendiente
 
-- En celular, el panel de Strategos y el detalle de zona del mando están ocultos.
+- En celular, el panel de Asesor IA y el detalle de zona del mando están ocultos.
 - El mapa del prototipo no tiene calles de fondo: las zonas son ilustrativas.
 - Faltan las pantallas de telemarketing, formularios y finanzas.

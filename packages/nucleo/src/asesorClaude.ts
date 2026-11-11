@@ -1,26 +1,26 @@
-// Strategos con Claude: ciclo de herramientas sobre los datos agregados. Corre en el servidor (función de Supabase
-// «strategos»), nunca en el navegador: la clave de Anthropic no sale del servidor. El cliente se recibe ya creado,
+// Asesor IA con Claude: ciclo de herramientas sobre los datos agregados. Corre en el servidor (función de Supabase
+// «asesor»), nunca en el navegador: la clave de Anthropic no sale del servidor. El cliente se recibe ya creado,
 // así este archivo solo depende de los tipos del SDK y se puede probar con un cliente simulado.
 import type Anthropic from "@anthropic-ai/sdk";
 import {
-  HERRAMIENTAS_STRATEGOS, SISTEMA_STRATEGOS, costoEstimadoUsd, ejecutarHerramienta,
-  type DatosStrategos, type RespuestaStrategos, type TareaPropuesta,
-} from "./strategos.ts";
+  HERRAMIENTAS_ASESOR, SISTEMA_ASESOR, costoEstimadoUsd, ejecutarHerramienta,
+  type DatosAsesor, type RespuestaAsesor, type TareaPropuesta,
+} from "./asesor.ts";
 
-export const MODELO_STRATEGOS_POR_DEFECTO = "claude-sonnet-5-5";
+export const MODELO_ASESOR_POR_DEFECTO = "claude-sonnet-5-5";
 const MAX_VUELTAS = 6;
 
 /** Lo único que el ciclo usa del cliente del SDK (permite probarlo sin red). */
 export type ClienteClaude = { beta: { messages: Pick<Anthropic["beta"]["messages"], "create"> } };
 
 export async function responderConClaude(
-  cliente: ClienteClaude, pregunta: string, datos: DatosStrategos, modelo = MODELO_STRATEGOS_POR_DEFECTO,
-): Promise<RespuestaStrategos> {
+  cliente: ClienteClaude, pregunta: string, datos: DatosAsesor, modelo = MODELO_ASESOR_POR_DEFECTO,
+): Promise<RespuestaAsesor> {
   const mensajes: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content: pregunta }];
   const tareas: TareaPropuesta[] = [];
   const fuentes = new Set<string>();
   const uso = { entrada: 0, salida: 0, cacheLectura: 0, cacheEscritura: 0 };
-  const tools: Anthropic.Beta.BetaTool[] = HERRAMIENTAS_STRATEGOS.map((h) => ({ ...h, input_schema: h.input_schema }));
+  const tools: Anthropic.Beta.BetaTool[] = HERRAMIENTAS_ASESOR.map((h) => ({ ...h, input_schema: h.input_schema }));
 
   for (let vuelta = 0; vuelta < MAX_VUELTAS; vuelta++) {
     const r = await cliente.beta.messages.create({
@@ -31,7 +31,7 @@ export async function responderConClaude(
       fallbacks: "default",
       output_config: { effort: "medium" },
       // Sistema y herramientas son fijos: se guardan en caché entre preguntas.
-      system: [{ type: "text", text: SISTEMA_STRATEGOS, cache_control: { type: "ephemeral" } }],
+      system: [{ type: "text", text: SISTEMA_ASESOR, cache_control: { type: "ephemeral" } }],
       tools,
       messages: mensajes,
     });
@@ -47,7 +47,7 @@ export async function responderConClaude(
     const texto = () => r.content.filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text").map((b) => b.text).join("\n").trim();
 
     if (r.stop_reason === "refusal") {
-      return { texto: "Strategos no puede responder esa pregunta. Intente plantearla de otra forma.", fuentes: [...fuentes], tareas: [], modelo: r.model, uso: resumenUso() };
+      return { texto: "El Asesor IA no puede responder esa pregunta. Intente plantearla de otra forma.", fuentes: [...fuentes], tareas: [], modelo: r.model, uso: resumenUso() };
     }
     if (r.stop_reason === "pause_turn") {
       mensajes.push({ role: "assistant", content: r.content });
@@ -55,7 +55,7 @@ export async function responderConClaude(
     }
     const usos = r.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
     if (r.stop_reason !== "tool_use" || !usos.length) {
-      return { texto: texto() || "Strategos no devolvió texto.", fuentes: [...fuentes], tareas, modelo: r.model, uso: resumenUso() };
+      return { texto: texto() || "El Asesor IA no devolvió texto.", fuentes: [...fuentes], tareas, modelo: r.model, uso: resumenUso() };
     }
 
     // Se devuelve el contenido completo (incluidos los bloques de razonamiento) y todos los resultados en un mensaje.
@@ -69,7 +69,7 @@ export async function responderConClaude(
     mensajes.push({ role: "user", content: resultados });
   }
   return {
-    texto: "Strategos necesitó demasiados pasos para esta pregunta. Intente una pregunta más concreta.",
+    texto: "El Asesor IA necesitó demasiados pasos para esta pregunta. Intente una pregunta más concreta.",
     fuentes: [...fuentes], tareas, modelo, uso: { entrada: uso.entrada + uso.cacheEscritura, salida: uso.salida, cacheLectura: uso.cacheLectura, costoUsd: costoEstimadoUsd(modelo, uso) },
   };
 }

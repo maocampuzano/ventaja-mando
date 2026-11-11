@@ -38,7 +38,7 @@ export function InicioSesion({ fuente, alEntrar, aviso }: { fuente: FuenteDatos;
           <div className="marca" aria-hidden="true">
             <svg viewBox="0 0 32 32" width="24" height="24"><path d="M8 9l8 15 8-15" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
-          <div><h1>Ventaja Mando</h1><p className="tenue">Centro de mando de la campaña</p></div>
+          <div><h1>Comando</h1><p className="tenue">De Ventaja Electoral. El centro de mando de su campaña.</p></div>
         </div>
 
         {aviso && <p className="aviso" role="status">{aviso}</p>}
@@ -63,7 +63,7 @@ export function InicioSesion({ fuente, alEntrar, aviso }: { fuente: FuenteDatos;
                 <ol className="pila" style={{ margin: 0, paddingLeft: 18 }}>
                   <li>Abra en su celular la app Google Authenticator o Microsoft Authenticator y toque «+» o «Agregar cuenta».</li>
                   <li>Elija «Escanear código QR» y apunte la cámara a este código.</li>
-                  <li>La app mostrará «Ventaja Mando» con un número de 6 dígitos que cambia cada 30 segundos. Escríbalo abajo.</li>
+                  <li>La app mostrará «Comando» con un número de 6 dígitos que cambia cada 30 segundos. Escríbalo abajo.</li>
                 </ol>
                 <img className="qr-2fa" src={inscripcion.qr} alt="Código QR para vincular la app autenticadora" width={200} height={200} />
                 <details>

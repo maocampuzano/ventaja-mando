@@ -7,7 +7,7 @@ import { Escaner } from "./Escaner";
 import { ImprimirPlanillas } from "./ImprimirPlanillas";
 import { RevisarPlanillas } from "./RevisarPlanillas";
 import { miles, pct, textoAccion } from "@ventaja/nucleo";
-import type { Tarea } from "./Strategos";
+import type { Tarea } from "./Asesor";
 
 /* ---------- Planillas (gerente / coordinador) ---------- */
 export function Planillas() {
@@ -34,7 +34,7 @@ export function Planillas() {
           <ImprimirPlanillas />
           <p className="aviso">La firma de autorización en la planilla es la prueba del consentimiento (Ley 1581). Una fila sin firma no se registra.</p>
         </div>
-        <Telefono titulo="Ventaja Mando"><Escaner /></Telefono>
+        <Telefono titulo="Comando"><Escaner /></Telefono>
       </div>
     </div>
   );
@@ -186,7 +186,7 @@ export function Resumen({ aprobadas }: { aprobadas: Tarea[] }) {
         <h2>Decisiones de hoy</h2>
         {aprobadas.length ? aprobadas.map((t) => (
           <div key={t.id} className="fila entre"><span>{t.titulo}</span><span className="sello verde">Aprobada</span></div>
-        )) : <p className="tenue">Su gerente todavía no ha aprobado tareas hoy. Las que Strategos propone aparecen aquí cuando alguien las aprueba.</p>}
+        )) : <p className="tenue">Su gerente todavía no ha aprobado tareas hoy. Las que propone el Asesor IA aparecen aquí cuando alguien las aprueba.</p>}
       </div>
     </div>
   );

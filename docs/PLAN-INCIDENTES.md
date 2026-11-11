@@ -19,7 +19,7 @@ Cualquier pérdida, robo, consulta, uso o acceso no autorizado a datos de person
 | Papel | Quién | Qué hace |
 |---|---|---|
 | **Responsable del tratamiento** | La campaña: el candidato y su gerente | Decide sobre los datos, reporta a la SIC y avisa a las personas afectadas. |
-| **Encargado del tratamiento** | XYZ Creatia (Mauricio Campuzano), que opera Ventaja Mando | Contiene el incidente, investiga, avisa a la campaña el mismo día y también reporta a la SIC. |
+| **Encargado del tratamiento** | XYZ Creatia (Mauricio Campuzano), que opera Comando | Contiene el incidente, investiga, avisa a la campaña el mismo día y también reporta a la SIC. |
 | **Apoyo técnico** | Quien mantenga el sistema | Ejecuta los pasos técnicos de abajo. |
 
 Deje aquí los contactos de cada campaña (nombre, celular y correo del gerente) y del abogado: ______________________
@@ -38,7 +38,7 @@ Haga solo lo necesario para que el daño no siga, y **no borre nada**: la audito
 2. En **Authentication → Users**, busque la cuenta y use **Send password recovery** para que tenga que cambiar la contraseña.
 
 **b. Una clave publicada o filtrada.** Cámbiela en su origen y cargue la nueva donde se usa:
-- **Supabase:** Project Settings → API Keys → genere una nueva y desactive la anterior. Actualice el `.env`, los secretos de GitHub y vuelva a publicar las funciones (`supabase/scripts/activar-strategos.sh`).
+- **Supabase:** Project Settings → API Keys → genere una nueva y desactive la anterior. Actualice el `.env`, los secretos de GitHub y vuelva a publicar las funciones (`supabase/scripts/activar-ia.sh`).
 - **Anthropic:** console.anthropic.com → API Keys → borre la anterior y cree otra. Actualice el `.env` y vuelva a publicar las funciones.
 - **Cloudflare:** borre el token y cree otro.
 - **Clave de los respaldos:** cree una nueva en el secreto `RESPALDO_CLAVE` de GitHub y borre los respaldos que se hicieron con la anterior (Actions → cada corrida → Artifacts → borrar).

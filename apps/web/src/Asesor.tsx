@@ -1,26 +1,26 @@
-// Strategos en el Mando. Pregunta con los datos agregados del alcance de quien consulta y muestra de dónde salió cada
+// El Asesor IA en el Mando. Pregunta con los datos agregados del alcance de quien consulta y muestra de dónde salió cada
 // respuesta. Los líderes llegan como «L-03» (la IA no recibe nombres, regla 6): aquí, del lado de quien consulta,
 // se traducen al nombre. Las tareas propuestas no se ejecutan hasta que la gerencia las aprueba.
 import { useMemo, useRef, useState, type FormEvent } from "react";
-import { armarDatosStrategos, refsLideres, type TareaPropuesta } from "@ventaja/nucleo";
+import { armarDatosAsesor, refsLideres, type TareaPropuesta } from "@ventaja/nucleo";
 import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
-import type { RespuestaStrategosPanel } from "./datos/tipos";
+import type { RespuestaAsesorPanel } from "./datos/tipos";
 
 export type Tarea = { id: string; titulo: string; detalle: string };
 
 const SUGERIDAS = ["¿Dónde actúo esta semana?", "¿Qué líderes debo revisar?", "¿Cómo vamos frente a la meta?"];
 
-type Turno = { id: number; pregunta: string; respuesta?: RespuestaStrategosPanel; error?: string };
+type Turno = { id: number; pregunta: string; respuesta?: RespuestaAsesorPanel; error?: string };
 
-export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
+export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
   const { sesion, zonas, lideres, meta } = useTablero();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [texto, setTexto] = useState("");
   const ocupado = turnos.some((t) => !t.respuesta && !t.error);
   const siguiente = useRef(1);
 
-  const datos = useMemo(() => armarDatosStrategos(
+  const datos = useMemo(() => armarDatosAsesor(
     { candidato: sesion.campana.candidato, cargo: sesion.campana.cargo, metaVotos: meta.votos, eleccion: sesion.campana.eleccion },
     zonas, lideres,
   ), [sesion, zonas, lideres, meta.votos]);
@@ -47,7 +47,7 @@ export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alApr
     setTurnos((ts) => [...ts, { id, pregunta }]);
     setTexto("");
     try {
-      const respuesta = await fuente.preguntarStrategos(sesion, pregunta, datos);
+      const respuesta = await fuente.preguntarAsesor(sesion, pregunta, datos);
       setTurnos((ts) => ts.map((t) => (t.id === id ? { ...t, respuesta } : t)));
     } catch (x) {
       setTurnos((ts) => ts.map((t) => (t.id === id ? { ...t, error: (x as Error).message } : t)));
@@ -60,7 +60,7 @@ export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alApr
   return (
     <>
       <p className="tenue">
-        Strategos responde con los datos agregados de su alcance y dice de dónde salió cada respuesta. No recibe listas de personas. Las tareas que propone no se ejecutan hasta que usted las apruebe.
+        El Asesor IA responde con los datos agregados de su alcance y dice de dónde salió cada respuesta. No recibe listas de personas. Las tareas que propone no se ejecutan hasta que usted las apruebe.
       </p>
       {turnos.map((t) => (
         <div key={t.id} className="pila" aria-label={`Pregunta: ${t.pregunta}`}>
@@ -103,7 +103,7 @@ export function Strategos({ aprobadas, alAprobar }: { aprobadas: string[]; alApr
       </div>
       <form className="fila" onSubmit={enviar}>
         <input className="enlace" style={{ flex: 1 }} value={texto} maxLength={500} placeholder="Escriba su pregunta"
-          aria-label="Pregunta para Strategos" onChange={(e) => setTexto(e.target.value)} />
+          aria-label="Pregunta para el Asesor IA" onChange={(e) => setTexto(e.target.value)} />
         <button className="btn btn-primario btn-chico" type="submit" disabled={ocupado || !texto.trim()}>Preguntar</button>
       </form>
       <p className="aviso">

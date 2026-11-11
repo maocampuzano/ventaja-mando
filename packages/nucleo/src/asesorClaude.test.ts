@@ -1,9 +1,9 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
-import type { DatosStrategos } from "./strategos";
-import { responderConClaude, type ClienteClaude } from "./strategosClaude";
+import type { DatosAsesor } from "./asesor";
+import { responderConClaude, type ClienteClaude } from "./asesorClaude";
 
-const datos: DatosStrategos = {
+const datos: DatosAsesor = {
   campana: { candidato: "Laura Méndez", cargo: "Alcaldía", metaVotos: 1000, eleccion: "2027-10-31" },
   zonas: [
     { id: "z1", nombre: "Centro", meta: 500, potencial: 100, bruto: 400, validados: 300, comprometidos: 100, lideres: 2, alcance: 100, clics: 10, gasto: 1000 },
@@ -35,7 +35,7 @@ function clienteFalso(respuestas: Respuesta[]) {
 const usoHerramienta = (id: string, name: string, input: unknown) => ({ type: "tool_use", id, name, input }) as Anthropic.Beta.BetaToolUseBlock;
 const texto = (t: string) => ({ type: "text", text: t, citations: null }) as Anthropic.Beta.BetaTextBlock;
 
-describe("Strategos con Claude (cliente simulado)", () => {
+describe("Asesor IA con Claude (cliente simulado)", () => {
   it("ejecuta las herramientas, devuelve todos los resultados juntos y arma la respuesta con fuentes y tareas", async () => {
     const { cliente, pedidos } = clienteFalso([
       { model: "claude-sonnet-5-5", stop_reason: "tool_use", content: [usoHerramienta("t1", "zonas", { orden: "brecha", limite: 5 }), usoHerramienta("t2", "resumen_campana", {})], usage: {} },

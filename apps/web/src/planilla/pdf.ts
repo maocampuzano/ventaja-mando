@@ -108,8 +108,8 @@ export async function generarPlanillaPdf(d: DatosPlanillaPdf): Promise<Uint8Arra
   const doc = await PDFDocument.create();
   doc.setTitle(aWinAnsi(`Planilla, lote ${d.numero}`));
   doc.setSubject("Planilla de registro con autorización de datos");
-  doc.setCreator("Ventaja Mando");
-  doc.setProducer("Ventaja Mando");
+  doc.setCreator("Comando");
+  doc.setProducer("Comando");
   doc.setCreationDate(d.generado);
   doc.setModificationDate(d.generado);
   const normal = await doc.embedFont(StandardFonts.Helvetica);

@@ -1,6 +1,8 @@
-# Ventaja Mando
+# Comando (antes «Ventaja Mando»)
 
-Centro de mando para campañas electorales en Colombia: une la operación de tierra (líderes, simpatizantes, territorio, testigos) con la pauta digital (Meta y Google Ads) y una IA estratégica (Strategos), en un mapa. Es un producto de XYZ Creatia, de la familia **Ventaja Electoral**. Dueño: Mauricio Campuzano.
+Centro de mando para campañas electorales en Colombia: une la operación de tierra (líderes, simpatizantes, territorio, testigos) con la pauta digital (Meta y Google Ads) y una IA estratégica (Asesor IA), en un mapa. Es un producto de XYZ Creatia, de la familia **Ventaja Electoral**. Dueño: Mauricio Campuzano.
+
+**Nombres (decididos el 10/11/2026):** el producto se llama **Comando** («Comando de Ventaja Electoral» en contratos, web y marca) y el asistente, **Asesor IA**. El repositorio, la carpeta y las direcciones de prueba conservan `ventaja-mando` hasta que se defina el dominio. No use «Strategos»: es el nombre del asistente de un competidor (regla 9).
 
 Antes de escribir código, lea `docs/02-diseno-producto.md` (el diseño) y `PLAN-DE-TRABAJO.md` (las fases). El prototipo navegable está en `apps/web/` y es la referencia visual. El estado de cada fase está en `docs/ESTADO.md` y cómo correr todo en `docs/DESARROLLO.md`.
 
@@ -19,7 +21,7 @@ Estas reglas son parte del producto y del argumento de venta. Ningún cambio las
 3. **Ninguna persona se guarda sin autorización registrada** (finalidades, canal, fecha y evidencia). Si se revoca, deja de usarse para contacto.
 4. **Las solicitudes ciudadanas no llevan valor en pesos** ni se relacionan con la intención de voto de la persona (riesgo de corrupción al sufragante, art. 390 del Código Penal).
 5. **No consultar en masa** puestos de votación con cédulas de terceros en fuentes de la Registraduría.
-6. **La IA nunca recibe listas de personas**: Strategos trabaja con vistas agregadas por medio de herramientas. Toda respuesta dice de qué datos salió. Los pronósticos se presentan como escenarios con supuestos, nunca como certeza.
+6. **La IA nunca recibe listas de personas**: Asesor IA trabaja con vistas agregadas por medio de herramientas. Toda respuesta dice de qué datos salió. Los pronósticos se presentan como escenarios con supuestos, nunca como certeza.
 7. **El OCR de planillas y E-14 siempre pasa por revisión humana** antes de entrar a la base o a la consolidación.
 8. **Aislamiento por campaña y territorio con RLS en Postgres.** Ocultar en la interfaz no cuenta como seguridad. Toda tabla con datos de personas tiene política RLS y prueba que la verifique.
 9. **No copiar nada de VOTOMAP** ni de otros competidores: ni código, ni textos, ni pantallas, ni recursos. El análisis de mercado (`docs/01-analisis-mercado.md`) es solo contexto funcional.
@@ -30,7 +32,7 @@ Estas reglas son parte del producto y del argumento de venta. Ningún cambio las
 - **Web:** React + TypeScript + Vite. MapLibre GL para el mapa en producción, con teselas de un proveedor con clave (MapTiler o Stadia). El mapa SVG del prototipo solo sirve para demos.
 - **Móvil:** Expo (React Native) con SQLite local y cola de sincronización; funciona sin conexión desde el primer día.
 - **Backend:** Supabase (Postgres + PostGIS + RLS, Auth con 2FA, Storage, Realtime y Edge Functions), región São Paulo.
-- **IA:** API de Claude con *tool use*. Modelos configurables por variable de entorno; por defecto `claude-sonnet-5-5` para Strategos y la lectura de planillas y E-14, y `claude-haiku-5-5` para clasificaciones simples.
+- **IA:** API de Claude con *tool use*. Modelos configurables por variable de entorno; por defecto `claude-sonnet-5-5` para Asesor IA y la lectura de planillas y E-14, y `claude-haiku-5-5` para clasificaciones simples.
 - **Monorepo con npm workspaces:** `apps/web`, `apps/movil`, `packages/nucleo` (tipos y lógica compartida), `supabase/` (migraciones, semillas y pruebas).
 - **Pruebas:** Vitest para la lógica, pruebas SQL de RLS y Playwright para los flujos web críticos.
 

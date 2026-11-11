@@ -18,7 +18,7 @@ export function codigoHoja({ loteId, hoja, hojas }: CodigoHoja): string {
   return `${PREFIJO_PLANILLA}:${id}:${hoja}/${hojas}`;
 }
 
-/** Lee el QR de una hoja. Devuelve null si el texto no es de una planilla de Ventaja Mando. */
+/** Lee el QR de una hoja. Devuelve null si el texto no es de una planilla de Comando. */
 export function leerCodigoHoja(texto: string): CodigoHoja | null {
   const m = /^VMP1:([0-9a-fA-F-]{36}):(\d{1,3})\/(\d{1,3})$/.exec(texto.trim());
   if (!m) return null;

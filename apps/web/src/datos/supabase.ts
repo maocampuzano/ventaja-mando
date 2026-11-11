@@ -1,7 +1,7 @@
 // Fuente «supabase»: el proyecto real. La seguridad la pone la base (RLS y funciones con alcance por rol);
 // aquí solo se piden los datos. El tablero llega agregado por zona y por líder: nunca personas una por una.
 import { FunctionsHttpError, createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { exige2fa, indiceLider, responderSimulado, type RespuestaStrategos, type RolCampana } from "@ventaja/nucleo";
+import { exige2fa, indiceLider, responderSimulado, type RespuestaAsesor, type RolCampana } from "@ventaja/nucleo";
 import { diaESupabase } from "./supabase-dia-e";
 import { mensajesSupabase } from "./supabase-mensajes";
 import { llamadasSupabase } from "./supabase-llamadas";
@@ -85,7 +85,7 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
           for (const viejo of f?.all?.filter((x) => x.factor_type === "totp" && x.status !== "verified") ?? []) {
             await sb.auth.mfa.unenroll({ factorId: viejo.id });
           }
-          const { data: nuevo, error: en } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Ventaja Mando" });
+          const { data: nuevo, error: en } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Comando" });
           if (en || !nuevo) return { estado: "error", mensaje: `No se pudo preparar la verificación en dos pasos: ${en?.message ?? "sin respuesta"}` };
           factorPendiente = nuevo.id;
           return { estado: "inscribir-2fa", qr: nuevo.totp.qr_code, secreto: nuevo.totp.secret };
@@ -266,16 +266,16 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       if (error) throw new Error(/row-level security/.test(error.message) ? "Solo la dirección de la campaña puede crear o cambiar formularios." : error.message);
       return { id: data.id, nombre: data.nombre, esquema: data.esquema_json, version: data.version, creado: fechaBogota(data.creado_en) };
     },
-    async preguntarStrategos(s, pregunta, datos) {
-      const { data, error } = await sb.functions.invoke<RespuestaStrategos>("strategos", { body: { campana: s.campana.id, pregunta } });
+    async preguntarAsesor(s, pregunta, datos) {
+      const { data, error } = await sb.functions.invoke<RespuestaAsesor>("asesor", { body: { campana: s.campana.id, pregunta } });
       if (!error && data) return data;
       if (error instanceof FunctionsHttpError) {
-        let mensaje = "Strategos no pudo responder.";
+        let mensaje = "El Asesor IA no pudo responder.";
         try { mensaje = ((await error.context.json()) as { error?: string }).error ?? mensaje; } catch { /* sin cuerpo */ }
         throw new Error(mensaje);
       }
       // La función no está publicada o no hay conexión con ella: responde el modelo simulado con lo que ya se ve.
-      return { ...responderSimulado(pregunta, datos), aviso: "Strategos con IA no está activo todavía: esta respuesta es del modelo simulado, con los datos de su tablero." };
+      return { ...responderSimulado(pregunta, datos), aviso: "El Asesor IA todavía no está activo con Claude: esta respuesta es del modelo simulado, con los datos de su tablero." };
     },
     async planillasPorRevisar(s) {
       const { data, error } = await sb.rpc("planillas_por_revisar", { p_campana: s.campana.id });

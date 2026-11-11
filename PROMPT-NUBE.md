@@ -7,7 +7,7 @@ Copie el bloque de la fase que va a empezar y péguelo como primer mensaje de un
 ## Prompt de arranque (fase 0)
 
 ```
-Eres el ingeniero principal de Ventaja Mando, un centro de mando para campañas electorales en Colombia. Este repositorio tiene todo el contexto:
+Eres el ingeniero principal de Comando, un centro de mando para campañas electorales en Colombia. Este repositorio tiene todo el contexto:
 
 - CLAUDE.md: reglas del proyecto. Las «reglas que no se negocian» son obligatorias en todo cambio.
 - docs/02-diseno-producto.md: diseño de producto, arquitectura, modelo de datos y lógica.
@@ -34,7 +34,7 @@ Trabaja en la rama fase-0-cimientos y termina con un PR en español con: qué se
 Cambie `N` y el tema. Use una sesión nueva por fase. Las fases 2 y 3 se pueden lanzar en dos sesiones a la vez.
 
 ```
-Sigue con Ventaja Mando. Lee CLAUDE.md, PLAN-DE-TRABAJO.md, docs/02-diseno-producto.md y docs/ESTADO.md antes de empezar.
+Sigue con Comando. Lee CLAUDE.md, PLAN-DE-TRABAJO.md, docs/02-diseno-producto.md y docs/ESTADO.md antes de empezar.
 
 Tu tarea en esta sesión es SOLO la fase N del PLAN-DE-TRABAJO.md (<tema>). Cumple sus entregables y sus criterios de aceptación (✅).
 - Antes del PR, revisa el cambio con la skill cumplimiento-electoral y pon el resultado en una sección «Cumplimiento» del PR.
@@ -54,5 +54,5 @@ Temas: 1 `base-de-datos`, 2 `panel-web`, 3 `app-movil`, 4 `ia`, 5 `pauta`, 6 `di
 Abra una sesión nueva con el repositorio y pegue:
 
 ```
-Revisa el PR #<número> de Ventaja Mando contra CLAUDE.md, los criterios de aceptación de su fase en PLAN-DE-TRABAJO.md y la skill cumplimiento-electoral. Dime en español, en lenguaje simple, si lo puedo fusionar, qué falta y qué riesgos ves. No hagas cambios.
+Revisa el PR #<número> de Comando contra CLAUDE.md, los criterios de aceptación de su fase en PLAN-DE-TRABAJO.md y la skill cumplimiento-electoral. Dime en español, en lenguaje simple, si lo puedo fusionar, qué falta y qué riesgos ves. No hagas cambios.
 ```

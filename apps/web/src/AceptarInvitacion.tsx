@@ -28,7 +28,7 @@ export function AceptarInvitacion({ fuente, codigo, alEntrar, alNecesitar2fa }: 
   return (
     <main className="ingreso">
       <div className="ingreso-caja pila">
-        <div><h1>Invitación a Ventaja Mando</h1><p className="tenue">Lo invitaron al equipo de una campaña. Use el mismo correo al que llegó la invitación.</p></div>
+        <div><h1>Invitación a Comando</h1><p className="tenue">Lo invitaron al equipo de una campaña. Use el mismo correo al que llegó la invitación.</p></div>
         {confirmar ? (
           <section className="tarjeta pila">
             <h2>Revise su correo</h2>

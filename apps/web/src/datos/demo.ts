@@ -106,7 +106,7 @@ export function crearFuenteDemo(): FuenteDatos {
     async sesionActual() { return actual; },
     async cerrarSesion() { actual = null; pendiente = null; guardar(null); },
     async cargarTablero(s) { return datosDemo(s); },
-    async preguntarStrategos(_s, pregunta, datos) {
+    async preguntarAsesor(_s, pregunta, datos) {
       await new Promise((r) => setTimeout(r, 500)); // que se note que «piensa»
       return responderSimulado(pregunta, datos);
     },

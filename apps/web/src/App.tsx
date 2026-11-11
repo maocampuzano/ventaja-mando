@@ -22,7 +22,7 @@ import { Finanzas } from "./Finanzas";
 import { AtrapaErrores, useRegistroDeErrores } from "./Errores";
 import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
 import { DiaE } from "./DiaE";
-import type { Tarea } from "./Strategos";
+import type { Tarea } from "./Asesor";
 
 type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "llamadas" | "llamar" | "finanzas" | "diae" | "datos" | "bandeja" | "mimesa";
 
