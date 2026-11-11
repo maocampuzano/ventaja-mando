@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 
 async function entrarComoGerente(page: Page) {
   await page.goto("/");
@@ -9,7 +10,7 @@ async function entrarComoGerente(page: Page) {
 
 test("una invitación con QR lleva a la persona a su rol y sus zonas", async ({ page }) => {
   await entrarComoGerente(page);
-  await page.getByRole("navigation").getByRole("button", { name: "Equipo" }).click();
+  await irA(page, "Equipo");
   await expect(page.getByRole("option", { name: "Administrador" })).toHaveCount(0); // gerencia no invita administradores
 
   await page.getByLabel("Correo de la persona").fill("Nueva.Coordinadora@Ficticio.co");
@@ -37,6 +38,7 @@ test("una invitación con QR lleva a la persona a su rol y sus zonas", async ({ 
 
   await page.getByLabel("Correo").fill("nueva.coordinadora@ficticio.co");
   await page.getByRole("button", { name: "Aceptar la invitación" }).click();
+  await irA(page, "Mapa y asesor");
   await expect(page.locator("polygon.zona")).toHaveCount(2);
   await expect(page.getByText("Coordinadora Ficticia Nueva")).toBeVisible();
   expect(page.url()).not.toContain("invitacion=");

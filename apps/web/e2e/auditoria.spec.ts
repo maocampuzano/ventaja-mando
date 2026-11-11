@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 
 async function entrarComoGerente(page: Page) {
   await page.goto("/");
@@ -8,11 +9,11 @@ async function entrarComoGerente(page: Page) {
   await page.getByLabel("Código").fill("123456");
   await page.getByRole("button", { name: "Verificar" }).click();
 }
-const ir = (page: Page, vista: string) => page.getByRole("navigation").getByRole("button", { name: vista }).click();
+const ir = (page: Page, vista: string) => irA(page, vista);
 
 test("la dirección revisa la auditoría y la filtra", async ({ page }) => {
   await entrarComoGerente(page);
-  await ir(page, "Datos");
+  await ir(page, "Cumplimiento");
   const caja = page.getByRole("region", { name: "Auditoría" });
   const tabla = caja.getByRole("table", { name: "Registro de auditoría" });
   await expect(tabla).toContainText("Exportó personas");
@@ -24,10 +25,10 @@ test("la dirección revisa la auditoría y la filtra", async ({ page }) => {
 
 test("un error del panel queda registrado sin el celular que traía", async ({ page }) => {
   await entrarComoGerente(page);
-  await ir(page, "Mando");
+  await ir(page, "Mapa y asesor");
   await page.evaluate(() => { setTimeout(() => { throw new Error("Falló al guardar el celular 300 000 9001"); }); });
   await page.waitForTimeout(200);
-  await ir(page, "Datos");
+  await ir(page, "Cumplimiento");
   const errores = page.getByRole("region", { name: "Errores del panel" });
   await expect(errores).toContainText("Falló al guardar el celular ‹número›");
   await expect(errores).not.toContainText("9001");

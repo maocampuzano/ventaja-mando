@@ -13,6 +13,7 @@ import { Importar } from "./Importar";
 import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
+import { Hoy } from "./Hoy";
 import { Datos } from "./Datos";
 import { Baja } from "./Baja";
 import { Mensajes } from "./Mensajes";
@@ -24,36 +25,42 @@ import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
 import { DiaE } from "./DiaE";
 import type { Tarea } from "./Asesor";
 
-type Vista = "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "llamadas" | "llamar" | "finanzas" | "diae" | "datos" | "bandeja" | "mimesa";
+type Vista = "hoy" | "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "llamadas" | "llamar" | "finanzas" | "diae" | "datos" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos"],
-  gerente: ["mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos"],
+  administrador: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos"],
+  gerente: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos"],
   candidato: ["resumen", "mando", "mensajes", "finanzas", "diae"],
-  coordinador: ["mando", "lideres", "importar", "planillas", "diae"],
+  coordinador: ["hoy", "mando", "lideres", "importar", "planillas", "diae"],
   lider: ["bandeja"],
   testigo: ["mimesa"],
   operador: ["llamar"],
 };
 
-const nav: Record<Vista, { nombre: string; icono: Parameters<typeof Icono>[0]["n"] }> = {
-  resumen: { nombre: "Resumen", icono: "resumen" },
-  mando: { nombre: "Mando", icono: "mando" },
-  lideres: { nombre: "Líderes", icono: "lideres" },
-  equipo: { nombre: "Equipo", icono: "equipo" },
-  importar: { nombre: "Importar", icono: "importar" },
-  formularios: { nombre: "Formularios", icono: "formularios" },
-  planillas: { nombre: "Planillas", icono: "planillas" },
-  mensajes: { nombre: "Mensajes", icono: "mensajes" },
-  llamadas: { nombre: "Llamadas", icono: "llamadas" },
-  llamar: { nombre: "Llamar", icono: "llamadas" },
-  finanzas: { nombre: "Finanzas", icono: "finanzas" },
-  diae: { nombre: "Día E", icono: "diae" },
-  datos: { nombre: "Datos", icono: "datos" },
-  bandeja: { nombre: "Celular", icono: "movil" },
-  mimesa: { nombre: "Mi mesa", icono: "movil" },
+type Icon = Parameters<typeof Icono>[0]["n"];
+/** Nombre de cada pantalla en las pestañas de su sección. */
+const nombreVista: Record<Vista, string> = {
+  hoy: "Hoy", resumen: "Hoy", mando: "Mapa y asesor",
+  lideres: "Líderes", equipo: "Equipo", importar: "Importar", formularios: "Formularios", planillas: "Planillas",
+  mensajes: "Mensajes", llamadas: "Llamadas", llamar: "Llamar", finanzas: "Cuentas", diae: "Día E", datos: "Cumplimiento",
+  bandeja: "Celular", mimesa: "Mi mesa",
 };
+
+// El menú va por lo que la persona quiere hacer, no por cómo está construido el sistema. Cada sección agrupa
+// pantallas; cada rol ve solo las secciones y pantallas que le tocan (vistasPorRol).
+type Seccion = { id: string; nombre: string; icono: Icon; vistas: Vista[]; abajo?: boolean };
+const secciones: Seccion[] = [
+  { id: "hoy", nombre: "Hoy", icono: "hoy", vistas: ["hoy", "resumen", "mando"] },
+  { id: "gente", nombre: "Mi gente", icono: "lideres", vistas: ["lideres", "equipo", "importar", "formularios", "planillas"] },
+  { id: "contactar", nombre: "Contactar", icono: "mensajes", vistas: ["mensajes", "llamadas"] },
+  { id: "cuentas", nombre: "Cuentas", icono: "finanzas", vistas: ["finanzas"] },
+  { id: "diae", nombre: "Día E", icono: "diae", vistas: ["diae"] },
+  { id: "llamar", nombre: "Llamar", icono: "llamadas", vistas: ["llamar"] },
+  { id: "bandeja", nombre: "Celular", icono: "movil", vistas: ["bandeja"] },
+  { id: "mimesa", nombre: "Mi mesa", icono: "movil", vistas: ["mimesa"] },
+  { id: "cumplimiento", nombre: "Cumplimiento", icono: "datos", vistas: ["datos"], abajo: true },
+];
 
 // Enlaces directos con un token simple: #lideres, o #gerente-lideres en la página publicada del modo demo.
 function leerHash(): { rol?: string; vista?: string } {
@@ -143,8 +150,20 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
     return null;
   }, [error, datos, sesion.rol]);
 
+  // Secciones de este rol, cada una con las pantallas que puede ver.
+  const menu = secciones.map((s) => ({ ...s, vistas: s.vistas.filter((v) => vistas.includes(v)) })).filter((s) => s.vistas.length);
+  const seccion = menu.find((s) => s.vistas.includes(vista)) ?? menu[0];
+  const pestanas = seccion.vistas.length > 1 && (
+    <nav className="subnav" aria-label={`Dentro de ${seccion.nombre}`}>
+      {seccion.vistas.map((v) => (
+        <button key={v} className="subnav-btn" aria-current={vista === v ? "page" : undefined} onClick={() => ir(v)}>{nombreVista[v]}</button>
+      ))}
+    </nav>
+  );
+
   const barraMando = datos && (
     <div className="barra">
+      {pestanas}
       <span className="chip solo-escritorio"><strong>{datos.campana.candidato}</strong><span className="tenue">{datos.campana.cargo}</span></span>
       <span className="chip"><span className="cuenta">{diasParaEleccion(datos.campana.eleccion)}</span><span className="tenue">días para la elección</span></span>
       <span className="espacio" />
@@ -161,10 +180,10 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
         <div className="marca" aria-hidden="true">
           <svg viewBox="0 0 32 32" width="24" height="24"><path d="M8 9l8 15 8-15" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </div>
-        {vistas.map((v) => (
-          <button key={v} className="riel-btn" aria-current={vista === v ? "page" : undefined} onClick={() => ir(v)}>
-            <Icono n={nav[v].icono} />
-            {nav[v].nombre}
+        {menu.map((s) => (
+          <button key={s.id} className={`riel-btn${s.abajo ? " riel-abajo" : ""}`} aria-current={s === seccion ? "page" : undefined} onClick={() => ir(s.vistas[0])}>
+            <Icono n={s.icono} />
+            {s.nombre}
           </button>
         ))}
       </nav>
@@ -172,7 +191,8 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
         {contenido ?? (
           <AtrapaErrores sesion={sesion} vista={vista}>
           <ContextoTablero.Provider value={datos}>
-            {vista !== "mando" && <div className="rol-flotante">{usuario}</div>}
+            {vista !== "mando" && <div className="cabecera-flotante">{pestanas || <span />}{usuario}</div>}
+            {vista === "hoy" && <Hoy aprobadas={aprobadas} ir={(v) => ir(v as Vista)} />}
             {vista === "mando" && <Mando barra={barraMando} aprobadas={aprobadas.map((t) => t.id)} alAprobar={aprobar} />}
             {vista === "resumen" && <Resumen aprobadas={aprobadas} />}
             {vista === "lideres" && <Lideres />}

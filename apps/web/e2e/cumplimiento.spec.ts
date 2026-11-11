@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { irA } from "./ayudas";
 import { readFileSync } from "node:fs";
 
 test("solicitudes de titulares con plazo legal y exportación con marca", async ({ page }) => {
@@ -6,7 +7,7 @@ test("solicitudes de titulares con plazo legal y exportación con marca", async 
   await page.getByRole("button", { name: /Gerente/ }).click();
   await page.getByLabel("Código").fill("123456");
   await page.getByRole("button", { name: "Verificar" }).click();
-  await page.getByRole("navigation").getByRole("button", { name: "Datos" }).click();
+  await irA(page, "Cumplimiento");
   await expect(page.locator('[data-prueba="abiertas"]')).toHaveText("0");
 
   // Una persona ficticia pide que se supriman sus datos.

@@ -21,8 +21,8 @@ El plan está en `entregas/plan-mejora/Plan-de-mejora-comercial.pdf` (fuera del 
 
 | Paso | Estado | Qué quedó | Qué falta |
 |---|---|---|---|
-| 1a. Nombres | En PR | «Comando» y «Asesor IA» en el panel, la app, los documentos y la base (`estado_asesor`, función `asesor`, `MODELO_ASESOR`). | Aplicar la migración `20261110000100_asesor`, publicar la función `asesor`, borrar la función vieja y republicar el panel. Verificar la marca en la SIC y el dominio (Mauricio). El repositorio y las direcciones siguen como `ventaja-mando`. |
-| 1b. Menú de cinco secciones y pantalla «Hoy» | Sin empezar | | |
+| 1a. Nombres | Fusionada (10/11/2026) | [#39](https://github.com/maocampuzano/ventaja-mando/pull/39): «Comando» y «Asesor IA» en el panel, la app, los documentos y la base. Migración `20261110000100_asesor` aplicada, función `asesor` publicada, función vieja borrada y panel republicado el 10/11/2026. | Verificar la marca en la SIC y el dominio (Mauricio). El repositorio y las direcciones siguen como `ventaja-mando`. |
+| 1b. Menú de cinco secciones y pantalla «Hoy» | En PR | El menú pasa a Hoy, Mi gente, Contactar, Cuentas y Día E, con Cumplimiento abajo; las pantallas de antes quedan como pestañas de su sección. Pantalla «Hoy» para la dirección y la coordinación: pendientes con botón, avisos, meta, zonas y acceso al Asesor IA. | «Ajustes» (campaña, roles, tope) todavía no existe como sección. Ocultar la pauta de ejemplo del mapa. Republicar el panel. |
 | 1c. Tema claro con «modo sala» para el día E | Sin empezar | | |
 
 ## Proyecto real de Supabase (V2)

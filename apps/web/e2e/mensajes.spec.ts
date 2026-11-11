@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 
 const MIERCOLES_10AM = new Date("2027-10-27T10:00:00-05:00");
 const DOMINGO = new Date("2027-10-24T10:00:00-05:00");
@@ -14,7 +15,7 @@ async function entrar(page: Page, correo: string, hora = MIERCOLES_10AM) {
     await page.getByRole("button", { name: "Verificar" }).click();
   }
 }
-const irAMensajes = (page: Page) => page.getByRole("navigation").getByRole("button", { name: "Mensajes" }).click();
+const irAMensajes = (page: Page) => irA(page, "Mensajes");
 
 test("la dirección arma, aprueba y envía un SMS solo a personas autorizadas", async ({ page }) => {
   await entrar(page, "gerente@demo.co");
@@ -69,7 +70,7 @@ test("la candidata ve los envíos, pero no arma ninguno; la coordinación no tie
   await expect(page.getByRole("button", { name: "Nuevo envío" })).toHaveCount(0);
   await page.getByRole("button", { name: "Salir" }).click();
   await entrar(page, "coordinadora@demo.co");
-  await expect(page.getByRole("navigation").getByRole("button", { name: "Mensajes" })).toHaveCount(0);
+  await expect(page.getByRole("navigation").getByRole("button", { name: "Contactar" })).toHaveCount(0);
 });
 
 test("la baja se da en un paso desde el enlace del mensaje, sin cuenta", async ({ page }) => {
