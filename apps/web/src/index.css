@@ -94,7 +94,7 @@ p { margin: 0; }
 .riel-btn:hover { background: var(--panel); color: var(--texto); }
 .riel-btn[aria-current="page"] { background: var(--acento-suave); color: #fff; }
 .riel-btn svg { width: 22px; height: 22px; }
-.riel-nav { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 0; }
+.riel-nav { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 0; overflow-y: auto; }
 .riel-tema { font-size: 10.5px; }
 
 .lienzo { position: relative; overflow: hidden; min-width: 0; }

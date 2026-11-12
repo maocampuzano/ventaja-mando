@@ -28,7 +28,7 @@ Arriba a la derecha, **«Ver como»** cambia de rol. Cada rol ve solo lo suyo:
 | **Testigo** | Su celular el día E: foto del E-14 y novedades |
 
 **Recorrido sugerido para una demo (5 minutos):**
-1. **Mando:** cambie las capas del mapa («Qué hacer en cada zona», «Alcance de la pauta», «Cobertura de testigos»). Toque una zona para ver su detalle.
+1. **Hoy → Mapa y asesor:** cambie las capas del mapa («Qué hacer en cada zona», «Simpatizantes validados», «Cobertura de testigos»). Toque una zona para ver su detalle. La pauta digital está aplazada: la demostración no trae cifras de pauta de ejemplo. Para ver cómo quedará el cruce tierra + pauta, compile con `VITE_PAUTA=1`.
 2. **Asesor IA** (panel derecho): pregunte «¿Dónde actúo esta semana?» y apruebe una tarea. Aparece arriba como «tarea aprobada» y en el Resumen de la candidata.
 3. **Líderes:** ordene de menor a mayor y abra uno con índice bajo. Se ve por qué está bajo (calidad, limpieza, tareas, meta) y el botón de WhatsApp de persona a persona.
 4. **Planillas:** en el celular, «Tomar foto». Muestra la lectura, las dudas en ámbar, la cédula repetida en rojo y que no deja enviar hasta corregir.
