@@ -16,8 +16,8 @@ test("una invitación con QR lleva a la persona a su rol y sus zonas", async ({ 
   await page.getByRole("button", { name: "Crear invitación" }).click();
   await expect(page.getByRole("alert")).toHaveText("Indique al menos una zona para el rol coordinador.");
 
-  await page.getByLabel("Florencia Norte").check();
-  await page.getByLabel("Florencia Oriental").check();
+  await page.getByLabel("Florencia", { exact: true }).check();
+  await page.getByLabel("Albania").check();
   await page.getByRole("button", { name: "Crear invitación" }).click();
   await expect(page.getByRole("img", { name: /Código QR de la invitación/ })).toBeVisible();
   await expect(page.getByText("nueva.coordinadora@ficticio.co")).toHaveCount(2); // en la tarjeta y en pendientes

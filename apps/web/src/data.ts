@@ -1,7 +1,8 @@
 // Datos FICTICIOS de una campaña a la Gobernación del Caquetá. La candidata, los líderes, los puestos y todas las
-// cifras son inventados. Las zonas llevan nombres de municipios del Caquetá (y de las cuatro comunas urbanas de
-// Florencia), pero son una cuadrícula hexagonal ilustrativa: no son límites oficiales ni están en su sitio real.
+// cifras son inventados. Las zonas son los 16 municipios del Caquetá con sus límites oficiales (DANE, MGN 2025,
+// simplificados); los puestos de votación son inventados y van dentro de su municipio.
 import { indiceLider, recomendar, type Mesa } from "@ventaja/nucleo";
+import { municipiosCaqueta } from "./datos/municipios-caqueta";
 
 function rng(seed: number) {
   return () => {
@@ -11,7 +12,7 @@ function rng(seed: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-const r = rng(2027);
+const r = rng(2033);
 const entre = (a: number, b: number) => Math.round(a + r() * (b - a));
 
 export const campana = {
@@ -21,25 +22,18 @@ export const campana = {
   metaVotos: 74000,
 };
 
-export const CENTRO: [number, number] = [-74.1, 1.1];
-const RADIO = 0.33; // grados, ≈ 36 km: la cuadrícula cubre más o menos el ancho del departamento
 /** Las cifras por zona de la semilla municipal, llevadas a la escala de un departamento. */
 const ESCALA = 4;
 
-const nombres = [
-  "Florencia Norte", "Florencia Sur", "Florencia Oriental", "Florencia Occidental", "Albania", "Belén de los Andaquíes",
-  "Cartagena del Chairá", "Curillo", "El Doncello", "El Paujil", "La Montañita", "Milán", "Morelia",
-  "Puerto Rico", "San José del Fragua", "San Vicente del Caguán", "Solano", "Solita", "Valparaíso",
-];
-
-function hexagono(cx: number, cy: number): [number, number][] {
-  const pts: [number, number][] = [];
-  for (let i = 0; i < 6; i++) {
-    const a = (Math.PI / 3) * i + Math.PI / 6;
-    pts.push([cx + RADIO * Math.cos(a) * 0.98, cy + RADIO * Math.sin(a) * 0.98]);
+/** Centro de un polígono (centroide por áreas), para el nombre y los puestos de la zona. */
+function centroide(anillo: [number, number][]): [number, number] {
+  let a = 0, x = 0, y = 0;
+  for (let i = 0; i < anillo.length - 1; i++) {
+    const [x0, y0] = anillo[i], [x1, y1] = anillo[i + 1];
+    const k = x0 * y1 - x1 * y0;
+    a += k; x += (x0 + x1) * k; y += (y0 + y1) * k;
   }
-  pts.push(pts[0]);
-  return pts;
+  return a ? [x / (3 * a), y / (3 * a)] : anillo[0];
 }
 
 export type Zona = {
@@ -58,13 +52,7 @@ export type Zona = {
   meta: number;
 };
 
-const axiales: [number, number][] = [];
-for (let q = -2; q <= 2; q++)
-  for (let s = -2; s <= 2; s++) if (Math.abs(q + s) <= 2) axiales.push([q, s]);
-
-export const zonas: Zona[] = axiales.map(([q, s], i) => {
-  const cx = CENTRO[0] + RADIO * Math.sqrt(3) * (q + s / 2);
-  const cy = CENTRO[1] + RADIO * 1.5 * s;
+export const zonas: Zona[] = municipiosCaqueta.map((mpio, i) => {
   const potencial = entre(1400, 4200) * ESCALA;
   const sesgo = r();
   const bruto = Math.round(potencial * (0.12 + sesgo * 0.38));
@@ -72,9 +60,9 @@ export const zonas: Zona[] = axiales.map(([q, s], i) => {
   const alcanceBase = r() < 0.3 ? 0.15 + r() * 0.2 : 0.4 + r() * 0.6;
   return {
     id: `z${i + 1}`,
-    nombre: nombres[i],
-    centro: [cx, cy],
-    anillo: hexagono(cx, cy),
+    nombre: mpio.nombre,
+    centro: centroide(mpio.anillo),
+    anillo: mpio.anillo,
     potencial,
     bruto,
     validados,
@@ -136,7 +124,8 @@ export const puestos: Puesto[] = nombresPuesto.map((nombre, i) => {
     votosHistoricos: entre(120, 310),
     testigoId: r() < 0.72 ? `t${i}-${k}` : undefined,
   }));
-  return { id: `p${i + 1}`, nombre, zonaId: z.id, punto: [z.centro[0] + (r() - 0.5) * RADIO * 0.8, z.centro[1] + (r() - 0.5) * RADIO * 0.8], mesas };
+  // Cerca del centro de su municipio, para que quede adentro.
+  return { id: `p${i + 1}`, nombre, zonaId: z.id, punto: [z.centro[0] + (r() - 0.5) * 0.04, z.centro[1] + (r() - 0.5) * 0.04], mesas };
 });
 
 export const todasLasMesas = puestos.flatMap((p) => p.mesas);

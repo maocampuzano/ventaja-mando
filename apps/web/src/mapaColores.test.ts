@@ -45,8 +45,14 @@ describe("escala y nombres del mapa", () => {
     expect(renglones("Bucaramanguesidad")).toEqual(["Bucaramanguesidad"]);
   });
 
-  it("la semilla tiene 19 zonas con nombres distintos", () => {
-    expect(new Set(zonas.map((z) => z.nombre)).size).toBe(19);
+  it("la semilla tiene los 16 municipios del Caquetá, con su forma y su centro adentro", () => {
+    expect(new Set(zonas.map((z) => z.nombre)).size).toBe(16);
+    for (const z of zonas) {
+      expect(z.anillo.length).toBeGreaterThan(10);
+      const xs = z.anillo.map((p) => p[0]), ys = z.anillo.map((p) => p[1]);
+      expect(z.centro[0]).toBeGreaterThan(Math.min(...xs)); expect(z.centro[0]).toBeLessThan(Math.max(...xs));
+      expect(z.centro[1]).toBeGreaterThan(Math.min(...ys)); expect(z.centro[1]).toBeLessThan(Math.max(...ys));
+    }
   });
 });
 

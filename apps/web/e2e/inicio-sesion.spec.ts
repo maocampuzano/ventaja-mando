@@ -25,7 +25,7 @@ test("el gerente necesita el código de dos pasos y luego ve toda la campaña", 
   await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
   await expect(menu(page).getByRole("button")).toHaveText(["Hoy", "Mi gente", "Contactar", "Cuentas", "Día E", "Cumplimiento", "Ajustes"]);
   await irA(page, "Mapa y asesor");
-  await expect(page.locator("polygon.zona")).toHaveCount(19);
+  await expect(page.locator("polygon.zona")).toHaveCount(16);
   await irA(page, "Líderes");
   await expect(page.locator("tbody tr")).toHaveCount(22);
 });

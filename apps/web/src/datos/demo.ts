@@ -20,7 +20,7 @@ const campana: Campana = { id: "campana-demo", ...campanaSemilla };
 export const usuariosDemo: { correo: string; nombre: string; rol: RolCampana; territorioIds: string[]; descripcion: string }[] = [
   { correo: "gerente@demo.co", nombre: "Gerente Demo", rol: "gerente", territorioIds: [], descripcion: "Dirige toda la campaña: pendientes del día, equipo, mensajes, cuentas y día E." },
   { correo: "candidata@demo.co", nombre: campanaSemilla.candidato, rol: "candidato", territorioIds: [], descripcion: "Un resumen de una pantalla, las cuentas y el día E, sin listas de personas." },
-  { correo: "coordinadora@demo.co", nombre: "Coordinadora Demo", rol: "coordinador", territorioIds: ["z1", "z2", "z3"], descripcion: "Solo sus tres zonas de Florencia." },
+  { correo: "coordinadora@demo.co", nombre: "Coordinadora Demo", rol: "coordinador", territorioIds: ["z1", "z2", "z3"], descripcion: "Solo sus tres municipios: Florencia, Albania y Belén de los Andaquíes." },
   { correo: "lider@demo.co", nombre: lideres[0].nombre, rol: "lider", territorioIds: [lideres[0].zonaId], descripcion: "Su bandeja en el celular." },
   { correo: "testigo@demo.co", nombre: "Testigo Demo", rol: "testigo", territorioIds: [], descripcion: "Su mesa el día E." },
   { correo: "operador@demo.co", nombre: "Operadora Demo", rol: "operador", territorioIds: [], descripcion: "Llama, una persona a la vez, a la gente de sus colas." },
