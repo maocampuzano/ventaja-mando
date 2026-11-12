@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { nombreRol, type RolCampana } from "@ventaja/nucleo";
-import { Icono, diasParaEleccion } from "./comunes";
+import { Icono, Logo, diasParaEleccion } from "./comunes";
 import { fuente } from "./datos/index";
 import { ContextoTablero, type Contexto } from "./datos/contexto";
 import { sesionDemoPorRol } from "./datos/demo";
@@ -188,7 +188,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
     <div className={`app${sala ? " tema-sala" : ""}`}>
       <div className="riel tema-sala">
         <div className="marca" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="24" height="24"><path d="M8 9l8 15 8-15" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <Logo />
         </div>
         <nav className="riel-nav" aria-label="Secciones">
         {menu.map((s) => (
