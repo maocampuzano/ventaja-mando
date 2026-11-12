@@ -7,6 +7,7 @@ import { useTablero } from "./datos/contexto";
 import { armarHoy, saludo, type ExtrasHoy } from "./datos/hoy";
 import { fuente } from "./datos/index";
 import type { Tarea } from "./Asesor";
+import { Arranque } from "./Arranque";
 
 const colorAviso = { rojo: "var(--rojo)", ambar: "var(--ambar)", verde: "var(--verde)" };
 
@@ -48,6 +49,8 @@ export function Hoy({ aprobadas, ir }: { aprobadas: Tarea[]; ir: (vista: string)
         </div>
         {modo === "demo" && <span className="sello">Datos ficticios</span>}
       </div>
+
+      {direccion && <Arranque tareasAprobadas={aprobadas.length} ir={ir} />}
 
       <div className="hoy">
         <div className="hoy-col">
