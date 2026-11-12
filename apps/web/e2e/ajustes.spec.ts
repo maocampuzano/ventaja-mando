@@ -36,10 +36,7 @@ test("sin pauta conectada, el mapa y el resumen no muestran cifras de pauta", as
   await expect(page.getByRole("group", { name: "Capas del mapa" }).getByRole("button")).toHaveText(
     ["Qué hacer en cada zona", "Simpatizantes validados", "Avance frente a la meta", "Cobertura de testigos"]);
   await expect(page.getByRole("region", { name: "Recomendaciones de hoy" })).not.toContainText(/pauta|digital/i);
-  await page.screenshot({ path: "/private/tmp/claude-501/-Users-marthahunter-Documents-ClaudeMauricio-Desarrollo-WEB-APPpolitica-ventaja-mando/fa04a05e-1a5b-402f-8659-348e7ea09acd/scratchpad/a-mapa.png" });
   await page.goto("/#candidato-resumen"); await page.reload();
   await expect(page.getByText("La pauta")).toHaveCount(0);
   await expect(page.getByText("El equipo")).toBeVisible();
-  await page.goto("/#gerente-ajustes"); await page.reload(); await page.waitForTimeout(800);
-  await page.screenshot({ path: "/private/tmp/claude-501/-Users-marthahunter-Documents-ClaudeMauricio-Desarrollo-WEB-APPpolitica-ventaja-mando/fa04a05e-1a5b-402f-8659-348e7ea09acd/scratchpad/a-ajustes.png" });
 });
