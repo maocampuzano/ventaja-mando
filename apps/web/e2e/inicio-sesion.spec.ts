@@ -54,3 +54,16 @@ test("salir vuelve a la pantalla de inicio de sesión", async ({ page }) => {
   await page.reload();
   await expect(page.getByRole("heading", { name: "Entrar" })).toBeVisible();
 });
+
+test("la demostración entra con un clic por rol, sin contraseña ni código", async ({ page }) => {
+  await page.goto("/");
+  const demo = page.getByRole("region", { name: "Véalo por dentro" });
+  await expect(demo.getByRole("button")).toHaveCount(6);
+  await demo.getByRole("button", { name: /Gerente/ }).click();
+  await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
+  await page.reload(); // la sesión de la demostración se mantiene en la pestaña
+  await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
+  await page.getByRole("button", { name: "Salir" }).first().click();
+  await page.getByRole("region", { name: "Véalo por dentro" }).getByRole("button", { name: /Candidato/ }).click();
+  await expect(page.getByRole("heading", { name: /Laura/ })).toBeVisible();
+});

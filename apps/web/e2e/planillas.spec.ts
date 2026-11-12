@@ -4,18 +4,14 @@ import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 import { lideres } from "../src/data";
 
-async function entrarComo(page: Page, rol: RegExp, codigo?: string) {
+async function entrarComo(page: Page, rol: RegExp) {
   await page.goto("/");
   await page.getByRole("button", { name: rol }).click();
-  if (codigo) {
-    await page.getByLabel("Código").fill(codigo);
-    await page.getByRole("button", { name: "Verificar" }).click();
-  }
   await irA(page, "Planillas");
 }
 
 test("la gerencia imprime un lote de planillas en PDF con su QR y queda registrado", async ({ page }) => {
-  await entrarComo(page, /Gerente/, "123456");
+  await entrarComo(page, /Gerente/);
   const caja = page.getByRole("region", { name: "Imprimir planillas" });
   await expect(caja.getByText("Todavía no se ha impreso ningún lote.")).toBeVisible();
 
@@ -51,7 +47,7 @@ test("la gerencia imprime un lote de planillas en PDF con su QR y queda registra
 });
 
 test("regla 3: sin ninguna finalidad marcada no se imprime", async ({ page }) => {
-  await entrarComo(page, /Gerente/, "123456");
+  await entrarComo(page, /Gerente/);
   const caja = page.getByRole("region", { name: "Imprimir planillas" });
   for (const casilla of await caja.getByRole("checkbox").all()) await casilla.uncheck();
   await expect(caja.getByRole("button", { name: /Descargar/ })).toBeDisabled();

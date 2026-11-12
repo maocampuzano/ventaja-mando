@@ -43,9 +43,26 @@ export function InicioSesion({ fuente, alEntrar, aviso }: { fuente: FuenteDatos;
         </div>
 
         {aviso && <p className="aviso" role="status">{aviso}</p>}
+
+        {fuente.modo === "demo" && paso === "clave" && fuente.entrarDemo && (
+          <section className="tarjeta pila" aria-labelledby="demo-titulo">
+            <h2 id="demo-titulo">Véalo por dentro</h2>
+            <p className="tenue">Una campaña inventada a la Gobernación del Caquetá. Elija cómo quiere verla: cada rol entra a su propio espacio. No necesita contraseña.</p>
+            {usuariosDemo.map((u) => (
+              <button key={u.correo} className="sugerida usuario-demo" type="button" disabled={ocupado}
+                onClick={async () => { const s = await fuente.entrarDemo!(u.rol); if (s) alEntrar(s); }}>
+                <span><strong>{nombreRol[u.rol]}</strong></span>
+                <span className="tenue">{u.descripcion}</span>
+              </button>
+            ))}
+            <p className="tenue" style={{ fontSize: 12.5 }}>En una campaña real cada persona entra con su correo y su contraseña, y la dirección, además, con un código de su celular.</p>
+          </section>
+        )}
+
         {paso === "clave" ? (
           <form className="tarjeta pila" onSubmit={(e) => { e.preventDefault(); entrar(); }}>
-            <h2>Entrar</h2>
+            <h2>{fuente.modo === "demo" ? "Entrar con correo" : "Entrar"}</h2>
+            {fuente.modo === "demo" && <p className="tenue">Para probar la entrada completa: cualquier correo de la demostración (por ejemplo, <code>gerente@demo.co</code>), contraseña <code>{CLAVE_DEMO}</code> y, si le pide código, <code>{CODIGO_2FA_DEMO}</code>.</p>}
             <label className="campo">Correo
               <input type="email" autoComplete="username" required value={correo} onChange={(e) => setCorreo(e.target.value)} />
             </label>
@@ -86,19 +103,6 @@ export function InicioSesion({ fuente, alEntrar, aviso }: { fuente: FuenteDatos;
           </form>
         )}
 
-        {fuente.modo === "demo" && paso === "clave" && (
-          <section className="tarjeta pila" aria-label="Usuarios de demostración">
-            <h2>Modo demostración</h2>
-            <p className="tenue">Datos ficticios de una campaña a la Gobernación del Caquetá. Entre con cualquiera de estos usuarios: la contraseña es <code>{CLAVE_DEMO}</code> y, si le pide código, es <code>{CODIGO_2FA_DEMO}</code>.</p>
-            {usuariosDemo.map((u) => (
-              <button key={u.correo} className="sugerida usuario-demo" type="button" disabled={ocupado}
-                onClick={() => { setCorreo(u.correo); setClave(CLAVE_DEMO); entrar(u.correo, CLAVE_DEMO); }}>
-                <span><strong>{nombreRol[u.rol]}</strong> <span className="tenue">· {u.correo}</span></span>
-                <span className="tenue">{u.descripcion}</span>
-              </button>
-            ))}
-          </section>
-        )}
       </div>
     </main>
   );
