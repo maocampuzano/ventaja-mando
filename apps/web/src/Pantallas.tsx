@@ -43,7 +43,7 @@ export function Planillas() {
 /* ---------- Teléfono ---------- */
 export function Telefono({ titulo, children, nav }: { titulo: string; children: ReactNode; nav?: ReactNode }) {
   return (
-    <div className="telefono" aria-label="Vista en el celular">
+    <div className="telefono tema-sala" aria-label="Vista en el celular">
       <div className="tel-top"><span>9:41</span><span>{titulo}</span><span>4G</span></div>
       <div className="tel-cuerpo">{children}</div>
       {nav && <div className="tel-nav">{nav}</div>}

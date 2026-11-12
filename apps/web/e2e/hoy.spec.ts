@@ -40,3 +40,22 @@ test("cada sección abre con sus pestañas y el enlace directo sigue funcionando
   await menu(page).getByRole("button", { name: "Cuentas" }).click();
   await expect(page.getByRole("navigation", { name: /^Dentro de/ })).toHaveCount(0);
 });
+
+test("el panel abre en claro, el mapa y el día E van en modo sala y el botón pone todo en oscuro", async ({ page }) => {
+  await page.goto("/#gerente-hoy");
+  const lienzo = page.locator("main.lienzo");
+  await expect(lienzo).not.toHaveClass(/tema-sala/);
+  await page.getByRole("navigation", { name: "Dentro de Hoy" }).getByRole("button", { name: "Mapa y asesor" }).click();
+  await expect(lienzo).toHaveClass(/tema-sala/);
+  await menu(page).getByRole("button", { name: "Día E" }).click();
+  await expect(lienzo).toHaveClass(/tema-sala/);
+  await menu(page).getByRole("button", { name: "Cuentas" }).click();
+  await expect(lienzo).not.toHaveClass(/tema-sala/);
+
+  await page.getByRole("button", { name: "Modo sala" }).click();
+  await expect(lienzo).toHaveClass(/tema-sala/);
+  await page.goto("/#gerente-finanzas"); await page.reload(); // la elección se recuerda en ese navegador
+  await expect(page.locator("main.lienzo")).toHaveClass(/tema-sala/);
+  await page.getByRole("button", { name: "Modo claro" }).click();
+  await expect(page.locator("main.lienzo")).not.toHaveClass(/tema-sala/);
+});
