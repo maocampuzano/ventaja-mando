@@ -59,7 +59,7 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
         </div>
       </section>
 
-      {modo === "demo" && <span className="ficticio">Datos ficticios. Zonas ilustrativas, no son límites oficiales.</span>}
+      {modo === "demo" && <span className="ficticio">Datos ficticios. Límites de los municipios: DANE, MGN 2025.</span>}
 
       <div className="capas" role="group" aria-label="Capas del mapa">
         {capas.map((c) => (

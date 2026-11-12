@@ -62,9 +62,9 @@ export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & {
       return {
         liderId: "70000000-0000-4000-8000-000000000001",
         meta: 187,
-        zonas: [{ id: "50000000-0000-4000-8000-000000000001", nombre: "Florencia Norte" }],
+        zonas: [{ id: "50000000-0000-4000-8000-000000000001", nombre: "Florencia" }],
         tareas: [
-          { id: "91000000-0000-4000-8000-000000000001", titulo: "Visitar a 8 simpatizantes sin validar", detalle: "Florencia Norte, antes de las 6 p. m.", estado: "pendiente", venceEn: null },
+          { id: "91000000-0000-4000-8000-000000000001", titulo: "Visitar a 8 simpatizantes sin validar", detalle: "Florencia, antes de las 6 p. m.", estado: "pendiente", venceEn: null },
           { id: "91000000-0000-4000-8000-000000000002", titulo: "Invitar a la reunión del jueves", detalle: "Contactos con autorización vigente", estado: "pendiente", venceEn: null },
           { id: "91000000-0000-4000-8000-000000000003", titulo: "Escanear la planilla del sábado", detalle: "Lote 14", estado: "pendiente", venceEn: null },
         ],
