@@ -48,7 +48,7 @@ Estas reglas son parte del producto y del argumento de venta. Ningún cambio las
 - **Autonomía:** el agente fusiona sus propios PR cuando la integración continua está en verde y la revisión de cumplimiento está hecha. Nunca sube cambios directo a `main` ni reescribe su historial.
 - **Solo se detiene para los puntos de validación V1 a V7 de `PLAN-DE-TRABAJO.md`:** cuentas y claves, textos legales, excepciones a las reglas que no se negocian, envío de código o datos a terceros, producción y decisiones de negocio. Mientras espera, sigue con lo que no dependa de ese punto.
 - **Mauricio es principiante en lo técnico.** Todo lo que se le pida (cuentas, claves, configuraciones, revisiones) va con un paso a paso numerado: dónde hacer clic, qué escribir y cómo saber que quedó bien. Sin jerga sin explicar.
-- **Datos de prueba siempre ficticios** (la semilla de Turbaco del prototipo). Nunca use datos de personas reales.
+- **Datos de prueba siempre ficticios**: la semilla es una campaña inventada a la Gobernación del Caquetá (decisión del 12/11/2026). Los municipios son reales; la candidata, los líderes, las personas, los puestos y las cifras son inventados. Nunca use nombres ni datos de personas reales, tampoco de candidatos o políticos del Caquetá.
 - Si una tarea necesita una cuenta o clave que no está en el entorno, deje el código listo detrás de una variable, documente cómo activarla y siga con lo demás.
 - Antes de abrir el PR deben pasar el *typecheck*, el *lint* y las pruebas.
 

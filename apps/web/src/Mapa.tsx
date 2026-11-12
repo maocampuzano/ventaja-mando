@@ -2,18 +2,19 @@
 import { useMemo } from "react";
 import { useTablero } from "./datos/contexto";
 import { porcentajeCobertura } from "@ventaja/nucleo";
-import { colorPuesto, colorZona, opacidadZona, type Capa } from "./mapaColores";
+import { colorPuesto, colorZona, distanciaRedonda, opacidadZona, renglones, textoDistancia, type Capa } from "./mapaColores";
 
 export type { Capa } from "./mapaColores";
 
-// Proyección equirectangular local: a 10° N, un grado de longitud mide cos(10°) de uno de latitud.
-const K = Math.cos((10.33 * Math.PI) / 180);
-const proy = ([lon, lat]: [number, number]): [number, number] => [lon * K * 10000, -lat * 10000];
+// Proyección equirectangular local: un grado de longitud mide cos(latitud) de uno de latitud.
 const METROS_POR_GRADO_LAT = 110574;
 
 export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion: string | null; alSeleccionar: (id: string) => void }) {
   const { zonas, puestos, recDe, campana } = useTablero();
   const geo = useMemo(() => {
+    const latitud = zonas.length ? zonas.reduce((a, z) => a + z.centro[1], 0) / zonas.length : 0;
+    const K = Math.cos((latitud * Math.PI) / 180);
+    const proy = ([lon, lat]: [number, number]): [number, number] => [lon * K * 10000, -lat * 10000];
     const formas = zonas.map((z) => ({
       z,
       puntos: z.anillo.map(proy),
@@ -23,15 +24,17 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
     const ys = formas.flatMap((f) => f.puntos.map((p) => p[1]));
     let minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const real = { minX, maxX, minY, maxY }; // límites de las zonas, sin el encuadre mínimo
-    // Con pocas zonas a la vista (un coordinador), se encuadra como mínimo un área de unos 4 km × 3,3 km.
-    const minW = 0.036 * K * 10000, minH = 0.03 * 10000;
+    // Con pocas zonas a la vista (un coordinador), se encuadra como mínimo un área de unas cuatro zonas de ancho.
+    const una = formas[0]?.puntos ?? [];
+    const minW = 4 * (Math.max(...una.map((p) => p[0])) - Math.min(...una.map((p) => p[0])));
+    const minH = 3 * (Math.max(...una.map((p) => p[1])) - Math.min(...una.map((p) => p[1])));
     const w = Math.max(maxX - minX, minW), h = Math.max(maxY - minY, minH);
     if (maxX - minX < minW) { const c = (minX + maxX) / 2; minX = c - w / 2; maxX = c + w / 2; }
     if (maxY - minY < minH) { const c = (minY + maxY) / 2; minY = c - h / 2; maxY = c + h / 2; }
     // Margen asimétrico: deja libre el espacio que ocupan los paneles flotantes.
     const vb = { x: minX - w * 0.62, y: minY - h * 0.2, w: w * 2.28, h: h * 1.75 };
     const metro = 10000 / METROS_POR_GRADO_LAT; // unidades SVG por metro
-    return { formas, vb, metro, ...real };
+    return { formas, vb, metro, proy, ...real };
   }, [zonas]);
 
   const relleno = (id: string) => colorZona(capa, zonas.find((x) => x.id === id)!, recDe(id));
@@ -40,13 +43,15 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
   if (!zonas.length) {
     return <div className="mapa mapa-vacio" role="region" aria-label="Mapa sin zonas"><p className="tenue">Todavía no hay zonas a la vista para su usuario.</p></div>;
   }
-  const { formas, vb, metro } = geo;
-  const paso = 400 * metro; // cuadrícula cada 400 m
+  const { formas, vb, metro, proy } = geo;
+  // La cuadrícula y la barra de escala se ajustan al tamaño de lo que se ve: un barrio o un departamento.
+  const paso = distanciaRedonda(vb.w / metro / 28, [1, 2, 4, 5, 10]) * metro;
   const lineas: number[] = [];
   for (let x = Math.floor(vb.x / paso) * paso; x < vb.x + vb.w; x += paso) lineas.push(x);
   const lineasY: number[] = [];
   for (let y = Math.floor(vb.y / paso) * paso; y < vb.y + vb.h; y += paso) lineasY.push(y);
-  const escala = 500 * metro;
+  const metrosEscala = distanciaRedonda(vb.w / metro / 22);
+  const escala = metrosEscala * metro;
   const fuente = vb.w / 95;
 
   return (
@@ -81,7 +86,11 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
 
         {formas.map(({ z, centro }) => (
           <text key={`t${z.id}`} x={centro[0]} y={centro[1]} textAnchor="middle" dominantBaseline="middle"
-            fontSize={fuente} fill="var(--texto)" className="zona-nombre">{z.nombre}</text>
+            fontSize={fuente} fill="var(--texto)" className="zona-nombre">
+            {renglones(z.nombre).map((r, i, todos) => (
+              <tspan key={r} x={centro[0]} dy={i === 0 ? (todos.length > 1 ? -fuente * 0.55 : 0) : fuente * 1.15}>{r}</tspan>
+            ))}
+          </text>
         ))}
 
         {capa === "testigos" && puestos.map((p) => {
@@ -100,7 +109,7 @@ export function Mapa({ capa, seleccion, alSeleccionar }: { capa: Capa; seleccion
           <line x1={0} x2={escala} y1={0} y2={0} stroke="var(--tenue)" strokeWidth={vb.w / 600} />
           <line x1={0} x2={0} y1={-fuente * 0.35} y2={fuente * 0.35} stroke="var(--tenue)" strokeWidth={vb.w / 600} />
           <line x1={escala} x2={escala} y1={-fuente * 0.35} y2={fuente * 0.35} stroke="var(--tenue)" strokeWidth={vb.w / 600} />
-          <text x={escala / 2} y={fuente * 1.3} textAnchor="middle" fontSize={fuente * 0.85} fill="var(--tenue)">500 m</text>
+          <text x={escala / 2} y={fuente * 1.3} textAnchor="middle" fontSize={fuente * 0.85} fill="var(--tenue)">{textoDistancia(metrosEscala)}</text>
         </g>
         <text x={geo.minX} y={geo.minY - (geo.maxY - geo.minY) * 0.06} fontSize={fuente * 1.05} fill="var(--tenue)">{campana.cargo}</text>
       </svg>

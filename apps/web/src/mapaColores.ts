@@ -63,3 +63,17 @@ export function geojsonPuestos(puestos: Puesto[]) {
   };
 }
 
+/** La distancia «redonda» más cercana (1, 2, 5… por una potencia de 10), para la cuadrícula y la barra de escala. */
+export function distanciaRedonda(metros: number, pasos: number[] = [1, 2, 5, 10]) {
+  const base = 10 ** Math.floor(Math.log10(metros));
+  return pasos.map((p) => p * base).reduce((a, b) => (Math.abs(b - metros) < Math.abs(a - metros) ? b : a));
+}
+export const textoDistancia = (metros: number) => (metros >= 1000 ? `${(metros / 1000).toLocaleString("es-CO")} km` : `${metros} m`);
+
+/** Los nombres largos van en dos renglones para que quepan en su zona. */
+export function renglones(nombre: string): string[] {
+  if (nombre.length <= 13 || !nombre.includes(" ")) return [nombre];
+  const cortes = [...nombre.matchAll(/ /g)].map((m) => m.index!);
+  const corte = cortes.reduce((a, b) => (Math.abs(b - nombre.length / 2) < Math.abs(a - nombre.length / 2) ? b : a));
+  return [nombre.slice(0, corte), nombre.slice(corte + 1)];
+}

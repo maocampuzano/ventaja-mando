@@ -7,7 +7,7 @@ test("la dirección tiene Ajustes: datos de la campaña, tope de gastos, roles y
   const campana = page.getByRole("region", { name: "La campaña" });
   await expect(campana).toContainText("Laura Méndez");
   await expect(campana).toContainText("31/10/2027");
-  await expect(campana).toContainText("18.500");
+  await expect(campana).toContainText("74.000");
 
   const tope = page.getByRole("region", { name: "Tope de gastos del CNE" });
   await tope.getByLabel("Tope en pesos").fill("500000000");

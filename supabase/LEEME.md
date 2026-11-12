@@ -5,7 +5,7 @@
 | Ruta | Qué es |
 |---|---|
 | `migrations/` | El modelo de datos, la seguridad (RLS) y las funciones. Se aplican en orden, desde cero. |
-| `seed.sql` | Semilla **ficticia** de Turbaco: dos campañas del mismo partido, 19 zonas, 8 puestos, 23 líderes, 183 personas con su autorización, testigos, novedades y E-14. |
+| `seed.sql` | Semilla **ficticia** del Caquetá (Gobernación): dos campañas del mismo partido, 19 zonas, 8 puestos, 23 líderes, 183 personas con su autorización, testigos, novedades y E-14. |
 | `tests/` | Pruebas en pgTAP: aislamiento por campaña, rol y territorio; reglas que no se negocian; duplicados y fusión; invitaciones. |
 | `local/` | Solo para pruebas locales: imita lo mínimo de Supabase (roles y `auth.uid()`) y trae funciones para actuar como un usuario de la semilla. **No se aplica en Supabase.** |
 | `scripts/probar.sh` | Crea una base desde cero, aplica todo y corre las pruebas (`npm run test:db`). |

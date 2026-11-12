@@ -1,5 +1,6 @@
-// Datos FICTICIOS de una campaña a la Alcaldía de Turbaco (Bolívar).
-// Las zonas son una cuadrícula hexagonal ilustrativa, no barrios ni límites oficiales.
+// Datos FICTICIOS de una campaña a la Gobernación del Caquetá. La candidata, los líderes, los puestos y todas las
+// cifras son inventados. Las zonas llevan nombres de municipios del Caquetá (y de las cuatro comunas urbanas de
+// Florencia), pero son una cuadrícula hexagonal ilustrativa: no son límites oficiales ni están en su sitio real.
 import { indiceLider, recomendar, type Mesa } from "@ventaja/nucleo";
 
 function rng(seed: number) {
@@ -15,18 +16,20 @@ const entre = (a: number, b: number) => Math.round(a + r() * (b - a));
 
 export const campana = {
   candidato: "Laura Méndez",
-  cargo: "Alcaldía de Turbaco",
+  cargo: "Gobernación del Caquetá",
   eleccion: "2027-10-31",
-  metaVotos: 18500,
+  metaVotos: 74000,
 };
 
-export const CENTRO: [number, number] = [-75.4115, 10.3345];
-const RADIO = 0.0052; // grados, ≈ 570 m
+export const CENTRO: [number, number] = [-74.1, 1.1];
+const RADIO = 0.33; // grados, ≈ 36 km: la cuadrícula cubre más o menos el ancho del departamento
+/** Las cifras por zona de la semilla municipal, llevadas a la escala de un departamento. */
+const ESCALA = 4;
 
 const nombres = [
-  "Centro", "Los Almendros", "La Ceiba", "Villa Rosa", "El Mirador", "Nueva Esperanza",
-  "Las Palmas", "Altos del Cerro", "La Granja", "Bellavista", "San Pedro", "El Bosque",
-  "Los Robles", "Campo Alegre", "Villa del Sol", "El Recreo", "La Floresta", "Buenos Aires", "Las Colinas",
+  "Florencia Norte", "Florencia Sur", "Florencia Oriental", "Florencia Occidental", "Albania", "Belén de los Andaquíes",
+  "Cartagena del Chairá", "Curillo", "El Doncello", "El Paujil", "La Montañita", "Milán", "Morelia",
+  "Puerto Rico", "San José del Fragua", "San Vicente del Caguán", "Solano", "Solita", "Valparaíso",
 ];
 
 function hexagono(cx: number, cy: number): [number, number][] {
@@ -62,7 +65,7 @@ for (let q = -2; q <= 2; q++)
 export const zonas: Zona[] = axiales.map(([q, s], i) => {
   const cx = CENTRO[0] + RADIO * Math.sqrt(3) * (q + s / 2);
   const cy = CENTRO[1] + RADIO * 1.5 * s;
-  const potencial = entre(1400, 4200);
+  const potencial = entre(1400, 4200) * ESCALA;
   const sesgo = r();
   const bruto = Math.round(potencial * (0.12 + sesgo * 0.38));
   const validados = Math.round(bruto * (0.45 + r() * 0.45));

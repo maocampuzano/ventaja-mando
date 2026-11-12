@@ -1,5 +1,5 @@
 -- Semilla de desarrollo y demos. TODOS LOS DATOS SON FICTICIOS.
--- Campaña inventada a la Alcaldía de Turbaco (Bolívar) y una segunda campaña del mismo partido,
+-- Campaña inventada a la Gobernación del Caquetá y una segunda campaña del mismo partido (Asamblea),
 -- para probar que un candidato no ve la base del otro.
 -- Las cédulas empiezan por 000 (no son números válidos) y los celulares siguen el patrón 300 000 XXXX del prototipo.
 -- Los usuarios de auth.users son solo para la base local; en un proyecto real se crean por invitación.
@@ -12,8 +12,9 @@ insert into ids values
   ('partido',        '10000000-0000-4000-8000-000000000001'),
   ('campana_a',      '20000000-0000-4000-8000-00000000000a'),
   ('campana_b',      '20000000-0000-4000-8000-00000000000b'),
-  ('bolivar',        '30000000-0000-4000-8000-000000000013'),
-  ('turbaco',        '30000000-0000-4000-8000-000000013836'),
+  -- Los identificadores vienen de la primera semilla; las pruebas los usan tal cual.
+  ('caqueta',        '30000000-0000-4000-8000-000000000013'),
+  ('florencia',      '30000000-0000-4000-8000-000000013836'),
   ('u_admin_a',      '40000000-0000-4000-8000-000000000001'),
   ('u_gerente_a',    '40000000-0000-4000-8000-000000000002'),
   ('u_candidata_a',  '40000000-0000-4000-8000-000000000003'),
@@ -30,15 +31,16 @@ create function pg_temp.id(p text) returns uuid language sql as $$ select id fro
 -- Organización y campañas
 insert into public.organizacion (id, tipo, nombre) values (pg_temp.id('partido'), 'partido', 'Partido Demo');
 insert into public.campana (id, organizacion_id, nombre, cargo, circunscripcion_divipole, eleccion_fecha, meta_votos) values
-  (pg_temp.id('campana_a'), pg_temp.id('partido'), 'Laura Méndez', 'Alcaldía de Turbaco', '13836', '2027-10-31', 18500),
-  (pg_temp.id('campana_b'), pg_temp.id('partido'), 'Carlos Ruiz', 'Concejo de Turbaco', '13836', '2027-10-31', 2200);
+  (pg_temp.id('campana_a'), pg_temp.id('partido'), 'Laura Méndez', 'Gobernación del Caquetá', '18', '2027-10-31', 74000),
+  (pg_temp.id('campana_b'), pg_temp.id('partido'), 'Carlos Ruiz', 'Asamblea del Caquetá', '18', '2027-10-31', 9000);
 
 -- Territorio oficial de referencia (códigos DANE) y zonas propias de cada campaña
 insert into public.territorio (id, codigo_divipole, nivel, nombre, padre_id, fuente, fecha_fuente) values
-  (pg_temp.id('bolivar'), '13', 'departamento', 'Bolívar', null, 'Semilla ficticia (código DANE de referencia)', '2026-10-23'),
-  (pg_temp.id('turbaco'), '13836', 'municipio', 'Turbaco', pg_temp.id('bolivar'), 'Semilla ficticia (código DANE de referencia)', '2026-10-23');
+  (pg_temp.id('caqueta'), '18', 'departamento', 'Caquetá', null, 'Semilla ficticia (código DANE de referencia)', '2026-10-23'),
+  (pg_temp.id('florencia'), '18001', 'municipio', 'Florencia', pg_temp.id('caqueta'), 'Semilla ficticia (código DANE de referencia)', '2026-10-23');
 
--- 19 zonas hexagonales ilustrativas, como en el prototipo (no son barrios ni límites oficiales).
+-- 19 zonas hexagonales ilustrativas, como en el prototipo. Llevan nombres de municipios del Caquetá y de las comunas
+-- urbanas de Florencia, pero no son límites oficiales ni están en su sitio real.
 create temporary table zona_semilla on commit drop as
 with axiales as (
   select q, s, row_number() over (order by q, s) as n
@@ -47,38 +49,38 @@ with axiales as (
 ),
 nombres as (
   select n, nombre from unnest(array[
-    'Centro', 'Los Almendros', 'La Ceiba', 'Villa Rosa', 'El Mirador', 'Nueva Esperanza',
-    'Las Palmas', 'Altos del Cerro', 'La Granja', 'Bellavista', 'San Pedro', 'El Bosque',
-    'Los Robles', 'Campo Alegre', 'Villa del Sol', 'El Recreo', 'La Floresta', 'Buenos Aires', 'Las Colinas'
+    'Florencia Norte', 'Florencia Sur', 'Florencia Oriental', 'Florencia Occidental', 'Albania', 'Belén de los Andaquíes',
+    'Cartagena del Chairá', 'Curillo', 'El Doncello', 'El Paujil', 'La Montañita', 'Milán', 'Morelia',
+    'Puerto Rico', 'San José del Fragua', 'San Vicente del Caguán', 'Solano', 'Solita', 'Valparaíso'
   ]) with ordinality as x(nombre, n)
 )
 select a.n, nm.nombre,
   ('50000000-0000-4000-8000-' || lpad(a.n::text, 12, '0'))::uuid as id,
-  -75.4115 + 0.0052 * sqrt(3) * (a.q + a.s / 2.0) as cx,
-  10.3345 + 0.0052 * 1.5 * a.s as cy
+  -74.1 + 0.33 * sqrt(3) * (a.q + a.s / 2.0) as cx,
+  1.1 + 0.33 * 1.5 * a.s as cy
 from axiales a join nombres nm using (n);
 
 insert into public.territorio (id, campana_id, nivel, nombre, padre_id, geom, fuente, fecha_fuente)
-select z.id, pg_temp.id('campana_a'), 'zona', z.nombre, pg_temp.id('turbaco'),
+select z.id, pg_temp.id('campana_a'), 'zona', z.nombre, pg_temp.id('caqueta'),
   extensions.st_setsrid(extensions.st_multi(extensions.st_makepolygon(extensions.st_addpoint(
     extensions.st_makeline(array(
-      select extensions.st_makepoint(z.cx + 0.0052 * 0.98 * cos(pi() / 3 * i + pi() / 6),
-                                     z.cy + 0.0052 * 0.98 * sin(pi() / 3 * i + pi() / 6))
+      select extensions.st_makepoint(z.cx + 0.33 * 0.98 * cos(pi() / 3 * i + pi() / 6),
+                                     z.cy + 0.33 * 0.98 * sin(pi() / 3 * i + pi() / 6))
       from generate_series(0, 5) i order by i
     )),
-    extensions.st_makepoint(z.cx + 0.0052 * 0.98 * cos(pi() / 6), z.cy + 0.0052 * 0.98 * sin(pi() / 6))
+    extensions.st_makepoint(z.cx + 0.33 * 0.98 * cos(pi() / 6), z.cy + 0.33 * 0.98 * sin(pi() / 6))
   ))), 4326),
   'Zona ilustrativa de la semilla', '2026-10-23'
 from zona_semilla z;
 
 insert into public.territorio (id, campana_id, nivel, nombre, padre_id, fuente) values
-  ('50000000-0000-4000-8000-0000000000b1', pg_temp.id('campana_b'), 'zona', 'Zona Norte (campaña B)', pg_temp.id('turbaco'), 'Semilla'),
-  ('50000000-0000-4000-8000-0000000000b2', pg_temp.id('campana_b'), 'zona', 'Zona Sur (campaña B)', pg_temp.id('turbaco'), 'Semilla');
+  ('50000000-0000-4000-8000-0000000000b1', pg_temp.id('campana_b'), 'zona', 'Zona Norte (campaña B)', pg_temp.id('caqueta'), 'Semilla'),
+  ('50000000-0000-4000-8000-0000000000b2', pg_temp.id('campana_b'), 'zona', 'Zona Sur (campaña B)', pg_temp.id('caqueta'), 'Semilla');
 
 -- Puestos de votación ficticios, dentro de las zonas 2, 4, 6, ...
 insert into public.puesto (id, codigo, nombre, territorio_id, geom, mesas, fuente, fecha_fuente)
 select ('60000000-0000-4000-8000-' || lpad(p.n::text, 12, '0'))::uuid, 'DEMO-' || lpad(p.n::text, 3, '0'), p.nombre,
-  pg_temp.id('turbaco'),
+  pg_temp.id('florencia'),
   extensions.st_setsrid(extensions.st_makepoint(z.cx, z.cy), 4326), 6 + (p.n * 5) % 13,
   'Semilla ficticia', '2026-10-23'
 from unnest(array['I.E. Ficticia Central', 'Colegio Demo San José', 'Escuela Demo La Ceiba', 'I.E. Demo El Mirador',
@@ -202,7 +204,7 @@ select pg_temp.id('campana_a'), 'meta', '2026-10-20', z.id, 2000 + z.n * 731 % 9
 from zona_semilla z;
 
 insert into public.historico_resultado (eleccion, puesto_id, candidato_o_partido, votos)
-select 'Alcaldía 2023 (ficticio)', p.id, 'Partido Demo', 300 + (row_number() over (order by p.codigo))::int * 97 % 900
+select 'Gobernación 2023 (ficticio)', p.id, 'Partido Demo', 300 + (row_number() over (order by p.codigo))::int * 97 % 900
 from public.puesto p;
 
 -- Operación

@@ -55,7 +55,7 @@ Antes de abrir un PR deben pasar `typecheck`, `lint`, `test` y `test:db` (en un 
 
 El panel tiene dos fuentes de datos con la misma interfaz (`apps/web/src/datos/`):
 
-- **demo** (por defecto): la semilla ficticia de Turbaco, en el navegador. La pantalla de entrada muestra los usuarios de prueba (contraseña `demo2027`; el código de dos pasos del gerente es `123456`). Recorta los datos con la misma regla de alcance que la base (`packages/nucleo/src/alcance.ts`), pero no es seguridad: todo está en el navegador.
+- **demo** (por defecto): la semilla ficticia del Caquetá, en el navegador. La pantalla de entrada muestra los usuarios de prueba (contraseña `demo2027`; el código de dos pasos del gerente es `123456`). Recorta los datos con la misma regla de alcance que la base (`packages/nucleo/src/alcance.ts`), pero no es seguridad: todo está en el navegador.
 - **supabase**: el proyecto real. Se enciende con `MODO_DATOS=supabase` más `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`. Inicia sesión con Supabase Auth, pide el código de dos pasos a administradores y gerentes, y lee el tablero con las funciones `tablero_zonas` y `tablero_lideres`, que solo devuelven agregados y aplican el alcance de cada rol en la base.
 
 En la página compilada en modo demo no queda nada del proyecto real; en modo supabase queda la URL y la clave publicable (que es pública por diseño), nunca la secreta.
