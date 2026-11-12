@@ -63,12 +63,16 @@ function guardar(s: Sesion | null) {
   } catch { /* sin almacenamiento: la sesión dura lo que dure la página */ }
 }
 
+const PAUTA_DE_EJEMPLO = import.meta.env.VITE_PAUTA === "1";
+
 /** Recorta la semilla al alcance de la sesión. Exportada para probarla. */
 export function datosDemo(s: Sesion): DatosTablero {
   const visibles = territoriosVisibles(s.rol, s.territorioIds, arbol);
   return {
     campana,
-    zonas: zonas.filter((z) => visibles.has(z.id)),
+    // La pauta digital (Meta y Google) está aplazada: la demostración no trae cifras de pauta de ejemplo, salvo que
+    // se compile con VITE_PAUTA=1 para mostrar cómo se verá el cruce tierra + pauta.
+    zonas: zonas.filter((z) => visibles.has(z.id)).map((z) => (PAUTA_DE_EJEMPLO ? z : { ...z, alcance: 0, clics: 0, gasto: 0 })),
     lideres: lideres.filter((l) => visibles.has(l.zonaId)),
     puestos: puestos.filter((p) => visibles.has(p.zonaId)),
   };

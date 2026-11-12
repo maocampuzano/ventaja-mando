@@ -19,6 +19,8 @@ export function armarTablero(d: DatosTablero, rol: RolCampana) {
     meta: veTodaLaCampana(rol)
       ? { votos: d.campana.metaVotos, texto: "Meta" }
       : { votos: s("meta"), texto: "Meta de sus zonas" },
+    /** Sin pauta conectada, el panel no muestra capas ni cifras de pauta. */
+    hayPauta: s("alcance") > 0,
     todasLasMesas: d.puestos.flatMap((p) => p.mesas),
     totales: {
       bruto: s("bruto"), validados: s("validados"), comprometidos: s("comprometidos"), lideres: d.lideres.length,

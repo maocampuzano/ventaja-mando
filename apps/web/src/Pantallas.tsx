@@ -6,7 +6,7 @@ import { useTablero } from "./datos/contexto";
 import { Escaner } from "./Escaner";
 import { ImprimirPlanillas } from "./ImprimirPlanillas";
 import { RevisarPlanillas } from "./RevisarPlanillas";
-import { miles, pct, textoAccion } from "@ventaja/nucleo";
+import { miles, pct } from "@ventaja/nucleo";
 import type { Tarea } from "./Asesor";
 
 /* ---------- Planillas (gerente / coordinador) ---------- */
@@ -145,7 +145,7 @@ export function MiMesa() {
 
 /* ---------- Candidato ---------- */
 export function Resumen({ aprobadas }: { aprobadas: Tarea[] }) {
-  const { campana, totales, recomendaciones, zonaDe } = useTablero();
+  const { campana, totales, recomendaciones, zonaDe, hayPauta } = useTablero();
   const meta = totales.comprometidos / campana.metaVotos;
   return (
     <div className="pagina">
@@ -167,17 +167,25 @@ export function Resumen({ aprobadas }: { aprobadas: Tarea[] }) {
           <div className="dato">{miles(totales.validados)}</div>
           <p className="tenue">Validados de {miles(totales.bruto)} registrados. {pct(1 - totales.validados / totales.bruto)} todavía sin comprobar.</p>
         </div>
-        <div className="tarjeta pila">
-          <div className="etiqueta">La pauta</div>
-          <div className="dato">{miles(Math.round(totales.alcance / 1000))} mil</div>
-          <p className="tenue">Personas alcanzadas en 14 días, con $ {miles(totales.gasto)} invertidos.</p>
-        </div>
+        {hayPauta ? (
+          <div className="tarjeta pila">
+            <div className="etiqueta">La pauta</div>
+            <div className="dato">{miles(Math.round(totales.alcance / 1000))} mil</div>
+            <p className="tenue">Personas alcanzadas en 14 días, con $ {miles(totales.gasto)} invertidos.</p>
+          </div>
+        ) : (
+          <div className="tarjeta pila">
+            <div className="etiqueta">El equipo</div>
+            <div className="dato">{miles(totales.lideres)}</div>
+            <p className="tenue">{totales.lideres === 1 ? "Líder" : "Líderes"} registrando simpatizantes en el territorio.</p>
+          </div>
+        )}
       </div>
       <div className="tarjeta pila" style={{ marginTop: 16 }}>
         <h2>Dónde está la oportunidad</h2>
         {recomendaciones.filter((r) => r.accion !== "mantener").sort((a, b) => b.brecha - a.brecha).slice(0, 3).map((r) => (
           <div key={r.territorioId} className="fila entre">
-            <span><strong>{zonaDe(r.territorioId).nombre}</strong> <span className="tenue">{textoAccion[r.accion].toLowerCase()}</span></span>
+            <span><strong>{zonaDe(r.territorioId).nombre}</strong> <span className="tenue">{r.texto.toLowerCase()}</span></span>
             <span className="tenue">{miles(zonaDe(r.territorioId).potencial)} votos en juego</span>
           </div>
         ))}

@@ -2,7 +2,7 @@
 // zona y el índice de cada líder bajo una referencia opaca («L-03»). El nombre del líder lo pone la pantalla, del lado
 // de quien consulta, con la misma tabla de referencias (refsLideres). Cada resultado dice de qué datos salió.
 import { indiceLider } from "./lider.ts";
-import { recomendar, textoAccion, type Accion } from "./territorio.ts";
+import { recomendar, type Accion } from "./territorio.ts";
 
 export type ZonaAgregada = {
   id: string; nombre: string; meta: number; potencial: number; bruto: number; validados: number; comprometidos: number;
@@ -162,7 +162,7 @@ export function ejecutarHerramienta(
         return {
           id: z.id, zona: z.nombre, validados: z.validados, comprometidos: z.comprometidos, potencial: z.potencial,
           lideres: z.lideres, alcanceDigital: z.alcance, digital: r2(r.digital), tierra: r2(r.tierra), brecha: r2(r.brecha),
-          accion: r.accion as Accion, recomendacion: textoAccion[r.accion],
+          accion: r.accion as Accion, recomendacion: r.texto,
         };
       });
       const clave: Record<string, (f: (typeof filas)[number]) => number> = {
@@ -277,7 +277,8 @@ export function responderSimulado(pregunta: string, d: DatosAsesor): RespuestaAs
   // Por defecto: ¿dónde actuar?
   type Z = { id: string; zona: string; accion: Accion; brecha: number; digital: number };
   const zonas = usar("zonas", { orden: "brecha", limite: 50 }) as Z[];
-  const brigada = zonas.filter((z) => z.accion === "brigada").sort((a, b) => b.digital - a.digital).slice(0, 2);
+  const conPauta = d.zonas.some((z) => z.alcance > 0);
+  const brigada = zonas.filter((z) => z.accion === "brigada").sort((a, b) => (conPauta ? b.digital - a.digital : b.brecha - a.brecha)).slice(0, 2);
   const oportunidad = zonas.find((z) => z.accion === "oportunidad");
   const partes: string[] = [];
   if (brigada.length) {
@@ -285,7 +286,9 @@ export function responderSimulado(pregunta: string, d: DatosAsesor): RespuestaAs
       tipo: "brigada", titulo: `Brigada de fin de semana en ${brigada.map((z) => z.zona).join(" y ")}`,
       detalle: "Asignar dos coordinadores el sábado de 8:00 a 12:00, con formulario de registro y autorización.", zonas: brigada.map((z) => z.id), lideres: [],
     });
-    partes.push(`En ${brigada.map((z) => z.zona).join(" y ")} la pauta ya generó atención pero hay pocos simpatizantes validados: propongo una brigada.`);
+    partes.push(conPauta
+      ? `En ${brigada.map((z) => z.zona).join(" y ")} la pauta ya generó atención pero hay pocos simpatizantes validados: propongo una brigada.`
+      : `En ${brigada.map((z) => z.zona).join(" y ")} hay muchos votos en juego y pocos simpatizantes validados: propongo una brigada.`);
   }
   if (oportunidad) {
     usar("proponer_tarea", {
@@ -294,6 +297,8 @@ export function responderSimulado(pregunta: string, d: DatosAsesor): RespuestaAs
     });
     partes.push(`${oportunidad.zona} tiene potencial alto sin pauta ni estructura: empezaría con una cola de llamadas.`);
   }
-  if (!partes.length) partes.push("Ninguna zona de su alcance muestra una brecha marcada entre tierra y pauta: conviene mantener el ritmo y revisar de nuevo la próxima semana.");
+  if (!partes.length) partes.push(conPauta
+    ? "Ninguna zona de su alcance muestra una brecha marcada entre tierra y pauta: conviene mantener el ritmo y revisar de nuevo la próxima semana."
+    : "Ninguna zona de su alcance muestra una brecha marcada entre la base y los votos en juego: conviene mantener el ritmo y revisar de nuevo la próxima semana.");
   return fin(partes.join(" "));
 }

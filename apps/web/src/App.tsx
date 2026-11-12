@@ -14,6 +14,7 @@ import { InicioSesion } from "./InicioSesion";
 import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
 import { Hoy } from "./Hoy";
+import { Ajustes } from "./Ajustes";
 import { Datos } from "./Datos";
 import { Baja } from "./Baja";
 import { Mensajes } from "./Mensajes";
@@ -25,12 +26,12 @@ import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
 import { DiaE } from "./DiaE";
 import type { Tarea } from "./Asesor";
 
-type Vista = "hoy" | "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "llamadas" | "llamar" | "finanzas" | "diae" | "datos" | "bandeja" | "mimesa";
+type Vista = "hoy" | "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "llamadas" | "llamar" | "finanzas" | "diae" | "datos" | "ajustes" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos"],
-  gerente: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos"],
+  administrador: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos", "ajustes"],
+  gerente: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos", "ajustes"],
   candidato: ["resumen", "mando", "mensajes", "finanzas", "diae"],
   coordinador: ["hoy", "mando", "lideres", "importar", "planillas", "diae"],
   lider: ["bandeja"],
@@ -43,7 +44,7 @@ type Icon = Parameters<typeof Icono>[0]["n"];
 const nombreVista: Record<Vista, string> = {
   hoy: "Hoy", resumen: "Hoy", mando: "Mapa y asesor",
   lideres: "Líderes", equipo: "Equipo", importar: "Importar", formularios: "Formularios", planillas: "Planillas",
-  mensajes: "Mensajes", llamadas: "Llamadas", llamar: "Llamar", finanzas: "Cuentas", diae: "Día E", datos: "Cumplimiento",
+  mensajes: "Mensajes", llamadas: "Llamadas", llamar: "Llamar", finanzas: "Cuentas", diae: "Día E", datos: "Cumplimiento", ajustes: "Ajustes",
   bandeja: "Celular", mimesa: "Mi mesa",
 };
 
@@ -60,6 +61,7 @@ const secciones: Seccion[] = [
   { id: "bandeja", nombre: "Celular", icono: "movil", vistas: ["bandeja"] },
   { id: "mimesa", nombre: "Mi mesa", icono: "movil", vistas: ["mimesa"] },
   { id: "cumplimiento", nombre: "Cumplimiento", icono: "datos", vistas: ["datos"], abajo: true },
+  { id: "ajustes", nombre: "Ajustes", icono: "ajustes", vistas: ["ajustes"], abajo: true },
 ];
 
 // Enlaces directos con un token simple: #lideres, o #gerente-lideres en la página publicada del modo demo.
@@ -221,6 +223,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "finanzas" && <Finanzas />}
             {vista === "diae" && <DiaE />}
             {vista === "datos" && <Datos />}
+            {vista === "ajustes" && <Ajustes sala={sala} cambiarTema={cambiarTema} ir={(v) => ir(v as Vista)} />}
             {vista === "bandeja" && <BandejaLider />}
             {vista === "mimesa" && <MiMesa />}
           </ContextoTablero.Provider>

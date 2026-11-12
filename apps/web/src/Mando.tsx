@@ -5,10 +5,10 @@ import { MapaReal } from "./MapaReal";
 const CLAVE_MAPAS = import.meta.env.VITE_MAPTILER_KEY ?? "";
 import { Barra } from "./comunes";
 import { useTablero } from "./datos/contexto";
-import { miles, pct, porcentajeCobertura, textoAccion } from "@ventaja/nucleo";
+import { miles, pct, porcentajeCobertura } from "@ventaja/nucleo";
 import { Asesor, type Tarea } from "./Asesor";
 
-const capas: { id: Capa; nombre: string; leyenda: ReactNode }[] = [
+const todasLasCapas: { id: Capa; nombre: string; leyenda: ReactNode }[] = [
   {
     id: "accion", nombre: "Qué hacer en cada zona",
     leyenda: <><span><i className="punto" style={{ background: "#f0a73a" }} />Brigada</span><span><i className="punto" style={{ background: "#1f5bff" }} />Pauta</span><span><i className="punto" style={{ background: "#b46cff" }} />Oportunidad</span></>,
@@ -23,7 +23,10 @@ const nombreTipo = { brigada: "Brigada", pauta: "Más pauta", oportunidad: "Opor
 const colorTipo = { brigada: "ambar", pauta: "azul", oportunidad: "azul", mantener: "" };
 
 export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
-  const { meta: metaVista, recomendaciones, totales, zonaDe, modo, zonas } = useTablero();
+  const { meta: metaVista, recomendaciones, totales, zonaDe, modo, zonas, hayPauta } = useTablero();
+  // Sin pauta conectada no se ofrece su capa, y la de acciones solo distingue dónde enviar brigada.
+  const capas = hayPauta ? todasLasCapas : todasLasCapas.filter((c) => c.id !== "pauta")
+    .map((c) => (c.id === "accion" ? { ...c, leyenda: <span><i className="punto" style={{ background: "#f0a73a" }} />Brigada: muchos votos en juego y poca base</span> } : c));
   const [capa, setCapa] = useState<Capa>("accion");
   const [mapaFallo, setMapaFallo] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
@@ -68,14 +71,14 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
       <section className="flota franja" aria-label="Recomendaciones de hoy">
         <div className="fila entre">
           <h3>Dónde actuar hoy</h3>
-          <span className="tenue" style={{ fontSize: 12 }}>Cruce de pauta, tierra y potencial por zona</span>
+          <span className="tenue" style={{ fontSize: 12 }}>{hayPauta ? "Cruce de pauta, tierra y potencial por zona" : "Cruce de la base validada y los votos en juego por zona"}</span>
         </div>
         <div className="franja-lista">
           {accionables.map((r) => (
             <button key={r.territorioId} className="reco" aria-pressed={sel === r.territorioId} onClick={() => elegir(r.territorioId)}>
               <span className="fila entre"><strong>{zonaDe(r.territorioId).nombre}</strong><span className={`sello ${colorTipo[r.accion]}`}>{nombreTipo[r.accion]}</span></span>
-              <span className="tenue" style={{ fontSize: 12.5 }}>{textoAccion[r.accion]}</span>
-              <span className="tenue" style={{ fontSize: 12 }}>Pauta {pct(r.digital)}, tierra {pct(r.tierra)}</span>
+              <span className="tenue" style={{ fontSize: 12.5 }}>{r.texto}</span>
+              <span className="tenue" style={{ fontSize: 12 }}>{hayPauta ? `Pauta ${pct(r.digital)}, tierra ${pct(r.tierra)}` : `Base ${pct(r.tierra)}, votos en juego ${pct(r.brecha)}`}</span>
             </button>
           ))}
           {!accionables.length && <p className="tenue" style={{ fontSize: 12.5 }}>Ninguna zona a la vista necesita un cambio hoy: todas van al ritmo esperado.</p>}
@@ -98,7 +101,7 @@ export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprob
 }
 
 function PerfilZona({ id }: { id: string }) {
-  const { zonaDe, recDe, lideres, puestos } = useTablero();
+  const { zonaDe, recDe, lideres, puestos, hayPauta } = useTablero();
   const z = zonaDe(id);
   const r = recDe(id);
   const suyos = lideres.filter((l) => l.zonaId === id);
@@ -107,7 +110,7 @@ function PerfilZona({ id }: { id: string }) {
     <>
       <div>
         <h2>{z.nombre}</h2>
-        <p className="tenue">{textoAccion[r.accion]}</p>
+        <p className="tenue">{r.texto}</p>
       </div>
       <div className="rejilla" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div><div className="etiqueta">Potencial (votos 2023)</div><div className="dato" style={{ fontSize: 22 }}>{miles(z.potencial)}</div></div>
@@ -115,13 +118,17 @@ function PerfilZona({ id }: { id: string }) {
         <div><div className="etiqueta">Comprometidos / meta</div><div className="dato" style={{ fontSize: 22 }}>{pct(z.comprometidos / z.meta)}</div></div>
         <div><div className="etiqueta">Líderes asignados</div><div className="dato" style={{ fontSize: 22 }}>{suyos.length}</div></div>
       </div>
-      <hr className="separa" />
-      <div className="pila" style={{ gap: 8 }}>
-        <h3>Pauta en la zona</h3>
-        <div className="fila entre"><span className="tenue">Alcance</span><span>{miles(z.alcance)} personas</span></div>
-        <div className="fila entre"><span className="tenue">Clics</span><span>{miles(z.clics)}</span></div>
-        <div className="fila entre"><span className="tenue">Inversión</span><span>$ {miles(z.gasto)}</span></div>
-      </div>
+      {hayPauta && (
+        <>
+          <hr className="separa" />
+          <div className="pila" style={{ gap: 8 }}>
+            <h3>Pauta en la zona</h3>
+            <div className="fila entre"><span className="tenue">Alcance</span><span>{miles(z.alcance)} personas</span></div>
+            <div className="fila entre"><span className="tenue">Clics</span><span>{miles(z.clics)}</span></div>
+            <div className="fila entre"><span className="tenue">Inversión</span><span>$ {miles(z.gasto)}</span></div>
+          </div>
+        </>
+      )}
       <hr className="separa" />
       <div className="pila" style={{ gap: 8 }}>
         <h3>Líderes de la zona</h3>

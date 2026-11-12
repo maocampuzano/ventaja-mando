@@ -45,4 +45,17 @@ describe("recomendar", () => {
       expect(textoAccion[r.accion]).toMatch(/\S/);
     }
   });
+
+  it("sin pauta conectada solo propone brigada o mantener, y sus textos no hablan de pauta", () => {
+    // a: muchos votos en juego y poca base; b: base fuerte; c: pocos votos en juego
+    const r = recomendar([s("a", 0, 10, 1000), s("b", 0, 900, 900), s("c", 0, 5, 100)]);
+    expect(r.map((x) => x.accion)).toEqual(["brigada", "mantener", "mantener"]);
+    expect(r[0].texto).toBe("Enviar brigada: muchos votos en juego y poca base");
+    for (const x of r) { expect(x.digital).toBe(0); expect(x.texto).not.toMatch(/pauta|digital/i); }
+  });
+
+  it("con pauta conectada conserva el cruce tierra + pauta", () => {
+    const r = recomendar([s("a", 1000, 10, 100), s("ref", 100, 100, 100)]);
+    expect(r[0].texto).toBe(textoAccion.brigada);
+  });
 });
