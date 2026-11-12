@@ -1,11 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 
 async function entrar(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: /Gerente/ }).click();
   await page.getByLabel("Código").fill("123456");
   await page.getByRole("button", { name: "Verificar" }).click();
-  await page.getByRole("navigation").getByRole("button", { name: "Planillas" }).click();
+  await irA(page, "Planillas");
 }
 
 test("regla 7: una hoja leída solo se aprueba después de confirmar cada fila dudosa", async ({ page }) => {

@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { irA } from "./ayudas";
 
 test("el constructor arma un formulario y bloquea preguntas por el voto", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Gerente/ }).click();
   await page.getByLabel("Código").fill("123456");
   await page.getByRole("button", { name: "Verificar" }).click();
-  await page.getByRole("navigation").getByRole("button", { name: "Formularios" }).click();
+  await irA(page, "Formularios");
   await expect(page.getByText("Visita casa a casa (ejemplo)")).toBeVisible();
 
   await page.getByRole("button", { name: "Nuevo formulario" }).click();

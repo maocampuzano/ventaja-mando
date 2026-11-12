@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 
 async function entrar(page: Page, correo: string) {
   await page.goto("/");
@@ -9,7 +10,7 @@ async function entrar(page: Page, correo: string) {
     await page.getByLabel("Código").fill("123456");
     await page.getByRole("button", { name: "Verificar" }).click();
   }
-  await page.getByRole("navigation").getByRole("button", { name: "Finanzas" }).click();
+  await irA(page, "Cuentas");
 }
 
 test("un aporte de particular exige quién lo da, las verificaciones y respeta el 10 % del tope", async ({ page }) => {
@@ -68,7 +69,7 @@ test("la candidata ve las finanzas pero no registra; la coordinación no las ve"
   await page.getByLabel("Correo").fill("coordinadora@demo.co");
   await page.getByLabel("Contraseña").fill("demo2027");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("navigation").getByRole("button", { name: "Finanzas" })).toHaveCount(0);
+  await expect(page.getByRole("navigation").getByRole("button", { name: "Cuentas" })).toHaveCount(0);
 });
 
 test("la propaganda pide el medio y cualquiera con acceso baja la plantilla vacía", async ({ page }) => {
@@ -83,7 +84,7 @@ test("la propaganda pide el medio y cualquiera con acceso baja la plantilla vac�
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await page.getByLabel("Código").fill("123456");
   await page.getByRole("button", { name: "Verificar" }).click();
-  await page.getByRole("navigation").getByRole("button", { name: "Finanzas" }).click();
+  await irA(page, "Cuentas");
   await page.getByRole("button", { name: "Registrar movimiento" }).click();
   const caja = page.getByRole("region", { name: "Registrar movimiento" });
   await caja.getByLabel("Código del CNE").selectOption("208");

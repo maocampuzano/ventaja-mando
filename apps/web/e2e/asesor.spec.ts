@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 import { lideres } from "../src/data";
 
 async function abrirAsesor(page: Page, rol: RegExp, codigo?: string) {
@@ -8,6 +9,7 @@ async function abrirAsesor(page: Page, rol: RegExp, codigo?: string) {
     await page.getByLabel("Código").fill(codigo);
     await page.getByRole("button", { name: "Verificar" }).click();
   }
+  await irA(page, "Mapa y asesor");
   await page.getByRole("tab", { name: "Asesor IA" }).click();
 }
 

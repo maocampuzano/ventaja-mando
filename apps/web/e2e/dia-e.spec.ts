@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 
 async function entrar(page: Page, correo: string) {
   await page.goto("/");
@@ -9,7 +10,7 @@ async function entrar(page: Page, correo: string) {
     await page.getByLabel("Código").fill("123456");
     await page.getByRole("button", { name: "Verificar" }).click();
   }
-  await page.getByRole("navigation").getByRole("button", { name: "Día E" }).click();
+  await irA(page, "Día E");
 }
 
 test("el centro de mando muestra el semáforo con su motivo y se rotula como consolidación privada", async ({ page }) => {

@@ -41,14 +41,14 @@ p { margin: 0; }
 .tenue { color: var(--tenue); }
 
 /* Estructura */
-.app { display: grid; grid-template-columns: 76px 1fr; height: 100%; }
+.app { display: grid; grid-template-columns: 92px 1fr; height: 100%; }
 .riel {
   background: #10151d; border-right: 1px solid var(--linea);
   display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 6px;
 }
 .marca { width: 40px; height: 40px; border-radius: 12px; background: var(--acento); display: grid; place-items: center; margin-bottom: 14px; }
 .riel-btn {
-  width: 62px; padding: 8px 2px; border: 0; border-radius: var(--radio-m); background: transparent;
+  width: 82px; padding: 8px 2px; border: 0; border-radius: var(--radio-m); background: transparent;
   color: var(--tenue); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px;
 }
 .riel-btn:hover { background: var(--panel); color: var(--texto); }
@@ -57,7 +57,32 @@ p { margin: 0; }
 
 .lienzo { position: relative; overflow: hidden; min-width: 0; }
 .pagina { height: 100%; overflow: auto; padding: 72px 32px 48px; }
-.rol-flotante { position: absolute; top: 14px; right: 18px; z-index: 6; }
+.riel-abajo { margin-top: auto; }
+.riel-abajo ~ .riel-abajo { margin-top: 0; }
+/* Arriba de cada pantalla: a la izquierda, las pestañas de la sección; a la derecha, quién inició sesión. */
+.cabecera-flotante { position: absolute; top: 14px; left: 32px; right: 18px; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 12px; pointer-events: none; }
+.cabecera-flotante > * { pointer-events: auto; }
+.subnav { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(27, 34, 48, 0.92); backdrop-filter: blur(8px); border: 1px solid var(--linea); }
+.subnav-btn { border: 0; background: transparent; color: var(--tenue); padding: 6px 13px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.subnav-btn:hover { color: var(--texto); }
+.subnav-btn[aria-current="page"] { background: var(--acento); color: #fff; }
+
+/* Pantalla Hoy */
+.hoy { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.hoy-col { display: grid; gap: 16px; min-width: 0; }
+.pendiente { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--linea); }
+.pendiente:first-of-type { border-top: 0; padding-top: 4px; }
+.pendiente p { font-size: 12.5px; margin-top: 2px; }
+.hoy-aviso { display: grid; grid-template-columns: 10px 1fr; gap: 10px; align-items: start; padding: 9px 0; border-top: 1px solid var(--linea); }
+.hoy-aviso:first-of-type { border-top: 0; }
+.hoy-aviso .punto { margin-top: 6px; }
+.pendiente .btn { flex-shrink: 0; white-space: nowrap; }
+.barra > .chip, .barra > .subnav { flex-shrink: 0; }
+.tres-cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tres-cifras .dato { font-size: 26px; }
+.zona-fila { display: grid; grid-template-columns: minmax(90px, 1.1fr) 2fr 44px; gap: 10px; align-items: center; font-size: 13px; }
+.zona-fila .barra-h { grid-column: auto; }
+.sugerencias { display: flex; flex-wrap: wrap; gap: 8px; }
 .pagina-cabeza { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
 .pagina-cabeza p { margin-top: 4px; max-width: 70ch; }
 
@@ -235,7 +260,11 @@ button.mesa[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--texto); }
   .marca { display: none; }
   .pagina { padding: 20px 16px 32px; }
   /* En el celular el recuadro de quien inició sesión va arriba, en su propia fila, sin tapar el título. */
-  .rol-flotante { position: static; display: flex; justify-content: flex-end; padding: 10px 16px 0; }
+  .cabecera-flotante { position: static; padding: 10px 16px 0; flex-wrap: wrap-reverse; justify-content: flex-end; }
+  .subnav { overflow-x: auto; max-width: 100%; margin-right: auto; }
+  .hoy { grid-template-columns: 1fr; }
+  .riel-abajo { margin-top: 0; margin-left: auto; }
+  .barra { overflow-x: auto; }
   .solo-escritorio { display: none !important; }
   .barra { flex-wrap: nowrap; }
   .barra .espacio { display: none; }

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 
 const MIERCOLES_10AM = new Date("2027-10-27T10:00:00-05:00");
 
@@ -16,7 +17,7 @@ async function entrar(page: Page, correo: string, hora = MIERCOLES_10AM) {
 
 test("la dirección arma una cola solo con personas autorizadas y le asigna una operadora", async ({ page }) => {
   await entrar(page, "gerente@demo.co");
-  await page.getByRole("navigation").getByRole("button", { name: "Llamadas" }).click();
+  await irA(page, "Llamadas");
   await page.getByRole("button", { name: "Nueva cola" }).click();
   const caja = page.getByRole("region", { name: "Nueva cola" });
   await caja.getByLabel("Nombre de la cola").fill("Invitación al sábado");

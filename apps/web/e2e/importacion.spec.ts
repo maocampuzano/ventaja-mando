@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { irA } from "./ayudas";
 import writeExcelFile from "write-excel-file/node";
 
 // Excel FICTICIO de 5.000 filas: 49 sin autorización y 100 con la cédula de otra fila.
@@ -29,7 +30,7 @@ test("un Excel de 5.000 filas termina con su reporte de duplicados", async ({ pa
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await page.getByLabel("Código").fill("123456");
   await page.getByRole("button", { name: "Verificar" }).click();
-  await page.getByRole("navigation").getByRole("button", { name: "Importar" }).click();
+  await irA(page, "Importar");
 
   await page.getByLabel("Archivo para importar").setInputFiles(ruta);
   await expect(page.getByText("5.000 filas")).toBeVisible({ timeout: 30_000 });
@@ -58,7 +59,7 @@ test("sin columna de autorización no se puede importar", async ({ page }) => {
   writeFileSync(ruta, "Nombre;Celular;Barrio\nAna Ficticia;3000000001;Centro\n");
   await page.goto("/");
   await page.getByRole("button", { name: /Coordinador/ }).click();
-  await page.getByRole("navigation").getByRole("button", { name: "Importar" }).click();
+  await irA(page, "Importar");
   await page.getByLabel("Archivo para importar").setInputFiles(ruta);
   await expect(page.getByRole("alert")).toContainText("Falta indicar: Autoriza datos");
 });

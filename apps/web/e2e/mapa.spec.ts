@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { irA } from "./ayudas";
 
 test("con una clave de mapas que falla, el Mando vuelve al mapa SVG", async ({ page }) => {
   const cargados: string[] = [];
@@ -8,6 +9,7 @@ test("con una clave de mapas que falla, el Mando vuelve al mapa SVG", async ({ p
 
   await page.goto("http://localhost:5175/");
   await page.getByRole("button", { name: /Coordinador/ }).click();
+  await irA(page, "Mapa y asesor");
 
   // MapLibre se pidió desde la carpeta vendor y, al fallar la clave, aparece el mapa SVG con las 3 zonas.
   await expect(page.locator("polygon.zona")).toHaveCount(3, { timeout: 20_000 });
@@ -20,6 +22,7 @@ test("sin clave de mapas no se descarga MapLibre", async ({ page }) => {
   page.on("request", (r) => { if (r.url().includes("maplibre")) pedidos.push(r.url()); });
   await page.goto("/");
   await page.getByRole("button", { name: /Coordinador/ }).click();
+  await irA(page, "Mapa y asesor");
   await expect(page.locator("polygon.zona")).toHaveCount(3);
   expect(pedidos).toEqual([]);
 });
@@ -35,6 +38,7 @@ test("con una clave válida se dibuja el mapa de MapLibre con las zonas", async 
 
   await page.goto("http://localhost:5175/");
   await page.getByRole("button", { name: /Coordinador/ }).click();
+  await irA(page, "Mapa y asesor");
   const mapa = page.locator('[data-mapa="maplibre"]');
   await expect(mapa.locator("canvas")).toBeVisible({ timeout: 20_000 });
   await page.waitForTimeout(1500);

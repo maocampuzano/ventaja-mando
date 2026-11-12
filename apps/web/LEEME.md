@@ -21,9 +21,9 @@ Arriba a la derecha, **«Ver como»** cambia de rol. Cada rol ve solo lo suyo:
 
 | Rol | Pantallas |
 |---|---|
-| **Gerente** | Mando (mapa + Asesor IA), Líderes, Planillas, Día E, Datos |
-| **Coordinador** | Mando, Líderes, Planillas |
-| **Candidata** | Resumen de una pantalla, Mando, Día E |
+| **Gerente** | Hoy (pendientes, avisos, meta; pestaña «Mapa y asesor»), Mi gente (Líderes, Equipo, Importar, Formularios, Planillas), Contactar (Mensajes, Llamadas), Cuentas, Día E y Cumplimiento |
+| **Coordinador** | Hoy (de sus zonas), Mi gente (Líderes, Importar, Planillas) y Día E |
+| **Candidata** | Hoy (resumen de una pantalla y mapa), Contactar (ve los envíos), Cuentas y Día E |
 | **Líder** | Su celular: tareas de hoy, escanear planilla, su meta |
 | **Testigo** | Su celular el día E: foto del E-14 y novedades |
 

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA, menu } from "./ayudas";
 
 async function entrar(page: Page, correo: string, clave = "demo2027") {
   await page.goto("/");
@@ -21,33 +22,33 @@ test("el gerente necesita el código de dos pasos y luego ve toda la campaña", 
 
   await page.getByLabel("Código").fill("123456");
   await page.getByRole("button", { name: "Verificar" }).click();
+  await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
+  await expect(menu(page).getByRole("button")).toHaveText(["Hoy", "Mi gente", "Contactar", "Cuentas", "Día E", "Cumplimiento"]);
+  await irA(page, "Mapa y asesor");
   await expect(page.locator("polygon.zona")).toHaveCount(19);
-  for (const s of ["Mando", "Líderes", "Planillas", "Día E", "Datos"]) {
-    await expect(page.getByRole("navigation").getByRole("button", { name: s })).toBeVisible();
-  }
-  await page.getByRole("navigation").getByRole("button", { name: "Líderes" }).click();
+  await irA(page, "Líderes");
   await expect(page.locator("tbody tr")).toHaveCount(22);
 });
 
 test("la coordinadora solo ve sus tres zonas y sus líderes", async ({ page }) => {
   await entrar(page, "coordinadora@demo.co");
+  await expect(menu(page).getByRole("button")).toHaveText(["Hoy", "Mi gente", "Día E"]);
+  await irA(page, "Mapa y asesor");
   await expect(page.locator("polygon.zona")).toHaveCount(3);
-  await expect(page.getByRole("navigation").getByRole("button", { name: "Datos" })).toHaveCount(0);
-  await expect(page.getByRole("navigation").getByRole("button", { name: "Día E" })).toBeVisible();
-  await page.getByRole("navigation").getByRole("button", { name: "Líderes" }).click();
+  await irA(page, "Líderes");
   await expect(page.locator("tbody tr")).toHaveCount(6);
 });
 
 test("la candidata entra a su resumen y no ve la lista de líderes", async ({ page }) => {
   await entrar(page, "candidata@demo.co");
   await expect(page.getByRole("heading", { name: /Buenos días, Laura/ })).toBeVisible();
-  await expect(page.getByRole("navigation").getByRole("button", { name: "Líderes" })).toHaveCount(0);
+  await expect(menu(page).getByRole("button")).toHaveText(["Hoy", "Contactar", "Cuentas", "Día E"]);
 });
 
 test("salir vuelve a la pantalla de inicio de sesión", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Coordinador/ }).click();
-  await expect(page.locator("polygon.zona")).toHaveCount(3);
+  await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
   await page.getByRole("button", { name: "Salir" }).first().click();
   await expect(page.getByRole("heading", { name: "Entrar" })).toBeVisible();
   await page.reload();

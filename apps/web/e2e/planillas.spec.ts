@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { irA } from "./ayudas";
 import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 import { lideres } from "../src/data";
@@ -10,7 +11,7 @@ async function entrarComo(page: Page, rol: RegExp, codigo?: string) {
     await page.getByLabel("Código").fill(codigo);
     await page.getByRole("button", { name: "Verificar" }).click();
   }
-  await page.getByRole("navigation").getByRole("button", { name: "Planillas" }).click();
+  await irA(page, "Planillas");
 }
 
 test("la gerencia imprime un lote de planillas en PDF con su QR y queda registrado", async ({ page }) => {
