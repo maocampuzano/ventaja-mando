@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { GeoJSONSource, Map as MapaML } from "maplibre-gl";
 import { useTablero } from "./datos/contexto";
-import { estiloMapTiler, geojsonPuestos, geojsonZonas, type Capa } from "./mapaColores";
+import { colorGrupoPuestos, estiloMapTiler, geojsonPuestos, geojsonZonas, margenMapa, type Capa } from "./mapaColores";
 
 type ML = typeof import("maplibre-gl");
 let cargando: Promise<ML> | null = null;
@@ -42,21 +42,48 @@ export function MapaReal({ clave, capa, seleccion, alSeleccionar, alFallar }: {
       const m = new ml.Map({
         container: div.current, style: estiloMapTiler(clave), attributionControl: { compact: true },
         bounds: lons.length ? [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]] : [[-79, -4.3], [-66.8, 12.6]],
-        fitBoundsOptions: { padding: { top: 90, bottom: 140, left: 340, right: 420 } },
+        fitBoundsOptions: { padding: margenMapa(div.current.clientWidth, div.current.clientHeight), maxZoom: 13 },
       });
       mapa.current = m;
       m.on("error", (e) => { if (!listo.current) { console.warn("El mapa real no cargó; se usa el mapa SVG.", e.error); ultimo.current.alFallar(); } });
       m.on("load", () => {
         const { capa: c, seleccion: s } = ultimo.current;
         m.addSource("zonas", { type: "geojson", data: geojsonZonas(zonas, c, recDe, s) });
-        m.addSource("puestos", { type: "geojson", data: geojsonPuestos(puestos) });
+        // Los puestos se agrupan al alejarse (una gobernación tiene cientos); cada grupo suma sus mesas y las que no tienen testigo.
+        m.addSource("puestos", { type: "geojson", data: geojsonPuestos(puestos), cluster: true, clusterRadius: 44, clusterMaxZoom: 11,
+          clusterProperties: { mesas: ["+", ["get", "mesas"]], sinTestigo: ["+", ["get", "sinTestigo"]] } });
         m.addLayer({ id: "zonas-relleno", type: "fill", source: "zonas", paint: { "fill-color": ["get", "color"], "fill-opacity": ["get", "opacidad"] } });
         m.addLayer({ id: "zonas-borde", type: "line", source: "zonas", paint: {
           "line-color": ["case", ["get", "sel"], "#ffffff", "#10161f"], "line-width": ["case", ["get", "sel"], 3, 1] } });
         m.addLayer({ id: "zonas-nombre", type: "symbol", source: "zonas", layout: { "text-field": ["get", "nombre"], "text-size": 12, "text-font": ["Noto Sans Regular"] },
           paint: { "text-color": "#e8ecf3", "text-halo-color": "#10161f", "text-halo-width": 1.2 } });
-        m.addLayer({ id: "puestos", type: "circle", source: "puestos", layout: { visibility: c === "testigos" ? "visible" : "none" },
+        const visible = c === "testigos" ? "visible" : "none";
+        m.addLayer({ id: "puestos-grupo", type: "circle", source: "puestos", filter: ["has", "point_count"], layout: { visibility: visible },
+          paint: { "circle-color": colorGrupoPuestos as never, "circle-radius": ["step", ["get", "point_count"], 14, 10, 18, 50, 24],
+            "circle-stroke-color": "#10161f", "circle-stroke-width": 2, "circle-opacity": 0.92 } });
+        m.addLayer({ id: "puestos-grupo-numero", type: "symbol", source: "puestos", filter: ["has", "point_count"],
+          layout: { visibility: visible, "text-field": ["get", "point_count_abbreviated"], "text-size": 12, "text-font": ["Noto Sans Regular"] },
+          paint: { "text-color": "#10161f" } });
+        m.addLayer({ id: "puestos", type: "circle", source: "puestos", filter: ["!", ["has", "point_count"]], layout: { visibility: visible },
           paint: { "circle-color": ["get", "color"], "circle-radius": ["+", 5, ["*", 0.4, ["get", "mesas"]]], "circle-stroke-color": "#10161f", "circle-stroke-width": 1.5 } });
+        // Tocar un grupo acerca el mapa hasta separarlo; tocar un puesto muestra su cobertura.
+        m.on("click", "puestos-grupo", async (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const zoom = await (m.getSource("puestos") as GeoJSONSource).getClusterExpansionZoom(Number(f.properties?.cluster_id));
+          m.easeTo({ center: (f.geometry as GeoJSON.Point).coordinates as [number, number], zoom });
+        });
+        m.on("click", "puestos", (e) => {
+          const p = e.features?.[0]?.properties;
+          if (!p) return;
+          const conTestigo = Number(p.mesas) - Number(p.sinTestigo);
+          new ml.Popup({ closeButton: false }).setLngLat(e.lngLat)
+            .setText(`${p.nombre}: ${conTestigo} de ${p.mesas} mesas con testigo`).addTo(m);
+        });
+        for (const capaPuestos of ["puestos-grupo", "puestos"]) {
+          m.on("mouseenter", capaPuestos, () => { m.getCanvas().style.cursor = "pointer"; });
+          m.on("mouseleave", capaPuestos, () => { m.getCanvas().style.cursor = ""; });
+        }
         m.on("click", "zonas-relleno", (e) => { const id = e.features?.[0]?.properties?.id; if (id) ultimo.current.alSeleccionar(String(id)); });
         m.on("mouseenter", "zonas-relleno", () => { m.getCanvas().style.cursor = "pointer"; });
         m.on("mouseleave", "zonas-relleno", () => { m.getCanvas().style.cursor = ""; });
@@ -71,7 +98,7 @@ export function MapaReal({ clave, capa, seleccion, alSeleccionar, alFallar }: {
     const m = mapa.current;
     if (!m || !listo.current) return;
     (m.getSource("zonas") as GeoJSONSource | undefined)?.setData(geojsonZonas(zonas, capa, recDe, seleccion));
-    m.setLayoutProperty("puestos", "visibility", capa === "testigos" ? "visible" : "none");
+    for (const id of ["puestos", "puestos-grupo", "puestos-grupo-numero"]) m.setLayoutProperty(id, "visibility", capa === "testigos" ? "visible" : "none");
   }, [capa, seleccion, zonas, recDe]);
 
   // MapLibre le pone position: relative a su contenedor; por eso va dentro de .mapa (que ocupa toda la pantalla).

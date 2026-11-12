@@ -57,11 +57,30 @@ export function geojsonPuestos(puestos: Puesto[]) {
     type: "FeatureCollection" as const,
     features: puestos.map((p) => ({
       type: "Feature" as const,
-      properties: { nombre: p.nombre, color: colorPuesto(p.mesas), mesas: p.mesas.length },
+      properties: {
+        nombre: p.nombre, color: colorPuesto(p.mesas), mesas: p.mesas.length,
+        sinTestigo: p.mesas.filter((m) => !m.testigoId).length,
+      },
       geometry: { type: "Point" as const, coordinates: p.punto },
     })),
   };
 }
+
+/**
+ * Margen para encuadrar el mapa: deja libres los paneles flotantes en pantallas grandes, pero en una pantalla
+ * angosta no se come el mapa entero.
+ */
+export function margenMapa(ancho: number, alto: number) {
+  if (ancho < 860) return { top: 70, bottom: 150, left: 20, right: 20 };
+  return {
+    top: Math.min(90, alto * 0.12), bottom: Math.min(140, alto * 0.2),
+    left: Math.min(340, ancho * 0.24), right: Math.min(420, ancho * 0.3),
+  };
+}
+
+/** Color de un grupo de puestos según la parte de sus mesas que tiene testigo (igual que colorPuesto). */
+export const colorGrupoPuestos = ["step", ["/", ["-", ["get", "mesas"], ["get", "sinTestigo"]], ["max", 1, ["get", "mesas"]]],
+  "#e5534b", 0.7, "#f0a73a", 0.85, "#2eb872"] as const;
 
 /** La distancia «redonda» más cercana (1, 2, 5… por una potencia de 10), para la cuadrícula y la barra de escala. */
 export function distanciaRedonda(metros: number, pasos: number[] = [1, 2, 5, 10]) {

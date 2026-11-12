@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { zonas, puestos } from "./data";
-import { colorZona, distanciaRedonda, estiloMapTiler, geojsonPuestos, geojsonZonas, renglones, textoDistancia } from "./mapaColores";
+import { colorZona, distanciaRedonda, margenMapa, estiloMapTiler, geojsonPuestos, geojsonZonas, renglones, textoDistancia } from "./mapaColores";
 
 const rec = () => ({ accion: "brigada" as const, digital: 0.8 });
 
@@ -47,5 +47,19 @@ describe("escala y nombres del mapa", () => {
 
   it("la semilla tiene 19 zonas con nombres distintos", () => {
     expect(new Set(zonas.map((z) => z.nombre)).size).toBe(19);
+  });
+});
+
+describe("encuadre del mapa real", () => {
+  it("en pantalla grande deja libres los paneles; en el celular no se come el mapa", () => {
+    expect(margenMapa(1440, 900)).toEqual({ top: 90, bottom: 140, left: 340, right: 420 });
+    const angosto = margenMapa(800, 600);
+    expect(angosto.left + angosto.right).toBeLessThan(800 * 0.6);
+    expect(margenMapa(390, 800)).toEqual({ top: 70, bottom: 150, left: 20, right: 20 });
+  });
+
+  it("cada puesto sabe cuántas de sus mesas no tienen testigo, para colorear los grupos", () => {
+    const f = geojsonPuestos(puestos).features[0].properties;
+    expect(f.sinTestigo).toBe(puestos[0].mesas.filter((m) => !m.testigoId).length);
   });
 });
