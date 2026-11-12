@@ -2,19 +2,15 @@ import { expect, test, type Page } from "@playwright/test";
 import { irA } from "./ayudas";
 import { lideres } from "../src/data";
 
-async function abrirAsesor(page: Page, rol: RegExp, codigo?: string) {
+async function abrirAsesor(page: Page, rol: RegExp) {
   await page.goto("/");
   await page.getByRole("button", { name: rol }).click();
-  if (codigo) {
-    await page.getByLabel("Código").fill(codigo);
-    await page.getByRole("button", { name: "Verificar" }).click();
-  }
   await irA(page, "Mapa y asesor");
   await page.getByRole("tab", { name: "Asesor IA" }).click();
 }
 
 test("Asesor IA responde con fuentes y propone tareas que se aprueban con un clic", async ({ page }) => {
-  await abrirAsesor(page, /Gerente/, "123456");
+  await abrirAsesor(page, /Gerente/);
   await page.getByRole("button", { name: "¿Dónde actúo esta semana?" }).click();
 
   const turno = page.getByLabel("Pregunta: ¿Dónde actúo esta semana?");
@@ -29,7 +25,7 @@ test("Asesor IA responde con fuentes y propone tareas que se aprueban con un cli
 });
 
 test("los líderes llegan como referencias y la pantalla muestra su nombre", async ({ page }) => {
-  await abrirAsesor(page, /Gerente/, "123456");
+  await abrirAsesor(page, /Gerente/);
   await page.getByRole("button", { name: "¿Qué líderes debo revisar?" }).click();
   const turno = page.getByLabel("Pregunta: ¿Qué líderes debo revisar?");
   await expect(turno.locator(".mensaje.ia").first()).not.toContainText("Revisando");
@@ -39,7 +35,7 @@ test("los líderes llegan como referencias y la pantalla muestra su nombre", asy
 });
 
 test("se puede escribir una pregunta propia", async ({ page }) => {
-  await abrirAsesor(page, /Gerente/, "123456");
+  await abrirAsesor(page, /Gerente/);
   await page.getByLabel("Pregunta para el Asesor IA").fill("¿Cómo vamos frente a la meta de votos?");
   await page.getByRole("button", { name: "Preguntar" }).click();
   const turno = page.getByLabel("Pregunta: ¿Cómo vamos frente a la meta de votos?");

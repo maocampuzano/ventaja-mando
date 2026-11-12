@@ -4,8 +4,6 @@ import { menu } from "./ayudas";
 test("la gerencia entra a «Hoy», ve qué hacer y cada pendiente la lleva a donde se resuelve", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Gerente/ }).click();
-  await page.getByLabel("Código").fill("123456");
-  await page.getByRole("button", { name: "Verificar" }).click();
 
   await expect(page.getByRole("heading", { name: /^(Buenos días|Buenas tardes|Buenas noches), Gerente$/ })).toBeVisible();
   const paraHoy = page.getByRole("region", { name: "Para hoy" });

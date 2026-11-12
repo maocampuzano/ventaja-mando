@@ -70,6 +70,8 @@ export interface FuenteDatos {
   verificar2fa(codigo: string): Promise<Ingreso>;
   sesionActual(): Promise<Sesion | null>;
   cerrarSesion(): Promise<void>;
+  /** Solo en la demostración: entra con el usuario de ese rol, sin contraseña ni código. Los datos son ficticios. */
+  entrarDemo?(rol: RolCampana): Promise<Sesion | null>;
   cargarTablero(sesion: Sesion): Promise<DatosTablero>;
   importarPersonas(sesion: Sesion, filas: FilaLista[], autorizacion: DatosAutorizacion,
     avance?: (hechas: number, total: number) => void): Promise<ResultadoImportacion>;

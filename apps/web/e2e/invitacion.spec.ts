@@ -4,8 +4,6 @@ import { irA } from "./ayudas";
 async function entrarComoGerente(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: /Gerente/ }).click();
-  await page.getByLabel("Código").fill("123456");
-  await page.getByRole("button", { name: "Verificar" }).click();
 }
 
 test("una invitación con QR lleva a la persona a su rol y sus zonas", async ({ page }) => {

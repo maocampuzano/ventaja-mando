@@ -18,8 +18,8 @@ const DEPARTAMENTO = "caqueta"; // raíz del árbol de territorios de la demostr
 const campana: Campana = { id: "campana-demo", ...campanaSemilla };
 
 export const usuariosDemo: { correo: string; nombre: string; rol: RolCampana; territorioIds: string[]; descripcion: string }[] = [
-  { correo: "gerente@demo.co", nombre: "Gerente Demo", rol: "gerente", territorioIds: [], descripcion: "Toda la campaña. Pide código de dos pasos." },
-  { correo: "candidata@demo.co", nombre: campanaSemilla.candidato, rol: "candidato", territorioIds: [], descripcion: "Cifras agregadas de toda la campaña." },
+  { correo: "gerente@demo.co", nombre: "Gerente Demo", rol: "gerente", territorioIds: [], descripcion: "Dirige toda la campaña: pendientes del día, equipo, mensajes, cuentas y día E." },
+  { correo: "candidata@demo.co", nombre: campanaSemilla.candidato, rol: "candidato", territorioIds: [], descripcion: "Un resumen de una pantalla, las cuentas y el día E, sin listas de personas." },
   { correo: "coordinadora@demo.co", nombre: "Coordinadora Demo", rol: "coordinador", territorioIds: ["z1", "z2", "z3"], descripcion: "Solo sus tres zonas de Florencia." },
   { correo: "lider@demo.co", nombre: lideres[0].nombre, rol: "lider", territorioIds: [lideres[0].zonaId], descripcion: "Su bandeja en el celular." },
   { correo: "testigo@demo.co", nombre: "Testigo Demo", rol: "testigo", territorioIds: [], descripcion: "Su mesa el día E." },
@@ -109,6 +109,11 @@ export function crearFuenteDemo(): FuenteDatos {
     },
     async sesionActual() { return actual; },
     async cerrarSesion() { actual = null; pendiente = null; guardar(null); },
+    async entrarDemo(rol) {
+      const u = usuariosDemo.find((x) => x.rol === rol);
+      actual = u ? sesionDe(u.correo) : null; pendiente = null; guardar(actual);
+      return actual;
+    },
     async cargarTablero(s) { return datosDemo(s); },
     async preguntarAsesor(_s, pregunta, datos) {
       await new Promise((r) => setTimeout(r, 500)); // que se note que «piensa»

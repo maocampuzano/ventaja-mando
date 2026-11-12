@@ -5,8 +5,6 @@ import { readFileSync } from "node:fs";
 test("solicitudes de titulares con plazo legal y exportación con marca", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Gerente/ }).click();
-  await page.getByLabel("Código").fill("123456");
-  await page.getByRole("button", { name: "Verificar" }).click();
   await irA(page, "Cumplimiento");
   await expect(page.locator('[data-prueba="abiertas"]')).toHaveText("0");
 
