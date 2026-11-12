@@ -86,7 +86,7 @@ p { margin: 0; }
   background: #10151d; border-right: 1px solid var(--linea);
   display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 6px;
 }
-.marca { width: 40px; height: 40px; border-radius: 12px; background: var(--acento); display: grid; place-items: center; margin-bottom: 14px; }
+.marca { width: 40px; height: 40px; border-radius: 12px; background: var(--acento); color: #fff; display: grid; place-items: center; margin-bottom: 14px; }
 .riel-btn {
   width: 82px; padding: 8px 2px; border: 0; border-radius: var(--radio-m); background: transparent;
   color: var(--tenue); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px;

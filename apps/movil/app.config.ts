@@ -13,9 +13,11 @@ const config: ExpoConfig = {
   orientation: "portrait",
   userInterfaceStyle: "dark",
   backgroundColor: "#141922",
+  icon: "./assets/icon.png",
   // Identificadores de tienda provisionales: se confirman al crear la cuenta de Expo (V2).
   ios: { bundleIdentifier: "co.xyzcreatia.ventajamando", supportsTablet: false },
-  android: { package: "co.xyzcreatia.ventajamando" },
+  android: { package: "co.xyzcreatia.ventajamando", adaptiveIcon: { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#1F5BFF" } },
+  web: { favicon: "./assets/favicon.png" },
   plugins: [
     "expo-sqlite",
     ["expo-image-picker", {

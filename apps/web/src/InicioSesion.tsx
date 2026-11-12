@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Logo } from "./comunes";
 import { nombreRol } from "@ventaja/nucleo";
 import { CLAVE_DEMO, CODIGO_2FA_DEMO, usuariosDemo } from "./datos/demo";
 import type { FuenteDatos, Sesion } from "./datos/tipos";
@@ -36,7 +37,7 @@ export function InicioSesion({ fuente, alEntrar, aviso }: { fuente: FuenteDatos;
       <div className="ingreso-caja pila">
         <div className="fila">
           <div className="marca" aria-hidden="true">
-            <svg viewBox="0 0 32 32" width="24" height="24"><path d="M8 9l8 15 8-15" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <Logo />
           </div>
           <div><h1>Comando</h1><p className="tenue">De Ventaja Electoral. El centro de mando de su campaña.</p></div>
         </div>

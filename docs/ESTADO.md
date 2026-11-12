@@ -26,7 +26,7 @@ El plan está en `entregas/plan-mejora/Plan-de-mejora-comercial.pdf` (fuera del 
 | 1c. Tema claro con «modo sala» para el día E | Fusionada (12/11/2026) | [#41](https://github.com/maocampuzano/ventaja-mando/pull/41): el panel abre en claro; el menú, el mapa y el día E van en «modo sala», y un botón pone todo el panel en oscuro. Panel republicado el 12/11/2026. | La app del celular sigue en oscuro. |
 | 1d. Ajustes y pauta de ejemplo | Fusionada (12/11/2026) | [#42](https://github.com/maocampuzano/ventaja-mando/pull/42): sección «Ajustes» para la dirección; sin pauta conectada el panel trabaja solo con la base y los votos en juego. Panel republicado el 12/11/2026. | Los datos de la campaña (fecha, meta) todavía no se editan desde Ajustes. |
 | 2a. Datos de prueba del Caquetá | En PR | La semilla (panel, app y base local) pasa a una campaña ficticia a la Gobernación del Caquetá: 19 zonas con nombres de municipios y de las comunas de Florencia, meta de 74.000 votos. El mapa SVG se adapta a la escala de un departamento. | Republicar el panel. |
-| 2b. Logo | Opciones enviadas | Cuatro opciones hechas en Magnific, en `entregas/logo/`. | Que Mauricio escoja una. |
+| 2b. Logo | En PR | Mauricio escogió el hexágono (12/11/2026): una C hecha con un hexágono abierto y un punto en el centro. Reemplaza la V en el menú, el inicio de sesión, el ícono del navegador y el ícono de la app. Hecho con Magnific; los originales están en `entregas/logo/`. | Revisar que no se parezca al logo de otra empresa del sector antes de registrar la marca (Mauricio). Republicar el panel. |
 
 ## Proyecto real de Supabase (V2)
 
