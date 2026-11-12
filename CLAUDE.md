@@ -54,7 +54,7 @@ Estas reglas son parte del producto y del argumento de venta. Ningún cambio las
 
 ## Diseño
 
-- Siga la dirección visual del prototipo: «sala de situación», mapa protagonista, grafito oscuro con acento #1F5BFF, tipografía Archivo y semáforo verde, ámbar y rojo.
+- Dos temas (decisión del 10/11/2026): **claro** para el trabajo diario y **«modo sala»** (grafito oscuro, la «sala de situación») para el menú, el mapa y el día E, o para todo el panel si la persona lo elige. Acento #1F5BFF, tipografía Archivo y semáforo verde, ámbar y rojo. Los colores van por variables de `apps/web/src/index.css`: no escriba colores fijos en pantallas que se ven en los dos temas.
 - Skills de diseño disponibles en `.claude/skills/`:
   - `frontend-design` y `ui-ux-pro-max` para pantallas nuevas;
   - `emil-design-eng` y `animate` para pulido y movimiento;

@@ -22,8 +22,8 @@ El plan está en `entregas/plan-mejora/Plan-de-mejora-comercial.pdf` (fuera del 
 | Paso | Estado | Qué quedó | Qué falta |
 |---|---|---|---|
 | 1a. Nombres | Fusionada (10/11/2026) | [#39](https://github.com/maocampuzano/ventaja-mando/pull/39): «Comando» y «Asesor IA» en el panel, la app, los documentos y la base. Migración `20261110000100_asesor` aplicada, función `asesor` publicada, función vieja borrada y panel republicado el 10/11/2026. | Verificar la marca en la SIC y el dominio (Mauricio). El repositorio y las direcciones siguen como `ventaja-mando`. |
-| 1b. Menú de cinco secciones y pantalla «Hoy» | En PR | El menú pasa a Hoy, Mi gente, Contactar, Cuentas y Día E, con Cumplimiento abajo; las pantallas de antes quedan como pestañas de su sección. Pantalla «Hoy» para la dirección y la coordinación: pendientes con botón, avisos, meta, zonas y acceso al Asesor IA. | «Ajustes» (campaña, roles, tope) todavía no existe como sección. Ocultar la pauta de ejemplo del mapa. Republicar el panel. |
-| 1c. Tema claro con «modo sala» para el día E | Sin empezar | | |
+| 1b. Menú de cinco secciones y pantalla «Hoy» | Fusionada (12/11/2026) | [#40](https://github.com/maocampuzano/ventaja-mando/pull/40): menú Hoy, Mi gente, Contactar, Cuentas y Día E, con Cumplimiento abajo; las pantallas de antes son pestañas de su sección. Pantalla «Hoy» para la dirección y la coordinación. Panel republicado el 12/11/2026. | «Ajustes» (campaña, roles, tope) todavía no existe como sección. Ocultar la pauta de ejemplo del mapa. |
+| 1c. Tema claro con «modo sala» para el día E | En PR | El panel abre en claro. El menú, el mapa y el día E van siempre en «modo sala» (oscuro), y un botón del menú pone todo el panel en oscuro y lo recuerda en ese navegador. Los colores pasaron a variables. | La app del celular sigue en oscuro. Republicar el panel. |
 
 ## Proyecto real de Supabase (V2)
 

@@ -117,6 +117,14 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
     return () => { vigente = false; };
   }, [sesion]);
 
+  // Tema: claro para el trabajo diario. El mapa y el día E van siempre en «modo sala»; el resto, si la persona lo pide.
+  const [sala, setSala] = useState(() => { try { return localStorage.getItem("comando-tema") === "sala"; } catch { return false; } });
+  const cambiarTema = () => setSala((v) => {
+    try { localStorage.setItem("comando-tema", v ? "claro" : "sala"); } catch { /* sin almacenamiento */ }
+    return !v;
+  });
+  const enSala = sala || vista === "mando" || vista === "diae";
+
   useEffect(() => {
     try { sessionStorage.setItem("vm-aprobadas", JSON.stringify(aprobadas)); } catch { /* sin almacenamiento */ }
   }, [aprobadas]);
@@ -175,19 +183,26 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
   );
 
   return (
-    <div className="app">
-      <nav className="riel" aria-label="Secciones">
+    <div className={`app${sala ? " tema-sala" : ""}`}>
+      <div className="riel tema-sala">
         <div className="marca" aria-hidden="true">
           <svg viewBox="0 0 32 32" width="24" height="24"><path d="M8 9l8 15 8-15" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </div>
+        <nav className="riel-nav" aria-label="Secciones">
         {menu.map((s) => (
           <button key={s.id} className={`riel-btn${s.abajo ? " riel-abajo" : ""}`} aria-current={s === seccion ? "page" : undefined} onClick={() => ir(s.vistas[0])}>
             <Icono n={s.icono} />
             {s.nombre}
           </button>
         ))}
-      </nav>
-      <main className="lienzo">
+        </nav>
+        <button className="riel-btn riel-tema" aria-pressed={sala} onClick={cambiarTema}
+          title={sala ? "Volver al tema claro" : "Poner todo el panel en oscuro, para la sala de la campaña o un televisor"}>
+          <Icono n={sala ? "claro" : "sala"} />
+          {sala ? "Modo claro" : "Modo sala"}
+        </button>
+      </div>
+      <main className={`lienzo${enSala ? " tema-sala" : ""}`}>
         {contenido ?? (
           <AtrapaErrores sesion={sesion} vista={vista}>
           <ContextoTablero.Provider value={datos}>
