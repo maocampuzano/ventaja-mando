@@ -57,3 +57,28 @@ test("el panel abre en claro, el mapa y el día E van en modo sala y el botón p
   await page.getByRole("button", { name: "Modo claro" }).click();
   await expect(page.locator("main.lienzo")).not.toHaveClass(/tema-sala/);
 });
+
+test("la dirección ve los pasos para poner la campaña en marcha y cada uno lleva a su pantalla", async ({ page }) => {
+  await page.goto("/#gerente-hoy");
+  const arranque = page.getByRole("region", { name: "Ponga su campaña en marcha" });
+  await expect(arranque.getByRole("listitem")).toHaveCount(7);
+  const siguiente = arranque.locator('li[aria-current="step"]');
+  await expect(siguiente).toContainText("Imprimir las primeras planillas");
+  await expect(arranque.locator("li.hecho").first()).toContainText("Fijar el tope");
+  await siguiente.getByRole("button", { name: "Imprimir" }).click();
+  await expect(page.getByRole("navigation", { name: "Dentro de Mi gente" }).getByRole("button", { name: "Planillas" })).toHaveAttribute("aria-current", "page");
+
+  await menu(page).getByRole("button", { name: "Hoy" }).click();
+  await page.getByRole("region", { name: "Ponga su campaña en marcha" }).getByRole("button", { name: "Ocultar" }).click();
+  await expect(page.getByRole("region", { name: "Ponga su campaña en marcha" })).toHaveCount(0);
+  await page.goto("/#gerente-hoy"); await page.reload(); // ocultarlo se recuerda en ese navegador
+  await expect(page.getByText(/Faltan \d pasos? para tener la campaña en marcha/)).toBeVisible();
+  await page.getByRole("button", { name: "Ver los pasos" }).click();
+  await expect(page.getByRole("region", { name: "Ponga su campaña en marcha" })).toBeVisible();
+});
+
+test("la coordinación no ve el arranque guiado", async ({ page }) => {
+  await page.goto("/#coordinador-hoy");
+  await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Ponga su campaña en marcha" })).toHaveCount(0);
+});
