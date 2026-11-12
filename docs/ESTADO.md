@@ -24,7 +24,9 @@ El plan está en `entregas/plan-mejora/Plan-de-mejora-comercial.pdf` (fuera del 
 | 1a. Nombres | Fusionada (10/11/2026) | [#39](https://github.com/maocampuzano/ventaja-mando/pull/39): «Comando» y «Asesor IA» en el panel, la app, los documentos y la base. Migración `20261110000100_asesor` aplicada, función `asesor` publicada, función vieja borrada y panel republicado el 10/11/2026. | Verificar la marca en la SIC y el dominio (Mauricio). El repositorio y las direcciones siguen como `ventaja-mando`. |
 | 1b. Menú de cinco secciones y pantalla «Hoy» | Fusionada (12/11/2026) | [#40](https://github.com/maocampuzano/ventaja-mando/pull/40): menú Hoy, Mi gente, Contactar, Cuentas y Día E, con Cumplimiento abajo; las pantallas de antes son pestañas de su sección. Pantalla «Hoy» para la dirección y la coordinación. Panel republicado el 12/11/2026. | Ajustes y la pauta de ejemplo se resolvieron en el paso 1d. |
 | 1c. Tema claro con «modo sala» para el día E | Fusionada (12/11/2026) | [#41](https://github.com/maocampuzano/ventaja-mando/pull/41): el panel abre en claro; el menú, el mapa y el día E van en «modo sala», y un botón pone todo el panel en oscuro. Panel republicado el 12/11/2026. | La app del celular sigue en oscuro. |
-| 1d. Ajustes y pauta de ejemplo | En PR | Sección «Ajustes» para la dirección (datos de la campaña, tope de gastos, roles, apariencia). Sin pauta conectada, el mapa, el resumen y el Asesor IA trabajan solo con la base y los votos en juego; la demostración ya no trae pauta de ejemplo (`VITE_PAUTA=1` la vuelve a mostrar). | Los datos de la campaña (fecha, meta) todavía no se editan desde Ajustes. Republicar el panel. |
+| 1d. Ajustes y pauta de ejemplo | Fusionada (12/11/2026) | [#42](https://github.com/maocampuzano/ventaja-mando/pull/42): sección «Ajustes» para la dirección; sin pauta conectada el panel trabaja solo con la base y los votos en juego. Panel republicado el 12/11/2026. | Los datos de la campaña (fecha, meta) todavía no se editan desde Ajustes. |
+| 2a. Datos de prueba del Caquetá | En PR | La semilla (panel, app y base local) pasa a una campaña ficticia a la Gobernación del Caquetá: 19 zonas con nombres de municipios y de las comunas de Florencia, meta de 74.000 votos. El mapa SVG se adapta a la escala de un departamento. | Republicar el panel. |
+| 2b. Logo | Opciones enviadas | Cuatro opciones hechas en Magnific, en `entregas/logo/`. | Que Mauricio escoja una. |
 
 ## Proyecto real de Supabase (V2)
 
@@ -43,7 +45,7 @@ Proyecto `ventaja-mando-prueba`, Postgres 17. Revisado el 23/10/2026.
 | Migración del día E | `20261030000100_dia_e` aplicada el 08/11/2026: 34 tablas, todas con RLS, y 65 políticas. Sin sesión, `tablero_dia_e`, `iniciar_simulacro` y `escalar_incidencias` responden 401 y la tabla `simulacro` no muestra nada. |
 | Versión de prueba publicada | `https://ventaja-mando-prueba.pages.dev` (proyecto de prueba de Supabase) y `https://demo.ventaja-mando-prueba.pages.dev` (datos ficticios), en Cloudflare Pages. Republicada el 08/11/2026 con las fases 3 y 4 y el mapa real de MapTiler (verificado en el navegador). |
 | Registro de cuentas | Abierto solo para correos con invitación vigente (hook `before user created`); contraseña de mínimo 12 caracteres. Verificado: un correo sin invitación recibe 403. |
-| Semilla ficticia de Turbaco | No cargada; solo con autorización expresa. |
+| Semilla ficticia del Caquetá | No cargada; solo con autorización expresa. |
 | 2FA (TOTP) | Pendiente: lo activa Mauricio (paso 4 de `supabase/LEEME.md`). |
 | Región | `us-east-2` (Estados Unidos). **Decisión de Mauricio del 24/10/2026: se deja así.** Supabase no tiene región en Colombia; la más cercana es São Paulo. Antes de cargar datos reales, el abogado de datos personales debe revisar que los datos se guardan fuera del país (V3). |
 

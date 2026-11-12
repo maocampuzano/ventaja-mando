@@ -23,7 +23,7 @@ Desde la raíz del repositorio:
 | `npm test -w apps/movil` | Pruebas del almacén SQLite (con el SQLite de Node), del registro y del modo demo. |
 | `npm run test:e2e -w apps/movil` | Pruebas de Playwright sobre la vista web, en modo demo. |
 
-Por defecto la app está en **modo demo**: datos ficticios de Turbaco, cuentas `lider@demo.co` y `testigo@demo.co`
+Por defecto la app está en **modo demo**: datos ficticios del Caquetá, cuentas `lider@demo.co` y `testigo@demo.co`
 (cualquier contraseña) y un interruptor «Simular sin señal» para ver la cola en acción.
 
 Con `MODO_DATOS=supabase`, `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` usa el proyecto real. Solo entran usuarios

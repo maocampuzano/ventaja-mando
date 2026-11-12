@@ -32,7 +32,7 @@ Solo estos puntos me detienen. Si uno de ellos llega en mitad de una fase, sigo 
 - Fusionar mis PR con la integración continua en verde y la revisión de cumplimiento hecha. Nunca subo cambios directo a `main` ni reescribo su historial.
 - Corregir inconsistencias de la documentación (por ejemplo, alinear la sección 7.4 del diseño con los umbrales del prototipo).
 - Hacer varias fases seguidas en una misma sesión cuando no dependan de nada suyo.
-- Datos de prueba: siempre ficticios, a partir de la semilla de Turbaco.
+- Datos de prueba: siempre ficticios, a partir de la semilla del Caquetá (antes, de Turbaco).
 
 ## Fases
 
@@ -57,7 +57,7 @@ En un Postgres 16 con PostGIS local, que imita a Supabase:
 - Pruebas SQL de RLS: un líder no ve otra zona, un candidato no ve la base de otro candidato del mismo partido y un testigo solo ve su mesa.
 - Cédula cifrada y `documento_hash`.
 - Funciones de duplicados, fusión con auditoría y registro de autorización.
-- Semilla ficticia de Turbaco.
+- Semilla ficticia (hoy, del Caquetá).
 - Un esquema `auth` mínimo que simula al de Supabase.
 
 Las pruebas de RLS entran a la integración continua. La carga de DIVIPOLE y del catálogo de puestos queda lista como script; corre cuando se permita el dominio de datos abiertos (ver «Lo que necesito de usted»).

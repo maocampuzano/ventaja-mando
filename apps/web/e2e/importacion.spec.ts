@@ -6,7 +6,7 @@ import writeExcelFile from "write-excel-file/node";
 async function crearExcel(ruta: string) {
   const nombres = ["María", "José", "Luz", "Carlos", "Ana", "Andrés", "Leidy", "Jorge", "Katerine", "Wilson"];
   const apellidos = ["Peña", "Ortiz", "Gómez", "Díaz", "Ruiz", "Julio", "Herrera", "Tapia", "Puello", "Castro"];
-  const zonas = ["Centro", "La Ceiba", "Villa Rosa"];
+  const zonas = ["Florencia Norte", "Florencia Oriental", "Florencia Occidental"];
   const filas: (string | number | Date)[][] = [["Nombre completo", "Cédula", "Celular", "Barrio", "Autoriza datos", "Fecha de autorización"]];
   for (let i = 0; i < 5000; i++) {
     const cedula = i < 4900 ? 9000000 + i : 9000000 + (i - 4900) * 2 + 1;

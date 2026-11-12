@@ -1,4 +1,4 @@
-// Fuente «demo»: la semilla ficticia de Turbaco, en el navegador. Recorta los datos con la misma regla de alcance
+// Fuente «demo»: la semilla ficticia del Caquetá, en el navegador. Recorta los datos con la misma regla de alcance
 // que la base (packages/nucleo/src/alcance.ts), para que la demostración se comporte como el producto real.
 // Aquí no hay seguridad real: todo vive en el navegador y es ficticio.
 import { exige2fa, responderSimulado, territoriosVisibles, type RolCampana } from "@ventaja/nucleo";
@@ -14,19 +14,19 @@ import type { Campana, DatosTablero, FuenteDatos, Ingreso, InvitacionPendiente, 
 
 export const CLAVE_DEMO = "demo2027";
 export const CODIGO_2FA_DEMO = "123456";
-const MUNICIPIO = "turbaco";
+const DEPARTAMENTO = "caqueta"; // raíz del árbol de territorios de la demostración
 const campana: Campana = { id: "campana-demo", ...campanaSemilla };
 
 export const usuariosDemo: { correo: string; nombre: string; rol: RolCampana; territorioIds: string[]; descripcion: string }[] = [
   { correo: "gerente@demo.co", nombre: "Gerente Demo", rol: "gerente", territorioIds: [], descripcion: "Toda la campaña. Pide código de dos pasos." },
   { correo: "candidata@demo.co", nombre: campanaSemilla.candidato, rol: "candidato", territorioIds: [], descripcion: "Cifras agregadas de toda la campaña." },
-  { correo: "coordinadora@demo.co", nombre: "Coordinadora Demo", rol: "coordinador", territorioIds: ["z1", "z2", "z3"], descripcion: "Solo sus tres zonas." },
+  { correo: "coordinadora@demo.co", nombre: "Coordinadora Demo", rol: "coordinador", territorioIds: ["z1", "z2", "z3"], descripcion: "Solo sus tres zonas de Florencia." },
   { correo: "lider@demo.co", nombre: lideres[0].nombre, rol: "lider", territorioIds: [lideres[0].zonaId], descripcion: "Su bandeja en el celular." },
   { correo: "testigo@demo.co", nombre: "Testigo Demo", rol: "testigo", territorioIds: [], descripcion: "Su mesa el día E." },
   { correo: "operador@demo.co", nombre: "Operadora Demo", rol: "operador", territorioIds: [], descripcion: "Llama, una persona a la vez, a la gente de sus colas." },
 ];
 
-const arbol = [{ id: MUNICIPIO }, ...zonas.map((z) => ({ id: z.id, padreId: MUNICIPIO }))];
+const arbol = [{ id: DEPARTAMENTO }, ...zonas.map((z) => ({ id: z.id, padreId: DEPARTAMENTO }))];
 const LLAVE = "vm-sesion-demo";
 
 // Cuentas creadas al aceptar invitaciones y las invitaciones mismas. Viven en la pestaña (sessionStorage), como todo

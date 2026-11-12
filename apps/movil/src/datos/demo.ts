@@ -1,4 +1,4 @@
-// Modo demo: datos ficticios de Turbaco y un servidor de mentira dentro del teléfono, idempotente como el real.
+// Modo demo: datos ficticios del Caquetá y un servidor de mentira dentro del teléfono, idempotente como el real.
 // Sirve para mostrar la app sin cuenta y para probar la cola: el interruptor «Simular sin señal» corta el envío.
 import { ErrorDefinitivo, ErrorDeRed, type Operacion, type Transporte } from "@ventaja/nucleo";
 import type { DatosLider, DatosTestigo, FuenteMovil, PersonaMovil, RolMovil, Sesion } from "./tipos";
@@ -52,7 +52,7 @@ export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & {
       if (!c) throw new Error("En el modo demo, entre con lider@demo.co o testigo@demo.co (cualquier contraseña).");
       sesion = {
         usuarioId: c.rol === "lider" ? "40000000-0000-4000-8000-000000000005" : "40000000-0000-4000-8000-000000000007",
-        nombre: c.nombre, campanaId: "20000000-0000-4000-8000-00000000000a", campanaNombre: "Turbaco Primero (ficticia)", rol: c.rol,
+        nombre: c.nombre, campanaId: "20000000-0000-4000-8000-00000000000a", campanaNombre: "Caquetá Primero (ficticia)", rol: c.rol,
       };
       return sesion;
     },
@@ -62,9 +62,9 @@ export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & {
       return {
         liderId: "70000000-0000-4000-8000-000000000001",
         meta: 187,
-        zonas: [{ id: "50000000-0000-4000-8000-000000000001", nombre: "El Mirador" }],
+        zonas: [{ id: "50000000-0000-4000-8000-000000000001", nombre: "Florencia Norte" }],
         tareas: [
-          { id: "91000000-0000-4000-8000-000000000001", titulo: "Visitar a 8 simpatizantes sin validar", detalle: "El Mirador, antes de las 6 p. m.", estado: "pendiente", venceEn: null },
+          { id: "91000000-0000-4000-8000-000000000001", titulo: "Visitar a 8 simpatizantes sin validar", detalle: "Florencia Norte, antes de las 6 p. m.", estado: "pendiente", venceEn: null },
           { id: "91000000-0000-4000-8000-000000000002", titulo: "Invitar a la reunión del jueves", detalle: "Contactos con autorización vigente", estado: "pendiente", venceEn: null },
           { id: "91000000-0000-4000-8000-000000000003", titulo: "Escanear la planilla del sábado", detalle: "Lote 14", estado: "pendiente", venceEn: null },
         ],
@@ -79,7 +79,7 @@ export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & {
       if (servidor.sinSenal) throw new ErrorDeRed("Sin señal (simulada)");
       return {
         mesas: [{
-          puestoId: "60000000-0000-4000-8000-000000000001", puestoNombre: "I. E. Técnica de Turbaco (ficticio)", mesa: 3,
+          puestoId: "60000000-0000-4000-8000-000000000001", puestoNombre: "I. E. Técnica de Florencia (ficticio)", mesa: 3,
           estado: "confirmado", e14Recibido: false,
           novedades: [{ id: "i-demo-1", tipo: "Fila larga, votantes se están yendo", hora: "2027-10-31T14:40:00Z", estado: "abierta" }],
         }],

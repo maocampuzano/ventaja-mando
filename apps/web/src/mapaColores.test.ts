@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { zonas, puestos } from "./data";
-import { colorZona, estiloMapTiler, geojsonPuestos, geojsonZonas } from "./mapaColores";
+import { colorZona, distanciaRedonda, estiloMapTiler, geojsonPuestos, geojsonZonas, renglones, textoDistancia } from "./mapaColores";
 
 const rec = () => ({ accion: "brigada" as const, digital: 0.8 });
 
@@ -27,5 +27,25 @@ describe("capas del mapa", () => {
 
   it("la clave va codificada en la dirección del estilo", () => {
     expect(estiloMapTiler("a b")).toBe("https://api.maptiler.com/maps/dataviz-dark/style.json?key=a%20b");
+  });
+});
+
+describe("escala y nombres del mapa", () => {
+  it("la barra de escala sirve para un barrio y para un departamento", () => {
+    expect(textoDistancia(distanciaRedonda(480))).toBe("500 m");
+    expect(textoDistancia(distanciaRedonda(1900))).toBe("2 km");
+    expect(textoDistancia(distanciaRedonda(46000))).toBe("50 km");
+    expect(distanciaRedonda(405, [1, 2, 4, 5, 10])).toBe(400);
+  });
+
+  it("los nombres largos se parten en dos renglones por el espacio más cercano a la mitad", () => {
+    expect(renglones("Solano")).toEqual(["Solano"]);
+    expect(renglones("San Vicente del Caguán")).toEqual(["San Vicente", "del Caguán"]);
+    expect(renglones("Belén de los Andaquíes")).toEqual(["Belén de los", "Andaquíes"]);
+    expect(renglones("Bucaramanguesidad")).toEqual(["Bucaramanguesidad"]);
+  });
+
+  it("la semilla tiene 19 zonas con nombres distintos", () => {
+    expect(new Set(zonas.map((z) => z.nombre)).size).toBe(19);
   });
 });

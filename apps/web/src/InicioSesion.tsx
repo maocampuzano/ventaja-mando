@@ -88,7 +88,7 @@ export function InicioSesion({ fuente, alEntrar, aviso }: { fuente: FuenteDatos;
         {fuente.modo === "demo" && paso === "clave" && (
           <section className="tarjeta pila" aria-label="Usuarios de demostración">
             <h2>Modo demostración</h2>
-            <p className="tenue">Datos ficticios de una campaña en Turbaco. Entre con cualquiera de estos usuarios: la contraseña es <code>{CLAVE_DEMO}</code> y, si le pide código, es <code>{CODIGO_2FA_DEMO}</code>.</p>
+            <p className="tenue">Datos ficticios de una campaña a la Gobernación del Caquetá. Entre con cualquiera de estos usuarios: la contraseña es <code>{CLAVE_DEMO}</code> y, si le pide código, es <code>{CODIGO_2FA_DEMO}</code>.</p>
             {usuariosDemo.map((u) => (
               <button key={u.correo} className="sugerida usuario-demo" type="button" disabled={ocupado}
                 onClick={() => { setCorreo(u.correo); setClave(CLAVE_DEMO); entrar(u.correo, CLAVE_DEMO); }}>
