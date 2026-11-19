@@ -1,6 +1,6 @@
 // App del líder y del testigo. Cada rol entra a su propio espacio; no hay un menú con todo.
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import Constants from "expo-constants";
@@ -17,6 +17,7 @@ import { Lider, type PestanaLider } from "./pantallas/Lider";
 import { FranjaSincronizacion, Sincronizacion } from "./pantallas/Sincronizacion";
 import { Testigo } from "./pantallas/Testigo";
 import { color, espacio } from "./tema";
+import { InstalarApp } from "./InstalarApp";
 
 type Extra = { modoDatos?: string; supabaseUrl?: string; supabasePublishableKey?: string };
 
@@ -39,7 +40,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: color.grafito }} edges={["top", "left", "right"]}>
+      {/* En el navegador de un computador, la app no se estira: queda del ancho de un celular grande, centrada. */}
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.grafito, width: "100%", maxWidth: Platform.OS === "web" ? 560 : undefined, alignSelf: "center" }}
+        edges={["top", "left", "right"]}>
         {!local || sesion === undefined ? (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={color.acento} /></View>
         ) : !sesion ? (
@@ -80,12 +83,13 @@ function Espacio() {
     <View style={{ flex: 1 }}>
       <View style={s.cabeza}>
         <View style={{ flex: 1 }}>
-          <Text style={s.marca}>VENTAJA MANDO</Text>
+          <Text style={s.marca}>Comando</Text>
           <Tenue>{sesion.campanaNombre} · {sesion.rol === "lider" ? "Líder" : "Testigo"}</Tenue>
         </View>
         <Pressable onPress={salir} accessibilityRole="button" hitSlop={12}><Text style={{ color: color.tenue }}>Salir</Text></Pressable>
       </View>
       <FranjaSincronizacion alAbrir={() => setVerEnvios(true)} />
+      {Platform.OS === "web" && <InstalarApp />}
       {fuente.modo === "demo" && "servidor" in fuente && <SimuladorSenal fuente={fuente as ReturnType<typeof crearFuenteDemo>} />}
 
       <View style={{ flex: 1 }}>

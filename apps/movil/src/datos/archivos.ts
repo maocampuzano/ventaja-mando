@@ -4,3 +4,8 @@ import { deleteAsync } from "expo-file-system/legacy";
 export async function borrarArchivo(uri: string) {
   try { await deleteAsync(uri, { idempotent: true }); } catch { /* no impide el envío */ }
 }
+
+/** En el teléfono la foto ya queda en un archivo local; se guarda su dirección. */
+export async function guardarFoto(uri: string): Promise<string> {
+  return uri;
+}

@@ -41,8 +41,19 @@ export function transporteDemo(servidor: ServidorDemo, espera = (ms: number) => 
   };
 }
 
+// En el navegador, la sesión de la demostración se recuerda como la real (que guarda Supabase), para que recargar
+// la página no la cierre. En el teléfono y en las pruebas de Node no hay localStorage: se queda en memoria.
+const LLAVE_SESION = "comando-demo-sesion";
+function sesionRecordada(): Sesion | null {
+  try { return JSON.parse(globalThis.localStorage?.getItem(LLAVE_SESION) ?? "null"); } catch { return null; }
+}
+function recordarSesion(s: Sesion | null) {
+  try { if (s) globalThis.localStorage?.setItem(LLAVE_SESION, JSON.stringify(s)); else globalThis.localStorage?.removeItem(LLAVE_SESION); }
+  catch { /* sin almacenamiento */ }
+}
+
 export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & { servidor: ServidorDemo } {
-  let sesion: Sesion | null = null;
+  let sesion: Sesion | null = sesionRecordada();
   return {
     modo: "demo",
     servidor,
@@ -54,9 +65,10 @@ export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & {
         usuarioId: c.rol === "lider" ? "40000000-0000-4000-8000-000000000005" : "40000000-0000-4000-8000-000000000007",
         nombre: c.nombre, campanaId: "20000000-0000-4000-8000-00000000000a", campanaNombre: "Caquetá Primero (ficticia)", rol: c.rol,
       };
+      recordarSesion(sesion);
       return sesion;
     },
-    async cerrarSesion() { sesion = null; },
+    async cerrarSesion() { sesion = null; recordarSesion(null); },
     async datosLider(): Promise<DatosLider> {
       if (servidor.sinSenal) throw new ErrorDeRed("Sin señal (simulada)");
       return {

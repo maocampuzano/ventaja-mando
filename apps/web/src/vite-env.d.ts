@@ -6,4 +6,5 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
   readonly VITE_MAPTILER_KEY?: string;
   readonly VITE_RUTA_MAPLIBRE: string;
+  readonly VITE_URL_APP_LIDER: string;
 }

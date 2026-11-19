@@ -22,7 +22,7 @@ export function InicioSesion({ fuente, alEntrar }: { fuente: FuenteMovil; alEntr
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: color.grafito }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: espacio.xl, gap: espacio.l }} keyboardShouldPersistTaps="handled">
         <View style={{ gap: espacio.xs }}>
-          <Tenue>VENTAJA MANDO</Tenue>
+          <Tenue>COMANDO</Tenue>
           <Titulo>Entrar</Titulo>
           <Tenue>Para líderes y testigos. Después de entrar la primera vez, la app funciona sin señal.</Tenue>
         </View>

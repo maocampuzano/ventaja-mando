@@ -25,6 +25,16 @@ echo "→ Panel de demostración (datos ficticios)"
 MODO_DATOS=demo npm run build -w apps/web >/dev/null
 $WRANGLER pages deploy apps/web/dist --project-name "$PROYECTO" --branch demo --commit-dirty=true
 
+echo "→ Web del líder y del testigo, conectada al proyecto de prueba (app.$PROYECTO.pages.dev)"
+rm -rf apps/movil/dist
+(cd apps/movil && MODO_DATOS=supabase npx expo export --platform web --output-dir dist >/dev/null)
+$WRANGLER pages deploy apps/movil/dist --project-name "$PROYECTO" --branch app --commit-dirty=true
+
+echo "→ Web del líder en modo demostración (app-demo.$PROYECTO.pages.dev)"
+rm -rf apps/movil/dist
+(cd apps/movil && MODO_DATOS=demo npx expo export --platform web --output-dir dist >/dev/null)
+$WRANGLER pages deploy apps/movil/dist --project-name "$PROYECTO" --branch app-demo --commit-dirty=true
+
 echo "→ Supabase: dirección del sitio para los correos de confirmación"
 node supabase/scripts/aplicar-remoto.mjs url-sitio "https://$PROYECTO.pages.dev"
-echo "Listo: https://$PROYECTO.pages.dev y https://demo.$PROYECTO.pages.dev"
+echo "Listo: https://$PROYECTO.pages.dev, https://demo.$PROYECTO.pages.dev, https://app.$PROYECTO.pages.dev y https://app-demo.$PROYECTO.pages.dev"
