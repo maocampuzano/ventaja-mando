@@ -13,11 +13,17 @@ export type LiderAgregado = {
   ref: string; zonaId: string; registrados: number; validados: number; duplicadosConOtros: number;
   tareasHechas: number; tareasAsignadas: number; meta: number;
 };
+/** Reuniones de una zona: solo números y temas, sin nombres ni textos de actas. */
+export type ReunionesAgregadas = {
+  zonaId: string | null; reuniones30d: number; actasAprobadas: number; actasPorAprobar: number;
+  compromisosVencidos: number; asistentesComunidad: number; temas: string[];
+};
 export type DatosAsesor = {
   /** metaVotos: la meta de votos según el alcance de quien pregunta (campaña completa o sus zonas). */
   campana: { candidato: string; cargo: string; metaVotos: number; eleccion: string };
   zonas: ZonaAgregada[];
   lideres: LiderAgregado[];
+  reuniones: ReunionesAgregadas[];
 };
 
 export type TipoTarea = "brigada" | "llamadas" | "revision_lideres" | "pauta";
@@ -42,6 +48,7 @@ export function armarDatosAsesor(
   campana: DatosAsesor["campana"],
   zonas: readonly ZonaAgregada[],
   lideres: readonly (Omit<LiderAgregado, "ref"> & { id: string })[],
+  reuniones: readonly ReunionesAgregadas[] = [],
 ): DatosAsesor {
   const refs = refsLideres(lideres.map((l) => l.id));
   return {
@@ -53,6 +60,10 @@ export function armarDatosAsesor(
     lideres: lideres.map((l) => ({
       ref: refs.get(l.id)!, zonaId: l.zonaId, registrados: l.registrados, validados: l.validados,
       duplicadosConOtros: l.duplicadosConOtros, tareasHechas: l.tareasHechas, tareasAsignadas: l.tareasAsignadas, meta: l.meta,
+    })),
+    reuniones: reuniones.map((r) => ({
+      zonaId: r.zonaId, reuniones30d: r.reuniones30d, actasAprobadas: r.actasAprobadas, actasPorAprobar: r.actasPorAprobar,
+      compromisosVencidos: r.compromisosVencidos, asistentesComunidad: r.asistentesComunidad, temas: r.temas.slice(0, 5).map((t) => String(t).slice(0, 40)),
     })),
   };
 }
@@ -112,6 +123,12 @@ export const HERRAMIENTAS_ASESOR = [
     },
     strict: true,
   },
+  {
+    name: "reuniones",
+    description: "Reuniones de la campaña por zona: cuántas hubo en los últimos 30 días, actas aprobadas y por aprobar, compromisos vencidos, asistentes de la comunidad y los temas que más salieron en las actas. Solo números y temas, sin nombres. Úsela para saber dónde falta presencia o qué piden en cada zona.",
+    input_schema: { type: "object" as const, properties: {}, required: [] as string[], additionalProperties: false },
+    strict: true,
+  },
 ];
 
 export type NombreHerramienta = (typeof HERRAMIENTAS_ASESOR)[number]["name"];
@@ -121,6 +138,7 @@ const FUENTE = {
   zonas: "Cifras por zona y recomendación tierra + pauta (simpatizantes validados, alcance digital y potencial)",
   lideres: "Índice del líder: calidad, limpieza, ejecución y meta (sin nombres)",
   tarea: "Propuesta de tarea para aprobar",
+  reuniones: "Reuniones y actas aprobadas por zona (cifras y temas, sin nombres)",
 };
 
 function limite(x: unknown) {
@@ -199,6 +217,10 @@ export function ejecutarHerramienta(
       propuestas.push({ tipo, titulo, detalle, zonas, lideres });
       return { fuente: FUENTE.tarea, datos: { propuesta: propuestas.length, estado: "pendiente de aprobación" } };
     }
+    case "reuniones": {
+      const nombre = new Map(d.zonas.map((z) => [z.id, z.nombre]));
+      return { fuente: FUENTE.reuniones, datos: d.reuniones.map((r) => ({ ...r, zona: r.zonaId ? nombre.get(r.zonaId) ?? r.zonaId : "Sin zona" })) };
+    }
     default:
       return { fuente: "—", datos: { error: `No existe la herramienta «${nombre}».` } };
   }
@@ -264,6 +286,22 @@ export function responderSimulado(pregunta: string, d: DatosAsesor): RespuestaAs
     return fin(`Los líderes con el índice más bajo son ${refs.join(", ")}. ${peor.ref} tiene un índice de ${Math.round(peor.total * 100)} sobre 100` +
       `${peor.coincidenciasConOtros > 0.15 ? ` y el ${Math.round(peor.coincidenciasConOtros * 100)} % de sus registros coincide con los de otros líderes` : ""}. ` +
       "Un índice bajo no prueba nada indebido: puede ser una lista compartida o tareas sin cerrar. Propongo una reunión de depuración.");
+  }
+
+  if (/reunion|acta|compromis|pidieron|piden/.test(p)) {
+    type R = ReunionesAgregadas & { zona: string };
+    const rs = usar("reuniones", {}) as R[];
+    if (!rs.length) return fin("Todavía no hay reuniones registradas en su alcance. Registre la primera en Mi gente, Reuniones.");
+    const total = rs.reduce((a, r) => a + r.reuniones30d, 0);
+    const sin = d.zonas.filter((z) => !rs.some((r) => r.zonaId === z.id && r.reuniones30d > 0)).map((z) => z.nombre);
+    const temas = new Map<string, number>();
+    for (const r of rs) for (const t of r.temas) temas.set(t, (temas.get(t) ?? 0) + 1);
+    const top = [...temas.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => t);
+    const vencidos = rs.reduce((a, r) => a + r.compromisosVencidos, 0);
+    return fin(`En los últimos 30 días hubo ${total} ${total === 1 ? "reunión" : "reuniones"}. ` +
+      (top.length ? `Lo que más sale en las actas: ${top.join(", ")}. ` : "") +
+      (vencidos ? `Hay ${vencidos} ${vencidos === 1 ? "compromiso vencido" : "compromisos vencidos"}: conviene cumplirlos antes de volver. ` : "") +
+      (sin.length ? `Sin reuniones recientes: ${sin.slice(0, 5).join(", ")}${sin.length > 5 ? " y otras" : ""}.` : ""));
   }
 
   if (/meta|vamos|avance|llegar/.test(p)) {

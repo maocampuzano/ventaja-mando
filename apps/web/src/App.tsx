@@ -15,6 +15,7 @@ import { Lideres } from "./Lideres";
 import { Mando } from "./Mando";
 import { Hoy } from "./Hoy";
 import { Ajustes } from "./Ajustes";
+import { Reuniones } from "./Reuniones";
 import { Datos } from "./Datos";
 import { Baja } from "./Baja";
 import { Mensajes } from "./Mensajes";
@@ -26,14 +27,14 @@ import { BandejaLider, MiMesa, Planillas, Resumen } from "./Pantallas";
 import { DiaE } from "./DiaE";
 import type { Tarea } from "./Asesor";
 
-type Vista = "hoy" | "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "mensajes" | "llamadas" | "llamar" | "finanzas" | "diae" | "datos" | "ajustes" | "bandeja" | "mimesa";
+type Vista = "hoy" | "resumen" | "mando" | "lideres" | "equipo" | "importar" | "formularios" | "planillas" | "reuniones" | "mensajes" | "llamadas" | "llamar" | "finanzas" | "diae" | "datos" | "ajustes" | "bandeja" | "mimesa";
 
 // Cada rol entra a su propio espacio (CLAUDE.md, «Diseño»): no hay un menú único con todo.
 const vistasPorRol: Record<RolCampana, Vista[]> = {
-  administrador: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos", "ajustes"],
-  gerente: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "mensajes", "llamadas", "finanzas", "diae", "datos", "ajustes"],
-  candidato: ["resumen", "mando", "mensajes", "finanzas", "diae"],
-  coordinador: ["hoy", "mando", "lideres", "importar", "planillas", "diae"],
+  administrador: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "reuniones", "mensajes", "llamadas", "finanzas", "diae", "datos", "ajustes"],
+  gerente: ["hoy", "mando", "lideres", "equipo", "importar", "formularios", "planillas", "reuniones", "mensajes", "llamadas", "finanzas", "diae", "datos", "ajustes"],
+  candidato: ["resumen", "mando", "reuniones", "mensajes", "finanzas", "diae"],
+  coordinador: ["hoy", "mando", "lideres", "importar", "planillas", "reuniones", "diae"],
   lider: ["bandeja"],
   testigo: ["mimesa"],
   operador: ["llamar"],
@@ -43,7 +44,7 @@ type Icon = Parameters<typeof Icono>[0]["n"];
 /** Nombre de cada pantalla en las pestañas de su sección. */
 const nombreVista: Record<Vista, string> = {
   hoy: "Hoy", resumen: "Hoy", mando: "Mapa y asesor",
-  lideres: "Líderes", equipo: "Equipo", importar: "Importar", formularios: "Formularios", planillas: "Planillas",
+  lideres: "Líderes", equipo: "Equipo", importar: "Importar", formularios: "Formularios", planillas: "Planillas", reuniones: "Reuniones",
   mensajes: "Mensajes", llamadas: "Llamadas", llamar: "Llamar", finanzas: "Cuentas", diae: "Día E", datos: "Cumplimiento", ajustes: "Ajustes",
   bandeja: "Celular", mimesa: "Mi mesa",
 };
@@ -53,7 +54,7 @@ const nombreVista: Record<Vista, string> = {
 type Seccion = { id: string; nombre: string; icono: Icon; vistas: Vista[]; abajo?: boolean };
 const secciones: Seccion[] = [
   { id: "hoy", nombre: "Hoy", icono: "hoy", vistas: ["hoy", "resumen", "mando"] },
-  { id: "gente", nombre: "Mi gente", icono: "lideres", vistas: ["lideres", "equipo", "importar", "formularios", "planillas"] },
+  { id: "gente", nombre: "Mi gente", icono: "lideres", vistas: ["lideres", "equipo", "importar", "formularios", "planillas", "reuniones"] },
   { id: "contactar", nombre: "Contactar", icono: "mensajes", vistas: ["mensajes", "llamadas"] },
   { id: "cuentas", nombre: "Cuentas", icono: "finanzas", vistas: ["finanzas"] },
   { id: "diae", nombre: "Día E", icono: "diae", vistas: ["diae"] },
@@ -217,6 +218,7 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
             {vista === "importar" && <Importar />}
             {vista === "formularios" && <Formularios />}
             {vista === "planillas" && <Planillas />}
+            {vista === "reuniones" && <Reuniones />}
             {vista === "mensajes" && <Mensajes />}
             {vista === "llamadas" && <Llamadas />}
             {vista === "llamar" && <Llamar />}

@@ -53,11 +53,12 @@ Deno.serve(async (req) => {
     return responder(429, { error: "La campaña llegó al cupo de IA de este mes. La gerencia puede pedir una ampliación." });
   }
 
-  const [c, z, l, m] = await Promise.all([
+  const [c, z, l, m, reu] = await Promise.all([
     usuario.from("campana").select("nombre, cargo, eleccion_fecha, meta_votos").eq("id", campana).single(),
     usuario.rpc("tablero_zonas", { p_campana: campana }),
     usuario.rpc("tablero_lideres", { p_campana: campana }),
     usuario.from("membresia").select("rol").eq("campana_id", campana).eq("usuario_id", u.user.id).eq("activa", true).maybeSingle(),
+    usuario.rpc("resumen_reuniones", { p_campana: campana }),
   ]);
   if (c.error || z.error || l.error) return responder(502, { error: "No se pudieron leer los datos de la campaña." });
 
@@ -75,6 +76,12 @@ Deno.serve(async (req) => {
       id: String(f.lider_id), zonaId: String((f.territorio_ids as string[] | null)?.[0] ?? ""), registrados: n(f.registrados),
       validados: n(f.validados), duplicadosConOtros: n(f.duplicados_con_otros), tareasHechas: n(f.tareas_hechas),
       tareasAsignadas: n(f.tareas_asignadas), meta: n(f.meta),
+    })),
+    // Si la lectura de reuniones falla, el asesor responde igual, sin ellas.
+    ((reu.data ?? []) as Record<string, unknown>[]).map((f) => ({
+      zonaId: (f.territorio_id as string | null) ?? null, reuniones30d: n(f.reuniones_30d), actasAprobadas: n(f.actas_aprobadas),
+      actasPorAprobar: n(f.actas_por_aprobar), compromisosVencidos: n(f.compromisos_vencidos), asistentesComunidad: n(f.asistentes_comunidad),
+      temas: ((f.temas as string[] | null) ?? []).map(String),
     })),
   );
 

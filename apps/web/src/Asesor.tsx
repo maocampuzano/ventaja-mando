@@ -1,15 +1,15 @@
 // El Asesor IA en el Mando. Pregunta con los datos agregados del alcance de quien consulta y muestra de dónde salió cada
 // respuesta. Los líderes llegan como «L-03» (la IA no recibe nombres, regla 6): aquí, del lado de quien consulta,
 // se traducen al nombre. Las tareas propuestas no se ejecutan hasta que la gerencia las aprueba.
-import { useMemo, useRef, useState, type FormEvent } from "react";
-import { armarDatosAsesor, refsLideres, type TareaPropuesta } from "@ventaja/nucleo";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { armarDatosAsesor, refsLideres, type ReunionesAgregadas, type TareaPropuesta } from "@ventaja/nucleo";
 import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
 import type { RespuestaAsesorPanel } from "./datos/tipos";
 
 export type Tarea = { id: string; titulo: string; detalle: string };
 
-const SUGERIDAS = ["¿Dónde actúo esta semana?", "¿Qué líderes debo revisar?", "¿Cómo vamos frente a la meta?"];
+const SUGERIDAS = ["¿Dónde actúo esta semana?", "¿Qué líderes debo revisar?", "¿Cómo vamos frente a la meta?", "¿Qué pidieron en las reuniones?"];
 
 type Turno = { id: number; pregunta: string; respuesta?: RespuestaAsesorPanel; error?: string };
 
@@ -19,11 +19,17 @@ export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAproba
   const [texto, setTexto] = useState("");
   const ocupado = turnos.some((t) => !t.respuesta && !t.error);
   const siguiente = useRef(1);
+  const [reuniones, setReuniones] = useState<ReunionesAgregadas[]>([]);
+  useEffect(() => {
+    fuente.resumenReuniones(sesion)
+      .then((r) => setReuniones(r.map(({ territorioId, ...x }) => ({ zonaId: territorioId, ...x }))))
+      .catch(() => setReuniones([]));
+  }, [sesion]);
 
   const datos = useMemo(() => armarDatosAsesor(
     { candidato: sesion.campana.candidato, cargo: sesion.campana.cargo, metaVotos: meta.votos, eleccion: sesion.campana.eleccion },
-    zonas, lideres,
-  ), [sesion, zonas, lideres, meta.votos]);
+    zonas, lideres, reuniones,
+  ), [sesion, zonas, lideres, meta.votos, reuniones]);
 
   // De referencia a nombre, solo en la pantalla.
   const nombres = useMemo(() => {

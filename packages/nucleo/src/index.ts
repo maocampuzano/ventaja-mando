@@ -14,6 +14,7 @@ export * from "./autorizacion";
 export * from "./planilla";
 export * from "./asesor";
 export * from "./lectura";
+export * from "./actaReunion";
 export * from "./diaE";
 export * from "./mensajeria";
 export * from "./envio";

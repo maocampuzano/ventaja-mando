@@ -4,7 +4,7 @@
 // la lectura simulada, para que no entren datos inventados.
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import { ErrorLectura, MODELO_LECTURA_POR_DEFECTO, leerConClaude, type ImagenLectura } from "../../../packages/nucleo/src/lecturaClaude.ts";
+import { ErrorLectura, MODELO_LECTURA_POR_DEFECTO, leerConClaude, redactarActaConClaude, type ImagenLectura } from "../../../packages/nucleo/src/lecturaClaude.ts";
 import { alertasActa } from "../../../packages/nucleo/src/lectura.ts";
 
 const CORS = {
@@ -32,12 +32,20 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return responder(405, { error: "Use POST." });
   const auth = req.headers.get("Authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return responder(401, { error: "Inicie sesión." });
-  let cuerpo: { lote?: string; acta?: string };
+  let cuerpo: { lote?: string; acta?: string; reunion?: string; notas?: string; adjunto?: string };
   try { cuerpo = await req.json(); } catch { return responder(400, { error: "La petición no es válida." }); }
 
   const url = Deno.env.get("SUPABASE_URL")!;
   const usuario = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
   const servicio = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+  if (cuerpo.reunion !== undefined) {
+    const reunionId = String(cuerpo.reunion);
+    if (!UUID.test(reunionId)) return responder(400, { error: "Falta la reunión." });
+    const { data: u } = await usuario.auth.getUser();
+    if (!u.user) return responder(401, { error: "La sesión venció. Vuelva a iniciar sesión." });
+    return redactarActa(usuario, servicio, u.user.id, reunionId, String(cuerpo.notas ?? ""), cuerpo.adjunto ? String(cuerpo.adjunto) : null);
+  }
 
   if (cuerpo.acta !== undefined) {
     const actaId = String(cuerpo.acta);
@@ -158,6 +166,49 @@ async function leerActa(usuario: Cliente, servicio: Cliente, usuarioId: string, 
       : e instanceof Anthropic.RateLimitError ? "La lectura está muy ocupada. Intente en un minuto."
       : "No se pudo leer la foto. Intente de nuevo o digite los números.";
     if (!(e instanceof ErrorLectura)) console.error(e instanceof Anthropic.APIError ? `Error de la API de Claude: ${e.status}` : "Error inesperado en la lectura del E-14");
+    return responder(502, { error: mensaje });
+  }
+}
+
+/**
+ * Propone el acta de una reunión con las notas de quien estuvo y, si hay, la foto del acta escrita a mano (bucket
+ * «actas»). No guarda nada: devuelve la propuesta para que una persona la revise y la guarde con guardar_acta.
+ */
+async function redactarActa(usuario: Cliente, servicio: Cliente, usuarioId: string, reunionId: string, notas: string, adjunto: string | null) {
+  // Con la sesión de quien pide: si no ve la reunión (RLS), no puede pedir su acta.
+  const { data: reunion } = await usuario.from("reunion").select("id, campana_id").eq("id", reunionId).maybeSingle();
+  if (!reunion) return responder(404, { error: "La reunión no existe o no la puede ver." });
+  if (adjunto && !adjunto.startsWith(`${reunion.campana_id}/${reunionId}/`)) return responder(400, { error: "La foto no es de esta reunión." });
+
+  const clave = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!clave) return responder(503, { error: "La redacción con IA no está activa todavía. Escriba el acta a mano." });
+  if (!(await hayCupo(servicio, reunion.campana_id))) {
+    return responder(429, { error: "La campaña llegó al cupo de IA de este mes. La gerencia puede pedir una ampliación." });
+  }
+
+  let imagen: ImagenLectura | null = null;
+  if (adjunto) {
+    const { data: archivo, error: ea } = await servicio.storage.from("actas").download(adjunto);
+    if (ea || !archivo) return responder(404, { error: "No se encontró la foto del acta." });
+    if (archivo.size > MAX_BYTES) return responder(413, { error: "La foto pesa más de 5 MB. Tómela de nuevo con menos resolución." });
+    const mediaType = tipoImagen(adjunto, archivo.type);
+    if (!mediaType) return responder(415, { error: "La foto debe ser JPG, PNG o WebP." });
+    imagen = { base64: base64(new Uint8Array(await archivo.arrayBuffer())), mediaType };
+  }
+
+  try {
+    const r = await redactarActaConClaude(new Anthropic({ apiKey: clave }), notas, imagen,
+      Deno.env.get("MODELO_LECTURA") || MODELO_LECTURA_POR_DEFECTO);
+    await servicio.from("uso_ia").insert({
+      campana_id: reunion.campana_id, usuario_id: usuarioId, funcion: "acta", modelo: r.uso.modelo,
+      tokens_entrada: r.uso.entrada, tokens_salida: r.uso.salida, tokens_cache_lectura: r.uso.cacheLectura, costo_usd: r.uso.costoUsd,
+    });
+    return responder(200, { acta: r.acta });
+  } catch (e) {
+    const mensaje = e instanceof ErrorLectura ? e.message
+      : e instanceof Anthropic.RateLimitError ? "La IA está muy ocupada. Intente en un minuto."
+      : "No se pudo redactar el acta. Intente de nuevo o escríbala a mano.";
+    if (!(e instanceof ErrorLectura)) console.error(e instanceof Anthropic.APIError ? `Error de la API de Claude: ${e.status}` : "Error inesperado al redactar un acta");
     return responder(502, { error: mensaje });
   }
 }

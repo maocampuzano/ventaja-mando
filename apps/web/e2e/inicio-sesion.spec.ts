@@ -42,7 +42,7 @@ test("la coordinadora solo ve sus tres zonas y sus líderes", async ({ page }) =
 test("la candidata entra a su resumen y no ve la lista de líderes", async ({ page }) => {
   await entrar(page, "candidata@demo.co");
   await expect(page.getByRole("heading", { name: /Buenos días, Laura/ })).toBeVisible();
-  await expect(menu(page).getByRole("button")).toHaveText(["Hoy", "Contactar", "Cuentas", "Día E"]);
+  await expect(menu(page).getByRole("button")).toHaveText(["Hoy", "Mi gente", "Contactar", "Cuentas", "Día E"]);
 });
 
 test("salir vuelve a la pantalla de inicio de sesión", async ({ page }) => {

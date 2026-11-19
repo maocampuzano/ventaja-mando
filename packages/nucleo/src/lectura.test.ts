@@ -4,7 +4,7 @@ import {
   ESQUEMA_E14, ESQUEMA_PLANILLA, alertasActa, lecturaSimuladaE14, lecturaSimuladaPlanilla, normalizarCedula, normalizarCelular,
   repetidosEnHoja, revisarFila, type FilaLeida,
 } from "./lectura";
-import { ErrorLectura, leerConClaude, type ClienteLectura } from "./lecturaClaude";
+import { ErrorLectura, leerConClaude, redactarActaConClaude, type ClienteLectura } from "./lecturaClaude";
 
 const alta = { nombre: 0.99, cedula: 0.99, celular: 0.99, barrio: 0.99, firma: 0.99 };
 const fila = (x: Partial<FilaLeida>): FilaLeida => ({ renglon: 1, nombre: "Ana Ruiz", cedula: "", celular: "", barrio: "", firma: true, confianza: alta, ...x });
@@ -125,5 +125,24 @@ describe("lectura con Claude (cliente simulado)", () => {
     await expect(leerConClaude(clienteFalso({ stop_reason: "refusal", content: [] }).cliente, "planilla", IMG)).rejects.toThrow(ErrorLectura);
     await expect(leerConClaude(clienteFalso({ stop_reason: "max_tokens", content: texto("{") }).cliente, "planilla", IMG)).rejects.toThrow(/incompleta/);
     await expect(leerConClaude(clienteFalso({ content: texto("no es json") }).cliente, "e14", IMG)).rejects.toThrow(/no devolvió un resultado válido/);
+  });
+});
+
+describe("acta de reunión con Claude (cliente simulado)", () => {
+  it("manda solo las notas limpias, sin datos de contacto, y devuelve la propuesta", async () => {
+    const propuesta = { resumen: "Se habló de la vía. Llamar al 310 000 1234.", temas: ["vías"], acuerdos: "", compromisos: [{ descripcion: "Visitar la vereda", vence_en: null }] };
+    const { cliente, pedidos } = clienteFalso({ content: texto(JSON.stringify(propuesta)) });
+    const r = await redactarActaConClaude(cliente, "Doña Ana, celular 310 000 1234, pidió arreglar la vía.", null);
+    const enviado = JSON.stringify(pedidos[0]);
+    expect(enviado).not.toContain("310 000 1234");
+    expect(enviado).toContain("pidió arreglar la vía");
+    expect(r.acta.resumen).not.toContain("310 000 1234");
+    expect(r.acta.compromisos).toHaveLength(1);
+  });
+
+  it("sin notas ni foto no llama a la IA", async () => {
+    const { cliente, pedidos } = clienteFalso({ content: texto("{}") });
+    await expect(redactarActaConClaude(cliente, "   ", null)).rejects.toThrow(/Escriba las notas/);
+    expect(pedidos).toHaveLength(0);
   });
 });

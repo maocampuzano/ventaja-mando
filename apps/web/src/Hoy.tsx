@@ -22,6 +22,9 @@ export function Hoy({ aprobadas, ir }: { aprobadas: Tarea[]; ir: (vista: string)
     const poner = (x: ExtrasHoy) => { if (vigente) setExtras((e) => ({ ...e, ...x })); };
     const callar = () => { /* sin ese dato, la pantalla no muestra ese pendiente */ };
     fuente.planillasPorRevisar(sesion).then((p) => poner({ planillasPorRevisar: p.length })).catch(callar);
+    fuente.resumenReuniones(sesion).then((r) => poner({
+      actasPorAprobar: r.reduce((a, z) => a + z.actasPorAprobar, 0), compromisosVencidos: r.reduce((a, z) => a + z.compromisosVencidos, 0),
+    })).catch(callar);
     if (direccion) {
       fuente.envios(sesion).then((e) => poner({
         enviosPorAprobar: e.filter((x) => x.estado === "borrador").length,

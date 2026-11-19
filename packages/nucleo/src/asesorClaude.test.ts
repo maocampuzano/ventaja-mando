@@ -10,6 +10,7 @@ const datos: DatosAsesor = {
     { id: "z2", nombre: "La Ceiba", meta: 500, potencial: 900, bruto: 50, validados: 20, comprometidos: 5, lideres: 1, alcance: 5000, clics: 400, gasto: 9000 },
   ],
   lideres: [{ ref: "L-01", zonaId: "z1", registrados: 10, validados: 5, duplicadosConOtros: 0, tareasHechas: 1, tareasAsignadas: 2, meta: 20 }],
+  reuniones: [],
 };
 
 type Respuesta = Pick<Anthropic.Beta.BetaMessage, "content" | "stop_reason" | "model"> & { usage: Partial<Anthropic.Beta.BetaUsage> };

@@ -24,6 +24,10 @@ const datos: DatosAsesor = {
     { ref: refs.get("c")!, zonaId: "z3", registrados: 100, validados: 50, duplicadosConOtros: 5, tareasHechas: 5, tareasAsignadas: 10, meta: 150 },
     { ref: refs.get("d")!, zonaId: "z4", registrados: 0, validados: 0, duplicadosConOtros: 0, tareasHechas: 0, tareasAsignadas: 0, meta: 100 },
   ],
+  reuniones: [
+    { zonaId: "z1", reuniones30d: 2, actasAprobadas: 2, actasPorAprobar: 0, compromisosVencidos: 1, asistentesComunidad: 40, temas: ["vías", "salud"] },
+    { zonaId: "z2", reuniones30d: 1, actasAprobadas: 1, actasPorAprobar: 1, compromisosVencidos: 0, asistentesComunidad: 0, temas: ["vías"] },
+  ],
 };
 
 const PROHIBIDAS = /^(nombre|nombres|telefono|celular|documento|cedula|correo|email|persona|personas|lider_id|usuario_id|direccion)$/i;
@@ -40,6 +44,7 @@ const ENTRADAS: Record<string, unknown[]> = {
   zonas: [{ orden: "brecha", limite: 50 }, { orden: "validados", limite: 1 }, { orden: "inventado", limite: -3 }],
   indice_lideres: [{ orden: "mas_bajos", limite: 50 }, { orden: "mas_altos", limite: 2 }, {}],
   proponer_tarea: [{ tipo: "brigada", titulo: "Brigada", detalle: "Sábado", zonas: ["z2"], lideres: [refs.get("b")] }],
+  reuniones: [{}],
 };
 
 describe("regla 6: ninguna herramienta del Asesor IA devuelve filas de personas", () => {
@@ -152,5 +157,16 @@ describe("costo", () => {
   it("Sonnet 5.5: $2 por millón de entrada y $10 de salida", () => {
     expect(costoEstimadoUsd("claude-sonnet-5-5", { entrada: 1_000_000, salida: 100_000, cacheLectura: 0 })).toBeCloseTo(3, 6);
     expect(costoEstimadoUsd("claude-sonnet-5-5", { entrada: 0, salida: 0, cacheLectura: 1_000_000, cacheEscritura: 1_000_000 })).toBeCloseTo(0.2 + 2.5, 6);
+  });
+});
+
+describe("reuniones en el Asesor IA", () => {
+  it("responde con cifras y temas por zona, y dice dónde no ha habido reuniones", () => {
+    const r = responderSimulado("¿Qué pidieron en las reuniones?", datos);
+    expect(r.fuentes).toContain("Reuniones y actas aprobadas por zona (cifras y temas, sin nombres)");
+    expect(r.texto).toMatch(/3 reuniones/);
+    expect(r.texto).toMatch(/vías/);
+    expect(r.texto).toMatch(/1 compromiso vencido/);
+    expect(r.texto).toMatch(/Villa Rosa/);
   });
 });

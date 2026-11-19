@@ -34,7 +34,7 @@ test("cada sección abre con sus pestañas y el enlace directo sigue funcionando
   await expect(menu(page).getByRole("button", { name: "Contactar" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("navigation", { name: "Dentro de Contactar" }).getByRole("button")).toHaveText(["Mensajes", "Llamadas"]);
   await menu(page).getByRole("button", { name: "Mi gente" }).click();
-  await expect(page.getByRole("navigation", { name: "Dentro de Mi gente" }).getByRole("button")).toHaveText(["Líderes", "Equipo", "Importar", "Formularios", "Planillas"]);
+  await expect(page.getByRole("navigation", { name: "Dentro de Mi gente" }).getByRole("button")).toHaveText(["Líderes", "Equipo", "Importar", "Formularios", "Planillas", "Reuniones"]);
   await menu(page).getByRole("button", { name: "Cuentas" }).click();
   await expect(page.getByRole("navigation", { name: /^Dentro de/ })).toHaveCount(0);
 });
