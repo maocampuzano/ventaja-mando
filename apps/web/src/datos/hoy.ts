@@ -12,6 +12,9 @@ export type ExtrasHoy = {
   solicitudesVencidas?: number;
   /** Gastos sobre el tope del CNE (1 = 100 %). null si no hay tope configurado. */
   usoTope?: number | null;
+  /** Reuniones: actas en borrador y compromisos vencidos (sumados de las zonas que la sesión ve). */
+  actasPorAprobar?: number;
+  compromisosVencidos?: number;
 };
 
 export type Pendiente = { id: string; titulo: string; detalle: string; boton: string; vista: string; urgente?: boolean };
@@ -59,6 +62,14 @@ export function armarHoy(d: { zonas: Zona[]; lideres: Lider[]; puestos: Puesto[]
     });
   }
 
+  if (x.actasPorAprobar) {
+    pendientes.push({
+      id: "actas", vista: "reuniones", boton: "Ver actas",
+      titulo: `Aprobar ${plural(x.actasPorAprobar, "acta de reunión", "actas de reuniones")}`,
+      detalle: "Mientras no se aprueben, no entran a la base de conocimiento ni sus compromisos se vuelven tareas.",
+    });
+  }
+
   const sinTestigo = d.puestos.map((p) => ({ nombre: p.nombre, faltan: p.mesas.filter((m) => !m.testigoId).length })).filter((p) => p.faltan > 0)
     .sort((a, b) => b.faltan - a.faltan);
   const mesasSinTestigo = sinTestigo.reduce((a, p) => a + p.faltan, 0);
@@ -85,6 +96,10 @@ export function armarHoy(d: { zonas: Zona[]; lideres: Lider[]; puestos: Puesto[]
       id: "tope", nivel: x.usoTope >= 0.95 ? "rojo" : "ambar",
       texto: x.usoTope > 1 ? "Los gastos ya superan el tope del CNE." : `Los gastos van en ${pct(x.usoTope)} del tope del CNE.`,
     });
+  }
+  if (x.compromisosVencidos) {
+    avisos.push({ id: "compromisos", nivel: "ambar",
+      texto: `${plural(x.compromisosVencidos, "compromiso de reunión está vencido", "compromisos de reuniones están vencidos")} y sin cumplir.` });
   }
   const atrasadas = d.zonas.filter((z) => z.meta > 0 && z.validados / z.meta < 0.25).sort((a, b) => a.validados / a.meta - b.validados / b.meta);
   if (atrasadas.length) {

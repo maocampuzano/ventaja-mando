@@ -1,4 +1,4 @@
-import type { ActaLeida, CanalMasivo, Confianzas, ErrorPanel, FilaLibro, FuenteProhibida, MedioPropaganda, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosAsesor, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaAsesor, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
+import type { ActaPropuesta, ActaLeida, CanalMasivo, Confianzas, ErrorPanel, FilaLibro, FuenteProhibida, MedioPropaganda, TipoMovimiento, ResultadoLlamada, ResumenCola, SegmentoEnvio, CumplimientoPost, DatosAsesor, Jornada, MesaDiaE, NovedadDiaE, EsquemaFormulario, FilaLista, RespuestaAsesor, RolCampana, TipoSolicitud } from "@ventaja/nucleo";
 import type { Lider, Puesto, Zona } from "../data";
 
 export type Campana = { id: string; candidato: string; cargo: string; eleccion: string; metaVotos: number };
@@ -167,7 +167,41 @@ export interface FuenteDatos {
   registrarError(sesion: Sesion, error: ErrorPanel): Promise<void>;
   erroresRecientes(sesion: Sesion): Promise<ErrorAgrupado[]>;
   auditoria(sesion: Sesion, filtro: FiltroAuditoria): Promise<FilaAuditoria[]>;
+  // Reuniones y actas (dirección y candidatura: todas; coordinación: las de sus zonas). La base lo hace cumplir.
+  reuniones(sesion: Sesion): Promise<Reunion[]>;
+  guardarReunion(sesion: Sesion, datos: NuevaReunion): Promise<string>;
+  actaDeReunion(sesion: Sesion, reunionId: string): Promise<ActaReunion | null>;
+  guardarActa(sesion: Sesion, reunionId: string, datos: BorradorActa): Promise<string>;
+  /** Aprueba el acta y devuelve cuántos compromisos quedaron como tareas. */
+  aprobarActa(sesion: Sesion, actaId: string): Promise<number>;
+  /** La IA propone el acta con las notas (limpias de datos de contacto) y la foto del acta escrita a mano, si hay. */
+  redactarActa(sesion: Sesion, reunionId: string, notas: string, foto: File | null): Promise<PropuestaActaPanel>;
+  buscarActas(sesion: Sesion, filtro: FiltroActas): Promise<ResultadoActa[]>;
+  resumenReuniones(sesion: Sesion): Promise<ResumenReunionesZona[]>;
+  /** Personas del equipo que pueden ser responsables de un compromiso o asistir a una reunión. */
+  equipoReuniones(sesion: Sesion): Promise<PersonaEquipo[]>;
 }
+
+export type TipoReunion = "lideres" | "comunitaria" | "sectorial" | "equipo" | "otra";
+export type EstadoReunion = "programada" | "realizada" | "cancelada";
+/** `fecha` en ISO. Los simpatizantes que asistieron se cuentan como número (regla 3). */
+export type Reunion = {
+  id: string; titulo: string; tipo: TipoReunion; fecha: string; lugar: string | null; territorioId: string | null;
+  estado: EstadoReunion; asistentesComunidad: number; liderIds: string[]; equipoIds: string[];
+  acta: { id: string; estado: "borrador" | "aprobada" } | null;
+};
+export type NuevaReunion = Omit<Reunion, "id" | "acta"> & { id?: string };
+export type CompromisoActa = { descripcion: string; responsableId: string | null; venceEn: string | null; tareaId?: string | null };
+export type BorradorActa = { resumen: string; temas: string[]; acuerdos: string; compromisos: CompromisoActa[]; origen: "manual" | "ia" };
+export type ActaReunion = BorradorActa & { id: string; reunionId: string; estado: "borrador" | "aprobada"; aprobadaEn: string | null };
+export type PropuestaActaPanel = ActaPropuesta & { aviso?: string };
+export type FiltroActas = { texto?: string; territorioId?: string; desde?: string; hasta?: string };
+export type ResultadoActa = { reunionId: string; actaId: string; titulo: string; fecha: string; territorio: string | null; temas: string[]; extracto: string };
+export type ResumenReunionesZona = {
+  territorioId: string | null; reuniones30d: number; actasAprobadas: number; actasPorAprobar: number;
+  compromisosVencidos: number; asistentesComunidad: number; temas: string[];
+};
+export type PersonaEquipo = { usuarioId: string; nombre: string; rol: RolCampana };
 
 export type ErrorAgrupado = { mensaje: string; veces: number; personas: number; ultima: string; ruta: string; version: string; pila: string };
 export type FiltroAuditoria = { accion?: string; desde?: string; hasta?: string; antes?: number };

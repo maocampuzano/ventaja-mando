@@ -48,4 +48,10 @@ describe("pantalla Hoy", () => {
     expect(saludo(new Date("2027-03-01T20:00:00Z"))).toBe("Buenas tardes"); // 3:00 p. m.
     expect(saludo(new Date("2027-03-02T01:00:00Z"))).toBe("Buenas noches"); // 8:00 p. m.
   });
+
+  it("avisa de actas por aprobar y compromisos de reuniones vencidos", () => {
+    const r = armarHoy({ zonas: [], lideres: [], puestos: [] }, { actasPorAprobar: 2, compromisosVencidos: 1 });
+    expect(r.pendientes.map((p) => [p.id, p.vista, p.titulo])).toEqual([["actas", "reuniones", "Aprobar 2 actas de reuniones"]]);
+    expect(r.avisos.map((a) => a.texto)).toEqual(["1 compromiso de reunión está vencido y sin cumplir."]);
+  });
 });

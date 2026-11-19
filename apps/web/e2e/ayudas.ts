@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 // El menú va por secciones (Hoy, Mi gente, Contactar, Cuentas, Día E, Cumplimiento) y, dentro de cada una, pestañas.
 const seccionDe: Record<string, string> = {
   "Mapa y asesor": "Hoy",
-  Líderes: "Mi gente", Equipo: "Mi gente", Importar: "Mi gente", Formularios: "Mi gente", Planillas: "Mi gente",
+  Líderes: "Mi gente", Equipo: "Mi gente", Importar: "Mi gente", Formularios: "Mi gente", Planillas: "Mi gente", Reuniones: "Mi gente",
   Mensajes: "Contactar", Llamadas: "Contactar",
 };
 
