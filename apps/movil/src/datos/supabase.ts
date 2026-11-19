@@ -135,6 +135,16 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       };
     },
 
+    async ping() {
+      try {
+        const r = await Promise.race([
+          sb.rpc("ping_movil").then(({ data, error }) => !error && data === true),
+          new Promise<boolean>((ok) => setTimeout(() => ok(false), 8000)),
+        ]);
+        return r;
+      } catch { return false; }
+    },
+
     transporte(s): Transporte {
       const rpc: LlamarRpc = async (f, p) => {
         const { data, error } = await sb.rpc(f, p);

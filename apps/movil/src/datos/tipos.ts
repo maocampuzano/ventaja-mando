@@ -50,4 +50,6 @@ export interface FuenteMovil {
   datosTestigo(s: Sesion): Promise<DatosTestigo>;
   /** Envía la cola: cada operación con su identificador, de forma idempotente. */
   transporte(s: Sesion): Transporte;
+  /** ¿Hay conexión de verdad con el servidor (no solo señal)? Responde en pocos segundos; sin conexión, false. */
+  ping(s: Sesion): Promise<boolean>;
 }

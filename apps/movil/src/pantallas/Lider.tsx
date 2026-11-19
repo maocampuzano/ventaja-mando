@@ -217,8 +217,8 @@ function Planilla() {
           {enviadas.slice().reverse().map((op, i) => (
             <View key={op.id} style={s.fila}>
               <Texto style={{ flex: 1 }}>Hoja {enviadas.length - i}</Texto>
-              <Pildora texto={op.estado === "pendiente" ? "Por enviar" : op.estado === "error" ? "Con problema" : op.estado === "revisado" ? "Revisada" : "En revisión"}
-                tono={op.estado === "pendiente" ? "ambar" : op.estado === "error" ? "rojo" : op.estado === "revisado" ? "verde" : "acento"} />
+              <Pildora texto={op.estado === "pendiente" || op.estado === "enviando" ? "Por enviar" : op.estado === "error" ? "Con problema" : op.estado === "revisado" ? "Revisada" : "En revisión"}
+                tono={op.estado === "pendiente" || op.estado === "enviando" ? "ambar" : op.estado === "error" ? "rojo" : op.estado === "revisado" ? "verde" : "acento"} />
             </View>
           ))}
         </Tarjeta>

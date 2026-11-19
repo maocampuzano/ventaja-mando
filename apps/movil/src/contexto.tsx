@@ -1,16 +1,19 @@
 // Estado de la app: sesión, cola de sincronización (en SQLite) y la copia local de lo que el usuario ve.
 // La cola se intenta enviar al abrir, cada 20 segundos y cada vez que vuelve la señal.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import * as Crypto from "expo-crypto";
 import { ColaSincronizacion, ErrorDeRed, type EstadoOperacion, type Operacion, type TipoOperacion } from "@ventaja/nucleo";
 import type { AlmacenLocal } from "./datos/almacenLocal";
 import { borrarArchivo } from "./datos/archivos";
+import { activarSegundoPlano } from "./segundoPlano";
 import { depurarEnviada, fotosParaBorrar } from "./datos/depurar";
 import type { DatosLider, DatosTestigo, FuenteMovil, Sesion } from "./datos/tipos";
 
 type Conteo = Record<EstadoOperacion, number>;
+/** Estado de la conexión con el servidor, para mostrarlo: conectado, sin conexión o enviando. */
+export type Conexion = "conectado" | "sin_conexion" | "sincronizando";
 
 type ContextoApp = {
   fuente: FuenteMovil;
@@ -18,6 +21,7 @@ type ContextoApp = {
   conteo: Conteo;
   operaciones: Operacion[];
   enviando: boolean;
+  conexion: Conexion;
   ultimaSincronizacion: number | null;
   datosLider: DatosLider | null;
   datosTestigo: DatosTestigo | null;
@@ -54,7 +58,8 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
     } };
     return new ColaSincronizacion(almacen, transporte, () => Crypto.randomUUID(), Date.now, depurarEnviada);
   }, [almacen, fuente, sesion]);
-  const [conteo, setConteo] = useState<Conteo>({ pendiente: 0, enviado: 0, revisado: 0, error: 0 });
+  const [conteo, setConteo] = useState<Conteo>({ pendiente: 0, enviando: 0, enviado: 0, revisado: 0, error: 0 });
+  const [conexion, setConexion] = useState<Conexion>("conectado");
   const [operaciones, setOperaciones] = useState<Operacion[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [ultima, setUltima] = useState<number | null>(null);
@@ -92,14 +97,25 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
 
   const sincronizar = useCallback(async (forzar = false) => {
     setEnviando(true);
+    // Mientras envía, la pantalla se actualiza seguido para que la barra de progreso avance foto por foto.
+    const avance = setInterval(() => { refrescarCola().catch(() => undefined); }, 700);
     try {
+      const pendientes = (await cola.operaciones()).some((o) => o.estado === "pendiente" || o.estado === "enviando");
+      // Antes de enviar, se comprueba que el servidor responde de verdad (no basta con tener señal).
+      if (pendientes && !(await fuente.ping(sesion))) {
+        if (vivo.current) setConexion("sin_conexion");
+        return;
+      }
+      if (vivo.current) setConexion("sincronizando");
       const r = await cola.sincronizar({ forzar });
+      if (vivo.current) setConexion(r.sinSenal ? "sin_conexion" : "conectado");
       if (!r.sinSenal) { setUltima(Date.now()); await recargar().catch(() => undefined); }
     } finally {
+      clearInterval(avance);
       await refrescarCola();
       if (vivo.current) setEnviando(false);
     }
-  }, [cola, recargar, refrescarCola]);
+  }, [cola, recargar, refrescarCola, fuente, sesion]);
 
   useEffect(() => {
     vivo.current = true;
@@ -111,11 +127,21 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
     const estado = AppState.addEventListener("change", (s) => { if (s === "active") sincronizar(true); });
     // Lo revisado hace más de 30 días ya no hace falta en el teléfono.
     almacen.limpiarRevisadas(Date.now() - 30 * 86_400_000).catch(() => undefined);
+    // Las fotos del E-14 se quedan en el teléfono hasta 7 días después de que el servidor confirmó que las recibió.
+    almacen.todas().then(async (ops) => {
+      for (const o of ops) {
+        const foto = (o.datos as { foto?: string }).foto;
+        if (o.tipo === "e14" && (o.estado === "enviado" || o.estado === "revisado") && o.creadaEn < Date.now() - 7 * 86_400_000
+            && foto && /^file:/.test(foto)) await borrarArchivo(foto);
+      }
+    }).catch(() => undefined);
+    // En el teléfono, el envío sigue cada 20 minutos aunque la app esté cerrada (Android decide el momento exacto).
+    if (Platform.OS !== "web") activarSegundoPlano().catch(() => undefined);
     return () => { vivo.current = false; clearInterval(intervalo); red(); estado.remove(); };
   }, [sincronizar, refrescarCola, recargar, almacen]);
 
   const valor: ContextoApp = {
-    fuente, sesion, conteo, operaciones, enviando, ultimaSincronizacion: ultima, datosLider, datosTestigo, copiaDe,
+    fuente, sesion, conteo, operaciones, enviando, conexion, ultimaSincronizacion: ultima, datosLider, datosTestigo, copiaDe,
     async agregar(tipo, datos) {
       const op = await cola.agregar(tipo, datos);
       await refrescarCola();

@@ -24,11 +24,12 @@ const hora = (ms: number) => new Intl.DateTimeFormat("es-CO", { timeZone: "Ameri
 /** Franja de arriba: siempre visible, dice si hay algo esperando señal. Al tocarla abre el detalle. */
 export function FranjaSincronizacion({ alAbrir }: { alAbrir: () => void }) {
   const { conteo, enviando, copiaDe } = useApp();
-  const tono = conteo.error ? color.rojo : conteo.pendiente ? color.ambar : color.verde;
+  const porEnviar = conteo.pendiente + conteo.enviando;
+  const tono = conteo.error ? color.rojo : porEnviar ? color.ambar : color.verde;
   const texto = conteo.error
     ? `${conteo.error} con problema: toque para revisar`
-    : conteo.pendiente
-      ? `${conteo.pendiente} esperando señal para enviarse`
+    : porEnviar
+      ? `${porEnviar} esperando señal para enviarse`
       : enviando ? "Enviando…" : "Todo enviado";
   return (
     <Pressable onPress={alAbrir} accessibilityRole="button" accessibilityLabel={`Sincronización: ${texto}`} style={[s.franja, { borderColor: tono }]}>
@@ -42,7 +43,7 @@ export function FranjaSincronizacion({ alAbrir }: { alAbrir: () => void }) {
 export function Sincronizacion({ alCerrar, alCorregir }: { alCerrar: () => void; alCorregir: (op: Operacion) => void }) {
   const { operaciones, conteo, sincronizar, enviando, descartar, ultimaSincronizacion } = useApp();
   const conError = operaciones.filter((o) => o.estado === "error");
-  const pendientes = operaciones.filter((o) => o.estado === "pendiente");
+  const pendientes = operaciones.filter((o) => o.estado === "pendiente" || o.estado === "enviando");
   const recientes = operaciones.filter((o) => o.estado === "enviado" || o.estado === "revisado").slice(-30).reverse();
 
   function confirmarDescartar(op: Operacion) {
@@ -56,7 +57,7 @@ export function Sincronizacion({ alCerrar, alCorregir }: { alCerrar: () => void;
         <Pressable onPress={alCerrar} accessibilityRole="button" hitSlop={12}><Text style={{ color: color.acento, fontSize: 16 }}>Cerrar</Text></Pressable>
       </View>
       <Tenue>
-        {conteo.pendiente} por enviar · {conteo.enviado} enviados · {conteo.revisado} revisados
+        {conteo.pendiente + conteo.enviando} por enviar · {conteo.enviado} enviados · {conteo.revisado} revisados
         {ultimaSincronizacion ? ` · última vez a las ${hora(ultimaSincronizacion)}` : ""}
       </Tenue>
       <Boton titulo="Enviar ahora" alPresionar={() => sincronizar(true)} ocupado={enviando} tipo="secundario" />
@@ -83,7 +84,7 @@ export function Sincronizacion({ alCerrar, alCorregir }: { alCerrar: () => void;
           {pendientes.map((op) => (
             <View key={op.id} style={s.fila}>
               <Texto style={{ flex: 1 }}>{NOMBRE[op.tipo]}: {resumen(op)}</Texto>
-              <Pildora texto="Pendiente" tono="ambar" />
+              <Pildora texto={op.estado === "enviando" ? "Enviando" : "Pendiente"} tono={op.estado === "enviando" ? "acento" : "ambar"} />
             </View>
           ))}
         </View>
