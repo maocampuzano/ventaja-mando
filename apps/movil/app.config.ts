@@ -33,7 +33,10 @@ const config: ExpoConfig = {
       microphonePermission: false,
     }],
   ],
+  // Proyecto de Expo donde se compila la APK (EAS Build). No es una clave: solo identifica el proyecto.
+  owner: "maocampuzano17",
   extra: {
+    eas: { projectId: "d7c731af-6984-4fe9-9f1c-d559a17528eb" },
     modoDatos: supabase ? "supabase" : "demo",
     supabaseUrl: url,
     supabasePublishableKey: supabase ? process.env.SUPABASE_PUBLISHABLE_KEY ?? "" : "",
