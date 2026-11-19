@@ -70,3 +70,28 @@ test("la app no deja entrar con cuentas que no son del demo", async ({ page }) =
   await entrar(page, "alguien@ejemplo.co");
   await expect(page.getByText(/entre con lider@demo.co o testigo@demo.co/)).toBeVisible();
 });
+
+test("en el navegador, lo registrado sin señal sobrevive a recargar la página y se envía después", async ({ page }) => {
+  await entrar(page, "lider@demo.co");
+  await expect(page.getByText("Hola, Yesenia")).toBeVisible();
+  await page.getByLabel("Simular sin señal").click();
+  await page.getByRole("tab", { name: "Registrar" }).click();
+  await page.getByLabel("Nombre completo").fill("Pedro Ficticio Recarga");
+  await page.getByRole("checkbox", { name: /Contacto de la campaña/ }).click();
+  await page.getByRole("checkbox", { name: /aceptó/ }).click();
+  await page.getByRole("button", { name: "Guardar registro" }).click();
+  await expect(page.getByText("1 esperando señal para enviarse")).toBeVisible();
+
+  await page.reload();
+  // La sesión y la cola siguen ahí: al recargar vuelve la señal del simulador y el registro se envía.
+  await expect(page.getByText("Hola, Yesenia")).toBeVisible();
+  await page.getByRole("button", { name: /Sincronización/ }).click();
+  await expect(page.getByText(/Pedro Ficticio Recarga/)).toBeVisible({ timeout: 10_000 });
+});
+
+test("en el navegador ofrece ponerla en la pantalla de inicio y se puede cerrar", async ({ page }) => {
+  await entrar(page, "lider@demo.co");
+  await expect(page.getByLabel("Instalar Comando")).toBeVisible();
+  await page.getByRole("button", { name: "Ahora no" }).click();
+  await expect(page.getByLabel("Instalar Comando")).toHaveCount(0);
+});

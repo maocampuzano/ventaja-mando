@@ -47,6 +47,8 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabase ? env.SUPABASE_PUBLISHABLE_KEY ?? "" : ""),
       "import.meta.env.VITE_MAPTILER_KEY": JSON.stringify(env.MAPTILER_KEY ?? ""),
       "import.meta.env.VITE_RUTA_MAPLIBRE": JSON.stringify(RUTA_MAPLIBRE),
+      // La web del líder y del testigo (apps/movil exportada para el navegador).
+      "import.meta.env.VITE_URL_APP_LIDER": JSON.stringify(env.URL_APP_LIDER || "https://app.ventaja-mando-prueba.pages.dev"),
     },
   };
 });

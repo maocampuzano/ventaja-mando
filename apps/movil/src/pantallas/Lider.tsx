@@ -9,6 +9,7 @@ import {
 } from "@ventaja/nucleo";
 import { Aviso, Barra, Boton, Campo, Casilla, Pildora, Subtitulo, Tarjeta, Tenue, Texto, Titulo } from "../componentes";
 import { useApp } from "../contexto";
+import { guardarFoto } from "../datos/archivos";
 import type { PersonaMovil, TareaMovil } from "../datos/tipos";
 import { formularioVacio, validarRegistro, type FormularioRegistro } from "../registro";
 import { color, espacio, radio } from "../tema";
@@ -20,7 +21,8 @@ export async function tomarFoto(): Promise<string | null> {
   const permiso = await ImagePicker.requestCameraPermissionsAsync();
   if (!permiso.granted) return null;
   const r = await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: false, exif: false });
-  return r.canceled ? null : r.assets[0]?.uri ?? null;
+  const uri = r.canceled ? null : r.assets[0]?.uri ?? null;
+  return uri ? guardarFoto(uri) : null;
 }
 
 export function Lider({ pestana, irA, corrigiendo, alTerminarCorreccion }: {

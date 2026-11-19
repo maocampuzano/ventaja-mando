@@ -154,9 +154,16 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
   const contenido = useMemo(() => {
     if (error) return <div className="pagina"><p className="error" role="alert">{error}</p></div>;
     if (!datos) return <div className="pagina"><p className="tenue">Cargando el tablero…</p></div>;
-    // En el proyecto real, líder y testigo trabajan en la app del celular (fase 3), no en el panel.
+    // En el proyecto real, líder y testigo trabajan en su espacio del celular (una web que se instala), no en el panel.
     if (fuente.modo === "supabase" && (sesion.rol === "lider" || sesion.rol === "testigo")) {
-      return <div className="pagina"><h1>Su espacio está en el celular</h1><p className="tenue">La app del líder y del testigo llega en la fase 3. Mientras tanto, su coordinador le asigna las tareas.</p></div>;
+      return (
+        <div className="pagina">
+          <h1>Su espacio está en el celular</h1>
+          <p className="tenue">Abra este enlace en su celular y entre con el mismo correo y contraseña. Allí puede ponerlo en la pantalla de inicio: se abre como una aplicación y funciona sin señal.</p>
+          <p style={{ marginTop: 12 }}><a className="btn btn-primario" href={import.meta.env.VITE_URL_APP_LIDER}>Abrir mi espacio</a></p>
+          <p className="tenue" style={{ marginTop: 8 }}>{import.meta.env.VITE_URL_APP_LIDER}</p>
+        </div>
+      );
     }
     return null;
   }, [error, datos, sesion.rol]);
