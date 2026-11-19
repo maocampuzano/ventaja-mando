@@ -98,5 +98,6 @@ export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & {
       };
     },
     transporte: () => transporteDemo(servidor),
+    async ping() { return !servidor.sinSenal; },
   };
 }

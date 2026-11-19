@@ -2,9 +2,11 @@
 // cola. El E-14 lo revisa una persona de la campaña antes de consolidarse (regla 7); la app no lo lee.
 import { useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import type { DatosE14Movil, DatosNovedadMovil } from "@ventaja/nucleo";
-import { Aviso, Boton, Campo, Pildora, Subtitulo, Tarjeta, Tenue, Texto, Titulo } from "../componentes";
-import { useApp } from "../contexto";
+import * as ImagePicker from "expo-image-picker";
+import type { DatosE14Movil, DatosNovedadMovil, Operacion } from "@ventaja/nucleo";
+import { Aviso, Barra, Boton, Campo, Pildora, Subtitulo, Tarjeta, Tenue, Texto, Titulo } from "../componentes";
+import { useApp, type Conexion } from "../contexto";
+import { guardarFoto, huellaFoto } from "../datos/archivos";
 import type { MesaTestigo } from "../datos/tipos";
 import { color, espacio, radio } from "../tema";
 import { tomarFoto } from "./Lider";
@@ -33,6 +35,7 @@ export function Testigo() {
         <Titulo>Hola, {sesion.nombre.split(" ")[0]}</Titulo>
         <Tenue>{datosTestigo ? (mesas.length ? "Su mesa de hoy" : "Todavía no tiene mesa asignada. Su coordinador se la asigna.") : "Cargando su mesa…"}</Tenue>
       </View>
+      <ProgresoE14 />
       {mesas.map((m) => <Mesa key={`${m.puestoId}-${m.mesa}`} m={m} />)}
     </ScrollView>
   );
@@ -46,7 +49,8 @@ function Mesa({ m }: { m: MesaTestigo }) {
   };
   const novedadesLocales = operaciones.filter((o) => o.tipo === "novedad" && de(o) && o.estado !== "revisado");
   const aperturaLocal = novedadesLocales.some((o) => (o.datos as DatosNovedadMovil).tipo === "apertura");
-  const e14Local = operaciones.find((o) => o.tipo === "e14" && de(o));
+  const e14Locales = operaciones.filter((o) => o.tipo === "e14" && de(o));
+  const [error, setError] = useState("");
   const abierta = m.estado === "en_mesa" || aperturaLocal;
   const [tipo, setTipo] = useState<(typeof TIPOS)[number] | null>(null);
   const [descripcion, setDescripcion] = useState("");
@@ -57,10 +61,35 @@ function Mesa({ m }: { m: MesaTestigo }) {
     } satisfies DatosNovedadMovil);
   }
 
-  async function subirE14() {
+  /** Guarda cada foto en la cola con su huella. Si es la misma imagen que ya está en el teléfono, no la repite. */
+  async function guardarE14(uris: string[]) {
     if (m.mesa === null) return;
+    setError("");
+    const yaEstan = new Set(operaciones.filter((o) => o.tipo === "e14").map((o) => (o.datos as DatosE14Movil).hash).filter(Boolean));
+    let repetidas = 0;
+    for (const uri of uris) {
+      const hash = await huellaFoto(uri);
+      if (hash && yaEstan.has(hash)) { repetidas++; continue; }
+      if (hash) yaEstan.add(hash);
+      await agregar("e14", { campana: sesion.campanaId, puesto: m.puestoId, mesa: m.mesa, foto: uri, hash } satisfies DatosE14Movil);
+    }
+    if (repetidas) setError(repetidas === 1 ? "Esa foto ya estaba guardada: no se repite." : `${repetidas} fotos ya estaban guardadas: no se repiten.`);
+  }
+
+  async function tomarE14() {
     const uri = await tomarFoto();
-    if (uri) await agregar("e14", { campana: sesion.campanaId, puesto: m.puestoId, mesa: m.mesa, foto: uri } satisfies DatosE14Movil);
+    if (uri) await guardarE14([uri]);
+  }
+
+  async function elegirE14() {
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: true, selectionLimit: 10, quality: 1, exif: false });
+    if (r.canceled) return;
+    const uris: string[] = [];
+    for (const a of r.assets) {
+      if (a.mimeType && !/^image\/(jpeg|png)$/.test(a.mimeType)) { setError("Solo se aceptan fotos (JPG o PNG) del E-14."); continue; }
+      uris.push(await guardarFoto(a.uri));
+    }
+    await guardarE14(uris);
   }
 
   async function reportar() {
@@ -91,20 +120,22 @@ function Mesa({ m }: { m: MesaTestigo }) {
       </Tarjeta>
 
       <Tarjeta>
-        <Subtitulo>2. Foto del E-14</Subtitulo>
-        {m.e14Recibido || e14Local ? (
-          <>
-            {e14Local && <Image source={{ uri: (e14Local.datos as DatosE14Movil).foto }} style={s.foto} accessibilityLabel="Foto del E-14" />}
-            <Pildora texto={e14Local?.estado === "pendiente" ? "Por enviar" : e14Local?.estado === "error" ? "Con problema" : "Recibido"}
-              tono={e14Local?.estado === "pendiente" ? "ambar" : e14Local?.estado === "error" ? "rojo" : "verde"} />
-            <Tenue>La campaña revisa cada E-14 antes de sumarlo. Es un conteo interno, no el resultado oficial.</Tenue>
-          </>
-        ) : (
-          <>
-            <Tenue>Al terminar el escrutinio de la mesa: foto de frente, con todo el formulario visible y legible.</Tenue>
-            <Boton titulo="Tomar foto del E-14" alPresionar={subirE14} deshabilitado={m.mesa === null} />
-          </>
-        )}
+        <Subtitulo>2. Fotos del E-14</Subtitulo>
+        <Tenue>Al terminar el escrutinio: foto de frente, con todo el formulario visible y legible. Si el E-14 tiene varias hojas, tome una foto por hoja. Sin señal quedan guardadas en el teléfono y se envían solas.</Tenue>
+        {m.e14Recibido && !e14Locales.length && <Pildora texto="Recibido" tono="verde" />}
+        {e14Locales.map((o, i) => (
+          <View key={o.id} style={s.fotoFila}>
+            <Image source={{ uri: (o.datos as DatosE14Movil).foto }} style={s.miniatura} accessibilityLabel={`Foto ${i + 1} del E-14`} />
+            <Texto style={{ flex: 1 }}>Foto {i + 1}</Texto>
+            <EstadoFoto op={o} />
+          </View>
+        ))}
+        {error ? <Aviso>{error}</Aviso> : null}
+        <View style={{ flexDirection: "row", gap: espacio.s }}>
+          <View style={{ flex: 1 }}><Boton titulo="Tomar foto" alPresionar={tomarE14} deshabilitado={m.mesa === null} /></View>
+          <View style={{ flex: 1 }}><Boton titulo="Elegir de la galería" tipo="secundario" alPresionar={elegirE14} deshabilitado={m.mesa === null} /></View>
+        </View>
+        <Tenue>La campaña revisa cada E-14 antes de sumarlo. Es un conteo interno, no el resultado oficial.</Tenue>
       </Tarjeta>
 
       <Tarjeta>
@@ -154,9 +185,51 @@ function Mesa({ m }: { m: MesaTestigo }) {
 
 const s = StyleSheet.create({
   foto: { width: "100%", aspectRatio: 3 / 4, borderRadius: radio.m, backgroundColor: color.panel2 },
+  fotoFila: { flexDirection: "row", alignItems: "center", gap: espacio.m, paddingVertical: espacio.xs },
+  miniatura: { width: 48, height: 64, borderRadius: radio.s, backgroundColor: color.panel2 },
   opcion: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: espacio.s, minHeight: 48,
     paddingHorizontal: espacio.m, borderRadius: radio.m, borderWidth: 1, borderColor: color.linea,
   },
   fila: { flexDirection: "row", alignItems: "center", gap: espacio.s, paddingVertical: espacio.s, borderBottomWidth: 1, borderBottomColor: color.linea },
 });
+
+function EstadoFoto({ op }: { op: Operacion }) {
+  const e = op.estado;
+  return <Pildora texto={e === "pendiente" ? "Pendiente" : e === "enviando" ? "Enviando" : e === "error" ? "Error" : "Enviada"}
+    tono={e === "pendiente" ? "ambar" : e === "enviando" ? "acento" : e === "error" ? "rojo" : "verde"} />;
+}
+
+const TEXTO_CONEXION: Record<Conexion, { texto: string; tono: "verde" | "rojo" | "acento" }> = {
+  conectado: { texto: "Conectado", tono: "verde" }, sin_conexion: { texto: "Sin conexión", tono: "rojo" }, sincronizando: { texto: "Sincronizando", tono: "acento" },
+};
+
+/** Cuántas fotos del E-14 hay, cuántas llegaron y cuántas faltan, con la barra y el estado de la conexión. */
+function ProgresoE14() {
+  const { operaciones, conexion, enviando, sincronizar } = useApp();
+  const fotos = operaciones.filter((o) => o.tipo === "e14");
+  if (!fotos.length) return null;
+  const enviadas = fotos.filter((o) => o.estado === "enviado" || o.estado === "revisado").length;
+  const conError = fotos.filter((o) => o.estado === "error").length;
+  const pendientes = fotos.length - enviadas - conError;
+  const avance = enviadas / fotos.length;
+  const c = TEXTO_CONEXION[enviando && conexion !== "sin_conexion" ? "sincronizando" : conexion];
+  return (
+    <Tarjeta>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Subtitulo>Envío de los E-14</Subtitulo>
+        <Pildora texto={c.texto} tono={c.tono} />
+      </View>
+      <Text style={{ color: color.texto, fontSize: 30, fontWeight: "700" }} accessibilityLabel={`Avance ${Math.round(avance * 100)} por ciento`}>{Math.round(avance * 100)} %</Text>
+      <Barra valor={avance} />
+      <View style={{ flexDirection: "row", gap: espacio.l }}>
+        <Tenue>{fotos.length} en total</Tenue>
+        <Tenue>{enviadas} enviadas</Tenue>
+        <Tenue>{pendientes} pendientes</Tenue>
+        {conError ? <Text style={{ color: color.rojo }}>{conError} con error</Text> : null}
+      </View>
+      {pendientes > 0 && <Boton titulo="Enviar ahora" tipo="secundario" ocupado={enviando} alPresionar={() => sincronizar(true)} />}
+      {pendientes > 0 && <Tenue>Si no hay señal, el teléfono lo vuelve a intentar solo, también cada 20 minutos con la app cerrada.</Tenue>}
+    </Tarjeta>
+  );
+}

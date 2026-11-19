@@ -47,7 +47,7 @@ describe("almacén SQLite de la cola", () => {
     await cola2.sincronizar();
     await cola2.sincronizar();
     expect(servidor.size).toBe(12);
-    expect(await cola2.conteo()).toEqual({ pendiente: 0, enviado: 12, revisado: 0, error: 0 });
+    expect(await cola2.conteo()).toEqual({ pendiente: 0, enviando: 0, enviado: 12, revisado: 0, error: 0 });
     expect((await cola2.operaciones())[10].datos).toEqual({ archivo: "file:///planilla-1.jpg" });
   });
 

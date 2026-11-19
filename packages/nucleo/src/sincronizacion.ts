@@ -5,7 +5,8 @@
 // (Supabase) se inyectan, para poder probar todo sin teléfono ni red.
 
 export type TipoOperacion = "persona" | "planilla" | "respuesta" | "novedad" | "e14" | "tarea";
-export type EstadoOperacion = "pendiente" | "enviado" | "revisado" | "error";
+/** «enviando»: se está enviando ahora. Si la app se cierra a mitad, al volver cuenta como pendiente. */
+export type EstadoOperacion = "pendiente" | "enviando" | "enviado" | "revisado" | "error";
 
 export type Operacion<D = unknown> = {
   id: string;
@@ -103,9 +104,15 @@ export class ColaSincronizacion {
 
   private async vuelta(forzar: boolean): Promise<Resumen> {
     const r: Resumen = { enviadas: 0, yaEstaban: 0, pendientes: 0, errores: 0, sinSenal: false };
-    for (const op of await this.operaciones()) {
+    for (const leida of await this.operaciones()) {
+      // Una sola vuelta corre a la vez: lo que esté «enviando» al empezar quedó así porque la app se cerró a mitad.
+      const op: Operacion = leida.estado === "enviando" ? { ...leida, estado: "pendiente" } : leida;
       if (op.estado !== "pendiente") continue;
-      if (r.sinSenal || (!forzar && op.proximoIntento > this.ahora())) { r.pendientes++; continue; }
+      if (r.sinSenal || (!forzar && op.proximoIntento > this.ahora())) {
+        if (leida.estado === "enviando") await this.almacen.guardar(op);
+        r.pendientes++; continue;
+      }
+      await this.almacen.guardar({ ...op, estado: "enviando" });
       try {
         const res = await this.transporte.enviar(op);
         await this.almacen.guardar({ ...op, datos: this.depurar(op), estado: "enviado", intentos: op.intentos + 1, ultimoError: undefined });
@@ -150,7 +157,7 @@ export class ColaSincronizacion {
 
   /** Para la pantalla: cuántas hay en cada estado. */
   async conteo(): Promise<Record<EstadoOperacion, number>> {
-    const c: Record<EstadoOperacion, number> = { pendiente: 0, enviado: 0, revisado: 0, error: 0 };
+    const c: Record<EstadoOperacion, number> = { pendiente: 0, enviando: 0, enviado: 0, revisado: 0, error: 0 };
     for (const o of await this.almacen.todas()) c[o.estado]++;
     return c;
   }
@@ -183,7 +190,8 @@ export type DatosNovedadMovil = {
   campana: string; puesto: string; mesa: number | null; tipo: string; descripcion?: string | null;
   prioridad?: "alta" | "media" | "baja"; evidencia?: string | null;
 };
-export type DatosE14Movil = { campana: string; puesto: string; mesa: number; foto: string };
+/** `hash`: huella del archivo de la foto, para que la misma imagen no cree dos actas. */
+export type DatosE14Movil = { campana: string; puesto: string; mesa: number; foto: string; hash?: string | null };
 export type DatosTareaMovil = { tarea: string; estado: "en_curso" | "hecha" };
 
 /** Códigos de Postgres que significan «el servidor dijo que no»: reintentar no lo arregla. */
@@ -212,7 +220,7 @@ function llamada(op: Operacion): [string, Record<string, unknown>] {
     }
     case "e14": {
       const d = op.datos as DatosE14Movil;
-      return ["registrar_e14_movil", { p_id: op.id, p_campana: d.campana, p_puesto: d.puesto, p_mesa: d.mesa, p_foto: d.foto }];
+      return ["registrar_e14_movil", { p_id: op.id, p_campana: d.campana, p_puesto: d.puesto, p_mesa: d.mesa, p_foto: d.foto, p_hash: d.hash ?? null }];
     }
     case "tarea": {
       const d = op.datos as DatosTareaMovil;

@@ -3,29 +3,20 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import Constants from "expo-constants";
 import type { Operacion } from "@ventaja/nucleo";
 import { confirmar, Tenue } from "./componentes";
 import { ProveedorApp, useApp } from "./contexto";
 import { abrirAlmacen } from "./datos/abrirBase";
 import type { AlmacenLocal } from "./datos/almacenLocal";
 import { crearFuenteDemo } from "./datos/demo";
-import { crearFuenteSupabase } from "./datos/supabase";
-import type { FuenteMovil, Sesion } from "./datos/tipos";
+import { crearFuente } from "./datos/crearFuente";
+import type { Sesion } from "./datos/tipos";
 import { InicioSesion } from "./pantallas/InicioSesion";
 import { Lider, type PestanaLider } from "./pantallas/Lider";
 import { FranjaSincronizacion, Sincronizacion } from "./pantallas/Sincronizacion";
 import { Testigo } from "./pantallas/Testigo";
 import { color, espacio } from "./tema";
 import { InstalarApp } from "./InstalarApp";
-
-type Extra = { modoDatos?: string; supabaseUrl?: string; supabasePublishableKey?: string };
-
-function crearFuente(): FuenteMovil {
-  const x = (Constants.expoConfig?.extra ?? {}) as Extra;
-  if (x.modoDatos === "supabase" && x.supabaseUrl && x.supabasePublishableKey) return crearFuenteSupabase(x.supabaseUrl, x.supabasePublishableKey);
-  return crearFuenteDemo();
-}
 
 export default function App() {
   const fuente = useMemo(crearFuente, []);
@@ -68,15 +59,15 @@ function Espacio() {
   const [corrigiendo, setCorrigiendo] = useState<Operacion | null>(null);
 
   function salir() {
-    const sinEnviar = conteo.pendiente + conteo.error;
-    confirmar(
-      "¿Cerrar sesión?",
-      sinEnviar
-        ? `Tiene ${sinEnviar} registros sin enviar en este teléfono. Si cierra sesión ahora, se pierden.`
-        : "Se borra del teléfono la información de la campaña.",
-      "Cerrar sesión",
-      cerrarSesion,
-    );
+    // Lo que no ha llegado al servidor no se pierde por cerrar sesión: primero se envía o se descarta a propósito.
+    const sinEnviar = conteo.pendiente + conteo.enviando + conteo.error;
+    if (sinEnviar) {
+      confirmar("Todavía no puede cerrar sesión",
+        `Tiene ${sinEnviar} ${sinEnviar === 1 ? "registro" : "registros"} sin enviar en este teléfono. Envíelos (o descarte los que tengan problema) y luego cierre sesión.`,
+        "Ver envíos", () => setVerEnvios(true));
+      return;
+    }
+    confirmar("¿Cerrar sesión?", "Se borra del teléfono la información de la campaña.", "Cerrar sesión", cerrarSesion);
   }
 
   return (

@@ -1,6 +1,8 @@
 import { Platform } from "react-native";
 import { registerRootComponent } from "expo";
 import App from "./src/App";
+// Define la tarea de envío en segundo plano al arrancar (también cuando Android despierta la app sin pantalla).
+import "./src/segundoPlano";
 
 registerRootComponent(App);
 

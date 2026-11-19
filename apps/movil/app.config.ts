@@ -20,6 +20,7 @@ const config: ExpoConfig = {
   web: { favicon: "./assets/favicon.png" },
   plugins: [
     "expo-sqlite",
+    "expo-background-task",
     ["expo-image-picker", {
       cameraPermission: "Comando usa la cámara para tomar la foto de las planillas, del E-14 y de la autorización firmada.",
       photosPermission: false,

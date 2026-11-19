@@ -18,3 +18,12 @@ export async function guardarFoto(uri: string): Promise<string> {
   lienzo.getContext("2d")!.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
   return lienzo.toDataURL("image/jpeg", 0.8);
 }
+
+/** Huella de la foto (SHA-256 de su contenido): la misma imagen siempre da la misma huella. */
+export async function huellaFoto(uri: string): Promise<string | null> {
+  try {
+    const bytes = await (await fetch(uri)).arrayBuffer();
+    const h = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch { return null; }
+}

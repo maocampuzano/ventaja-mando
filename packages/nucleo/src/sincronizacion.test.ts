@@ -57,7 +57,7 @@ describe("cola de sincronización", () => {
 
     expect(servidor.personas.size).toBe(10);
     expect(servidor.planillas.size).toBe(2);
-    expect(await otra.conteo()).toEqual({ pendiente: 0, enviado: 12, revisado: 0, error: 0 });
+    expect(await otra.conteo()).toEqual({ pendiente: 0, enviando: 0, enviado: 12, revisado: 0, error: 0 });
   });
 
   it("el reintento de algo que ya llegó no duplica: el servidor responde «ya_estaba»", async () => {
@@ -150,7 +150,7 @@ describe("cola de sincronización", () => {
     await cola.sincronizar();
     servidor.revisados.add(a.id);
     await cola.sincronizar();
-    expect(await cola.conteo()).toEqual({ pendiente: 0, enviado: 1, revisado: 1, error: 0 });
+    expect(await cola.conteo()).toEqual({ pendiente: 0, enviando: 0, enviado: 1, revisado: 1, error: 0 });
   });
 
   it("el líder puede descartar lo rechazado; lo pendiente no se descarta", async () => {
@@ -194,5 +194,45 @@ describe("transporte a Supabase", () => {
     await expect(con({ data: null, error: { code: "57014", message: "timeout" } }).enviar(p)).rejects.toBeInstanceOf(ErrorDeRed);
     await expect(con({ data: "ya_estaba", error: null }).enviar(p)).resolves.toBe("ya_estaba");
     await expect(con({ data: null, error: null }).enviar(op("respuesta", {}))).rejects.toBeInstanceOf(ErrorDefinitivo);
+  });
+});
+
+describe("APK del E-14: estado «enviando» y huella de la foto", () => {
+  it("mientras se envía, la operación queda «enviando»; si la app se cerró a mitad, la próxima vuelta la retoma", async () => {
+    const servidor = new ServidorFalso();
+    const almacen = new AlmacenEnMemoria();
+    const { cola } = crear(servidor, almacen);
+    let visto: string | undefined;
+    const original = servidor.enviar.bind(servidor);
+    servidor.enviar = async (op) => { visto = (await almacen.todas()).find((o) => o.id === op.id)?.estado; return original(op); };
+    const op = await cola.agregar("e14", { campana: "c", puesto: "p", mesa: 3, foto: "file:///fotos/1.jpg", hash: "abc" });
+    await cola.sincronizar();
+    expect(visto).toBe("enviando");
+    expect((await cola.operaciones())[0].estado).toBe("enviado");
+
+    // Simula el cierre de la app a mitad de un envío: quedó «enviando» en el teléfono.
+    const otra = await cola.agregar("e14", { campana: "c", puesto: "p", mesa: 3, foto: "file:///fotos/2.jpg", hash: "def" });
+    await almacen.guardar({ ...(await almacen.todas()).find((o) => o.id === otra.id)!, estado: "enviando" });
+    expect((await cola.conteo()).enviando).toBe(1);
+    await cola.sincronizar();
+    expect((await cola.operaciones()).map((o) => o.estado)).toEqual(["enviado", "enviado"]);
+    expect(op.id).not.toBe(otra.id);
+  });
+
+  it("sin conexión, lo que estaba «enviando» vuelve a pendiente y no se pierde", async () => {
+    const servidor = new ServidorFalso();
+    const { cola, almacen } = crear(servidor);
+    servidor.conSenal = false;
+    const op = await cola.agregar("e14", { campana: "c", puesto: "p", mesa: 3, foto: "file:///fotos/1.jpg" });
+    await cola.sincronizar();
+    expect((await almacen.todas()).find((o) => o.id === op.id)?.estado).toBe("pendiente");
+  });
+
+  it("el E-14 viaja con su huella a la base", async () => {
+    const llamadas: [string, Record<string, unknown>][] = [];
+    const rpc: LlamarRpc = async (f, p) => { llamadas.push([f, p]); return { data: "creada", error: null }; };
+    await transporteSupabase(rpc).enviar({ id: "x", tipo: "e14", datos: { campana: "c", puesto: "p", mesa: 3, foto: "c/u/x.jpg", hash: "abc123" },
+      estado: "pendiente", intentos: 0, creadaEn: 0, proximoIntento: 0 });
+    expect(llamadas[0]).toEqual(["registrar_e14_movil", { p_id: "x", p_campana: "c", p_puesto: "p", p_mesa: 3, p_foto: "c/u/x.jpg", p_hash: "abc123" }]);
   });
 });
