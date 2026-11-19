@@ -14,16 +14,23 @@ const config: ExpoConfig = {
   userInterfaceStyle: "dark",
   backgroundColor: "#141922",
   icon: "./assets/icon.png",
-  // Identificadores de tienda provisionales: se confirman al crear la cuenta de Expo (V2).
+  // Identificadores de tienda provisionales: se confirman cuando se publique en las tiendas.
   ios: { bundleIdentifier: "co.xyzcreatia.ventajamando", supportsTablet: false },
-  android: { package: "co.xyzcreatia.ventajamando", adaptiveIcon: { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#1F5BFF" } },
+  android: {
+    package: "co.xyzcreatia.ventajamando",
+    adaptiveIcon: { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#1F5BFF" },
+    // Solo la cámara. La galería usa el selector de fotos de Android, que no pide permiso; el micrófono no se usa.
+    permissions: ["android.permission.CAMERA"],
+    blockedPermissions: ["android.permission.RECORD_AUDIO"],
+  },
   web: { favicon: "./assets/favicon.png" },
   plugins: [
     "expo-sqlite",
     "expo-background-task",
     ["expo-image-picker", {
       cameraPermission: "Comando usa la cámara para tomar la foto de las planillas, del E-14 y de la autorización firmada.",
-      photosPermission: false,
+      photosPermission: "Comando abre su galería solo cuando usted elige una foto del E-14 o de una planilla.",
+      microphonePermission: false,
     }],
   ],
   extra: {

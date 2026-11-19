@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import path from "node:path";
 
 async function entrar(page: Page, correo: string) {
   await page.goto("/");
@@ -64,6 +65,25 @@ test("el testigo reporta la apertura y una novedad", async ({ page }) => {
   await expect(page.getByText(/No confronte a nadie/)).toBeVisible();
   await page.getByRole("button", { name: "Enviar novedad" }).click();
   await expect(page.getByText("Todo enviado")).toBeVisible({ timeout: 10_000 });
+});
+
+test("el testigo sube el E-14 desde la galería, ve el avance y la misma foto no se repite", async ({ page }) => {
+  await entrar(page, "testigo@demo.co");
+  await expect(page.getByText("Mesa 3")).toBeVisible();
+  const foto = path.join(__dirname, "../assets/icon.png");
+  const elegir = async () => {
+    const [selector] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Elegir de la galería" }).click()]);
+    await selector.setFiles(foto);
+  };
+  await elegir();
+  await expect(page.getByLabel("Foto 1 del E-14")).toBeVisible();
+  await expect(page.getByText("Envío de los E-14")).toBeVisible();
+  await expect(page.getByText("1 en total")).toBeVisible();
+  await expect(page.getByLabel("Avance 100 por ciento")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("1 enviadas")).toBeVisible();
+  await elegir();
+  await expect(page.getByText("Esa foto ya estaba guardada: no se repite.")).toBeVisible();
+  await expect(page.getByText("1 en total")).toBeVisible();
 });
 
 test("la app no deja entrar con cuentas que no son del demo", async ({ page }) => {

@@ -1,0 +1,19 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "build": {
+    "apk": {
+      "distribution": "internal",
+      "environment": "preview",
+      "autoIncrement": true,
+      "env": { "MODO_DATOS": "supabase" },
+      "android": { "buildType": "apk" }
+    },
+    "apk-demo": {
+      "distribution": "internal",
+      "environment": "development",
+      "autoIncrement": true,
+      "env": { "MODO_DATOS": "demo" },
+      "android": { "buildType": "apk" }
+    }
+  }
+}
