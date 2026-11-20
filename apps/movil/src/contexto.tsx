@@ -79,13 +79,15 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
       if (sesion.rol === "lider") {
         const d = await fuente.datosLider(sesion);
         await copia.escribir(clave, d);
-        if (vivo.current) { setDatosLider(d); setCopiaDe(null); }
+        if (vivo.current) { setDatosLider(d); setCopiaDe(null); setConexion((c) => (c === "sincronizando" ? c : "conectado")); }
       } else {
         const d = await fuente.datosTestigo(sesion);
         await copia.escribir(clave, d);
-        if (vivo.current) { setDatosTestigo(d); setCopiaDe(null); }
+        if (vivo.current) { setDatosTestigo(d); setCopiaDe(null); setConexion((c) => (c === "sincronizando" ? c : "conectado")); }
       }
     } catch (e) {
+      // Si el servidor no responde, se dice aunque no haya nada por enviar (antes quedaba «Conectado» sin señal).
+      if (e instanceof ErrorDeRed && vivo.current) setConexion("sin_conexion");
       const guardada = await copia.leer<DatosLider & DatosTestigo>(clave);
       if (guardada && vivo.current) {
         if (sesion.rol === "lider") setDatosLider(guardada.valor); else setDatosTestigo(guardada.valor);
@@ -107,9 +109,10 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
         if (vivo.current) setConexion("sin_conexion");
         return;
       }
-      if (vivo.current) setConexion("sincronizando");
+      if (pendientes && vivo.current) setConexion("sincronizando");
       const r = await cola.sincronizar({ forzar });
-      if (vivo.current) setConexion(r.sinSenal ? "sin_conexion" : "conectado");
+      // Sin nada por enviar, la cola no habla con el servidor: lo dice recargar(), que sí lo intenta.
+      if (pendientes && vivo.current) setConexion(r.sinSenal ? "sin_conexion" : "conectado");
       if (!r.sinSenal) { setUltima(Date.now()); await recargar().catch(() => undefined); }
     } finally {
       if (avance) clearInterval(avance);
@@ -124,7 +127,10 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
     recargar().catch(() => undefined);
     sincronizar();
     const intervalo = setInterval(() => sincronizar(), 20_000);
-    const red = NetInfo.addEventListener((s) => { if (s.isConnected) sincronizar(true); });
+    const red = NetInfo.addEventListener((s) => {
+      if (s.isConnected) sincronizar(true);
+      else if (s.isConnected === false && vivo.current) setConexion("sin_conexion");
+    });
     const estado = AppState.addEventListener("change", (s) => { if (s === "active") sincronizar(true); });
     // Lo revisado hace más de 30 días ya no hace falta en el teléfono.
     almacen.limpiarRevisadas(Date.now() - 30 * 86_400_000).catch(() => undefined);

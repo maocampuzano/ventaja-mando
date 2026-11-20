@@ -84,6 +84,15 @@ test("el testigo sube el E-14 desde la galería, ve el avance y la misma foto no
   await elegir();
   await expect(page.getByText("Esa foto ya estaba guardada: no se repite.")).toBeVisible();
   await expect(page.getByText("1 en total")).toBeVisible();
+
+  // Sin señal y sin nada por enviar, el envío de los E-14 ya no dice «Conectado».
+  await expect(page.getByText("Conectado")).toBeVisible();
+  await page.getByLabel("Simular sin señal").click();
+  await page.getByRole("button", { name: /Sincronización/ }).click();
+  await page.getByRole("button", { name: "Enviar ahora" }).click();
+  await page.getByRole("button", { name: "Cerrar" }).click();
+  await expect(page.getByText("Sin conexión")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Conectado")).toHaveCount(0);
 });
 
 test("la app no deja entrar con cuentas que no son del demo", async ({ page }) => {
