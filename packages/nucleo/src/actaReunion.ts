@@ -76,3 +76,14 @@ export function redaccionSimulada(notas: string): ActaPropuesta {
     compromisos,
   };
 }
+
+/**
+ * La foto del acta solo puede estar en la carpeta de su reunión: «<campaña>/<reunión>/<archivo>.<jpg|jpeg|png|webp>».
+ * El nombre del archivo no admite «/», «..» ni «%»: así una ruta no puede salirse hacia otra reunión, otra campaña u
+ * otro bucket (la descarga la hace el servidor).
+ */
+const ARCHIVO_ACTA = /^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.(?:jpe?g|png|webp)$/i;
+export function rutaAdjuntoValida(ruta: string, campanaId: string, reunionId: string): boolean {
+  const partes = ruta.split("/");
+  return partes.length === 3 && partes[0] === campanaId && partes[1] === reunionId && ARCHIVO_ACTA.test(partes[2]);
+}

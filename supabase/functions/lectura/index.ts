@@ -6,6 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { ErrorLectura, MODELO_LECTURA_POR_DEFECTO, leerConClaude, redactarActaConClaude, type ImagenLectura } from "../../../packages/nucleo/src/lecturaClaude.ts";
 import { alertasActa } from "../../../packages/nucleo/src/lectura.ts";
+import { rutaAdjuntoValida } from "../../../packages/nucleo/src/actaReunion.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -178,7 +179,13 @@ async function redactarActa(usuario: Cliente, servicio: Cliente, usuarioId: stri
   // Con la sesión de quien pide: si no ve la reunión (RLS), no puede pedir su acta.
   const { data: reunion } = await usuario.from("reunion").select("id, campana_id").eq("id", reunionId).maybeSingle();
   if (!reunion) return responder(404, { error: "La reunión no existe o no la puede ver." });
-  if (adjunto && !adjunto.startsWith(`${reunion.campana_id}/${reunionId}/`)) return responder(400, { error: "La foto no es de esta reunión." });
+  // La ruta viene del navegador: debe ser un archivo de la carpeta de esta reunión (sin «..» ni subcarpetas) y estar
+  // registrado en acta_adjunto, consultado con la sesión de quien pide (RLS).
+  if (adjunto) {
+    if (!rutaAdjuntoValida(adjunto, reunion.campana_id, reunionId)) return responder(400, { error: "La foto no es de esta reunión." });
+    const { data: registrado } = await usuario.from("acta_adjunto").select("id").eq("reunion_id", reunionId).eq("ruta", adjunto).maybeSingle();
+    if (!registrado) return responder(404, { error: "No se encontró la foto del acta." });
+  }
 
   const clave = Deno.env.get("ANTHROPIC_API_KEY");
   if (!clave) return responder(503, { error: "La redacción con IA no está activa todavía. Escriba el acta a mano." });
@@ -188,7 +195,7 @@ async function redactarActa(usuario: Cliente, servicio: Cliente, usuarioId: stri
 
   let imagen: ImagenLectura | null = null;
   if (adjunto) {
-    const { data: archivo, error: ea } = await servicio.storage.from("actas").download(adjunto);
+    const { data: archivo, error: ea } = await usuario.storage.from("actas").download(adjunto); // con la sesión: aplica «actas_ver»
     if (ea || !archivo) return responder(404, { error: "No se encontró la foto del acta." });
     if (archivo.size > MAX_BYTES) return responder(413, { error: "La foto pesa más de 5 MB. Tómela de nuevo con menos resolución." });
     const mediaType = tipoImagen(adjunto, archivo.type);
