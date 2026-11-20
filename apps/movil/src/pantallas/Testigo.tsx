@@ -6,7 +6,7 @@ import * as ImagePicker from "expo-image-picker";
 import type { DatosE14Movil, DatosNovedadMovil, Operacion } from "@ventaja/nucleo";
 import { Aviso, Barra, Boton, Campo, Pildora, Subtitulo, Tarjeta, Tenue, Texto, Titulo } from "../componentes";
 import { useApp, type Conexion } from "../contexto";
-import { guardarFoto, huellaFoto } from "../datos/archivos";
+import { borrarArchivo, guardarFoto, huellaFoto } from "../datos/archivos";
 import type { MesaTestigo } from "../datos/tipos";
 import { color, espacio, radio } from "../tema";
 import { tomarFoto } from "./Lider";
@@ -61,35 +61,48 @@ function Mesa({ m }: { m: MesaTestigo }) {
     } satisfies DatosNovedadMovil);
   }
 
-  /** Guarda cada foto en la cola con su huella. Si es la misma imagen que ya está en el teléfono, no la repite. */
-  async function guardarE14(uris: string[]) {
-    if (m.mesa === null) return;
-    setError("");
+  /**
+   * Guarda cada foto en la cola con su huella. Si es la misma imagen que ya está en el teléfono, no la repite y borra
+   * la copia que se acababa de hacer. Devuelve cuántas se repitieron.
+   */
+  async function guardarE14(uris: string[]): Promise<number> {
+    if (m.mesa === null) return 0;
     const yaEstan = new Set(operaciones.filter((o) => o.tipo === "e14").map((o) => (o.datos as DatosE14Movil).hash).filter(Boolean));
     let repetidas = 0;
     for (const uri of uris) {
       const hash = await huellaFoto(uri);
-      if (hash && yaEstan.has(hash)) { repetidas++; continue; }
+      if (hash && yaEstan.has(hash)) { repetidas++; await borrarArchivo(uri); continue; }
       if (hash) yaEstan.add(hash);
       await agregar("e14", { campana: sesion.campanaId, puesto: m.puestoId, mesa: m.mesa, foto: uri, hash } satisfies DatosE14Movil);
     }
-    if (repetidas) setError(repetidas === 1 ? "Esa foto ya estaba guardada: no se repite." : `${repetidas} fotos ya estaban guardadas: no se repiten.`);
+    return repetidas;
+  }
+
+  /** Arma un solo aviso con todo lo que no entró (formato no aceptado o foto repetida). */
+  function avisar(rechazadas: number, repetidas: number) {
+    const partes: string[] = [];
+    if (rechazadas) partes.push(rechazadas === 1 ? "1 foto no se guardó: solo se aceptan JPG o PNG." : `${rechazadas} fotos no se guardaron: solo se aceptan JPG o PNG.`);
+    if (repetidas) partes.push(repetidas === 1 ? "Esa foto ya estaba guardada: no se repite." : `${repetidas} fotos ya estaban guardadas: no se repiten.`);
+    setError(partes.join(" "));
   }
 
   async function tomarE14() {
+    setError("");
     const uri = await tomarFoto();
-    if (uri) await guardarE14([uri]);
+    if (uri) avisar(0, await guardarE14([uri]));
   }
 
   async function elegirE14() {
+    setError("");
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: true, selectionLimit: 10, quality: 1, exif: false });
     if (r.canceled) return;
     const uris: string[] = [];
+    let rechazadas = 0;
     for (const a of r.assets) {
-      if (a.mimeType && !/^image\/(jpeg|png)$/.test(a.mimeType)) { setError("Solo se aceptan fotos (JPG o PNG) del E-14."); continue; }
+      if (a.mimeType && !/^image\/(jpeg|png)$/.test(a.mimeType)) { rechazadas++; continue; }
       uris.push(await guardarFoto(a.uri));
     }
-    await guardarE14(uris);
+    avisar(rechazadas, await guardarE14(uris));
   }
 
   async function reportar() {
@@ -125,7 +138,9 @@ function Mesa({ m }: { m: MesaTestigo }) {
         {m.e14Recibido && !e14Locales.length && <Pildora texto="Recibido" tono="verde" />}
         {e14Locales.map((o, i) => (
           <View key={o.id} style={s.fotoFila}>
-            <Image source={{ uri: (o.datos as DatosE14Movil).foto }} style={s.miniatura} accessibilityLabel={`Foto ${i + 1} del E-14`} />
+            {(o.datos as DatosE14Movil).foto
+              ? <Image source={{ uri: (o.datos as DatosE14Movil).foto }} style={s.miniatura} accessibilityLabel={`Foto ${i + 1} del E-14`} />
+              : <View style={s.miniatura} accessibilityLabel={`Foto ${i + 1} del E-14 (ya no está en el teléfono)`} />}
             <Texto style={{ flex: 1 }}>Foto {i + 1}</Texto>
             <EstadoFoto op={o} />
           </View>

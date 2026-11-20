@@ -9,7 +9,7 @@ import {
 } from "@ventaja/nucleo";
 import { Aviso, Barra, Boton, Campo, Casilla, Pildora, Subtitulo, Tarjeta, Tenue, Texto, Titulo } from "../componentes";
 import { useApp } from "../contexto";
-import { guardarFoto } from "../datos/archivos";
+import { borrarArchivo, guardarFoto } from "../datos/archivos";
 import type { PersonaMovil, TareaMovil } from "../datos/tipos";
 import { formularioVacio, validarRegistro, type FormularioRegistro } from "../registro";
 import { color, espacio, radio } from "../tema";
@@ -168,7 +168,12 @@ function Registrar({ corrigiendo, alTerminar }: { corrigiendo: Operacion | null;
         {f.fotoFirma ? (
           <View style={{ gap: espacio.s }}>
             <Image source={{ uri: f.fotoFirma }} style={s.foto} accessibilityLabel="Foto del formato firmado" />
-            <Boton titulo="Quitar la foto" tipo="secundario" alPresionar={() => cambiar({ fotoFirma: null })} />
+            <Boton titulo="Quitar la foto" tipo="secundario" alPresionar={() => {
+              // La firma es un dato personal: si se quita, se borra del teléfono (salvo la del registro que se corrige).
+              const original = corrigiendo ? (corrigiendo.datos as DatosPersonaMovil).evidencia : null;
+              if (f.fotoFirma && f.fotoFirma !== original) borrarArchivo(f.fotoFirma).catch(() => undefined);
+              cambiar({ fotoFirma: null });
+            }} />
           </View>
         ) : (
           <>

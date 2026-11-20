@@ -50,7 +50,7 @@ select throws_ok($$ select public.guardar_acta((select id from v where k = 'r1')
   '[{"descripcion": "Dar $ 50.000 por asistente"}]') $$, '22023', null, 'Regla 4: ni con dinero');
 insert into v values ('a1', public.guardar_acta((select id from v where k = 'r1'),
   'Los líderes pidieron arreglar la vía a la vereda y mejorar el alumbrado. Doña Ana dejó su celular 310 000 1234 y su correo ana@ficticio.co.',
-  array['Vías', 'Alumbrado', 'vías'], 'Volver a reunirse en un mes.',
+  array['Vías', 'Alumbrado', 'vías', '310 000 1234'], 'Volver a reunirse en un mes.',
   jsonb_build_array(jsonb_build_object('descripcion', 'Visitar la vereda con el equipo técnico', 'responsable_id', pruebas.uid('coord_a'), 'vence_en', '2027-03-20')),
   'ia'));
 select is((select origen from public.acta where id = (select id from v where k = 'a1')), 'ia', 'El acta recuerda que la redactó la IA');
@@ -58,7 +58,7 @@ reset role;
 select ok((select resumen not like '%310 000 1234%' and resumen not like '%ana@ficticio.co%' from public.acta where id = (select id from v where k = 'a1')),
   'El acta se guarda sin teléfonos ni correos');
 select is((select temas from public.acta where id = (select id from v where k = 'a1')), array['alumbrado', 'vías'],
-  'Los temas quedan sin repetir y en minúscula');
+  'Los temas quedan sin repetir, en minúscula y sin los que solo eran un teléfono');
 select is((select estado from public.reunion where id = (select id from v where k = 'r1')), 'realizada', 'Con acta, la reunión queda realizada');
 select is((select count(*)::int from public.buscar_actas('20000000-0000-4000-8000-00000000000a')), 0,
   'Un acta en borrador todavía no está en la base de conocimiento');

@@ -1,6 +1,6 @@
 // Service worker de la web del líder: guarda la aplicación para que abra sin señal. No guarda nada de la base de
 // datos ni de otros sitios: solo los archivos de la propia aplicación (mismo origen, GET).
-const CACHE = "comando-app-v1";
+const CACHE = "comando-app-v2";
 const BASICOS = ["/", "/manifest.webmanifest", "/icono-192.png", "/icono-512.png", "/apple-touch-icon.png", "/favicon.ico"];
 
 self.addEventListener("install", (e) => {
@@ -17,8 +17,14 @@ self.addEventListener("fetch", (e) => {
   if (r.method !== "GET" || url.origin !== self.location.origin) return;
   if (r.mode === "navigate") {
     // La página: primero la red (para tener la última versión); sin señal, la guardada.
-    e.respondWith(fetch(r).then((resp) => { const copia = resp.clone(); caches.open(CACHE).then((c) => c.put("/", copia)); return resp; })
-      .catch(() => caches.match("/")));
+    // Solo se guarda una página buena de la app: nunca un error (404, 500) ni una redirección.
+    e.respondWith(fetch(r).then((resp) => {
+      if (resp.ok && resp.type === "basic" && (resp.headers.get("content-type") || "").includes("text/html")) {
+        const copia = resp.clone();
+        caches.open(CACHE).then((c) => c.put("/", copia));
+      }
+      return resp;
+    }).catch(() => caches.match("/")));
     return;
   }
   // Los archivos de la aplicación llevan su versión en el nombre: si ya están guardados, no cambian.

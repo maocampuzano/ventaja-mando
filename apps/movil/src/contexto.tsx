@@ -6,7 +6,7 @@ import NetInfo from "@react-native-community/netinfo";
 import * as Crypto from "expo-crypto";
 import { ColaSincronizacion, ErrorDeRed, type EstadoOperacion, type Operacion, type TipoOperacion } from "@ventaja/nucleo";
 import type { AlmacenLocal } from "./datos/almacenLocal";
-import { borrarArchivo } from "./datos/archivos";
+import { borrarArchivo, limpiarFotosSueltas } from "./datos/archivos";
 import { activarSegundoPlano } from "./segundoPlano";
 import { depurarEnviada, fotosParaBorrar } from "./datos/depurar";
 import type { DatosLider, DatosTestigo, FuenteMovil, Sesion } from "./datos/tipos";
@@ -97,10 +97,11 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
 
   const sincronizar = useCallback(async (forzar = false) => {
     setEnviando(true);
-    // Mientras envía, la pantalla se actualiza seguido para que la barra de progreso avance foto por foto.
-    const avance = setInterval(() => { refrescarCola().catch(() => undefined); }, 700);
+    let avance: ReturnType<typeof setInterval> | undefined;
     try {
       const pendientes = (await cola.operaciones()).some((o) => o.estado === "pendiente" || o.estado === "enviando");
+      // Solo si hay algo por enviar, la pantalla se actualiza seguido para que la barra avance foto por foto.
+      if (pendientes) avance = setInterval(() => { refrescarCola().catch(() => undefined); }, 700);
       // Antes de enviar, se comprueba que el servidor responde de verdad (no basta con tener señal).
       if (pendientes && !(await fuente.ping(sesion))) {
         if (vivo.current) setConexion("sin_conexion");
@@ -111,7 +112,7 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
       if (vivo.current) setConexion(r.sinSenal ? "sin_conexion" : "conectado");
       if (!r.sinSenal) { setUltima(Date.now()); await recargar().catch(() => undefined); }
     } finally {
-      clearInterval(avance);
+      if (avance) clearInterval(avance);
       await refrescarCola();
       if (vivo.current) setEnviando(false);
     }
@@ -127,13 +128,26 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
     const estado = AppState.addEventListener("change", (s) => { if (s === "active") sincronizar(true); });
     // Lo revisado hace más de 30 días ya no hace falta en el teléfono.
     almacen.limpiarRevisadas(Date.now() - 30 * 86_400_000).catch(() => undefined);
-    // Las fotos del E-14 se quedan en el teléfono hasta 7 días después de que el servidor confirmó que las recibió.
+    // Las fotos del E-14 se quedan en el teléfono hasta 7 días después de que el servidor confirmó que las recibió
+    // (en una operación enviada, proximoIntento guarda ese momento). Al borrarla, la operación deja de apuntarle.
+    // Además se borran las fotos sueltas (una firma repetida, un registro a medias) que nada usa hace más de un día.
     almacen.todas().then(async (ops) => {
+      const ahora = Date.now();
+      const enUso = new Set<string>();
       for (const o of ops) {
-        const foto = (o.datos as { foto?: string }).foto;
-        if (o.tipo === "e14" && (o.estado === "enviado" || o.estado === "revisado") && o.creadaEn < Date.now() - 7 * 86_400_000
-            && foto && /^file:/.test(foto)) await borrarArchivo(foto);
+        const d = o.datos as { foto?: string; archivo?: string; evidencia?: string };
+        const foto = d.foto;
+        // Las enviadas antes de este cambio no tienen esa hora: se cuenta desde que se tomaron.
+        const confirmada = o.proximoIntento || o.creadaEn;
+        if (o.tipo === "e14" && (o.estado === "enviado" || o.estado === "revisado") && confirmada < ahora - 7 * 86_400_000
+            && foto && /^file:/.test(foto)) {
+          await borrarArchivo(foto);
+          await almacen.guardar({ ...o, datos: { ...d, foto: "" } });
+          continue;
+        }
+        for (const u of [d.foto, d.archivo, d.evidencia]) if (u) enUso.add(u);
       }
+      await limpiarFotosSueltas(enUso, ahora - 86_400_000);
     }).catch(() => undefined);
     // En el teléfono, el envío sigue cada 20 minutos aunque la app esté cerrada (Android decide el momento exacto).
     if (Platform.OS !== "web") activarSegundoPlano().catch(() => undefined);

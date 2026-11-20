@@ -1,7 +1,7 @@
 // Fotos en el teléfono. Se guardan reducidas en la carpeta privada de la app (no en la caché, que el sistema puede
 // vaciar) y se borran solo cuando el servidor ya confirmó que las recibió.
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import { copyAsync, deleteAsync, documentDirectory, getInfoAsync, makeDirectoryAsync } from "expo-file-system/legacy";
+import { copyAsync, deleteAsync, documentDirectory, getInfoAsync, makeDirectoryAsync, readDirectoryAsync } from "expo-file-system/legacy";
 import * as Crypto from "expo-crypto";
 
 const CARPETA = `${documentDirectory}fotos/`;
@@ -31,4 +31,22 @@ export async function huellaFoto(uri: string): Promise<string | null> {
     const info = await getInfoAsync(uri, { md5: true });
     return info.exists && "md5" in info && info.md5 ? info.md5.toLowerCase() : null;
   } catch { return null; }
+}
+
+/**
+ * Borra las fotos de la carpeta privada que ya no usa ninguna operación de la cola y que tienen más de un día (una
+ * firma que se repitió o un registro que se dejó a medias). Las de menos de un día pueden ser de un formulario que la
+ * persona todavía está llenando.
+ */
+export async function limpiarFotosSueltas(enUso: ReadonlySet<string>, antesDe: number) {
+  let nombres: string[];
+  try { nombres = await readDirectoryAsync(CARPETA); } catch { return; }
+  for (const n of nombres) {
+    const uri = `${CARPETA}${n}`;
+    if (enUso.has(uri)) continue;
+    try {
+      const info = await getInfoAsync(uri);
+      if (info.exists && "modificationTime" in info && info.modificationTime * 1000 < antesDe) await borrarArchivo(uri);
+    } catch { /* se intenta la próxima vez */ }
+  }
 }

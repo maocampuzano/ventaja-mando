@@ -8,6 +8,9 @@ export type TipoOperacion = "persona" | "planilla" | "respuesta" | "novedad" | "
 /** «enviando»: se está enviando ahora. Si la app se cierra a mitad, al volver cuenta como pendiente. */
 export type EstadoOperacion = "pendiente" | "enviando" | "enviado" | "revisado" | "error";
 
+/** Cuánto dura la reserva de una operación que se está enviando (si la app se cierra a mitad, después se retoma). */
+export const RESERVA_ENVIO_MS = 5 * 60_000;
+
 export type Operacion<D = unknown> = {
   id: string;
   tipo: TipoOperacion;
@@ -15,7 +18,11 @@ export type Operacion<D = unknown> = {
   estado: EstadoOperacion;
   intentos: number;
   creadaEn: number; // ms
-  proximoIntento: number; // ms; 0 = ya
+  /**
+   * ms. Pendiente: cuándo intentar (0 = ya). Enviando: hasta cuándo la reserva la vuelta que la está enviando.
+   * Enviada o revisada: cuándo confirmó el servidor que la recibió.
+   */
+  proximoIntento: number;
   ultimoError?: string;
 };
 
@@ -105,17 +112,19 @@ export class ColaSincronizacion {
   private async vuelta(forzar: boolean): Promise<Resumen> {
     const r: Resumen = { enviadas: 0, yaEstaban: 0, pendientes: 0, errores: 0, sinSenal: false };
     for (const leida of await this.operaciones()) {
-      // Una sola vuelta corre a la vez: lo que esté «enviando» al empezar quedó así porque la app se cerró a mitad.
-      const op: Operacion = leida.estado === "enviando" ? { ...leida, estado: "pendiente" } : leida;
+      // «Enviando» con la reserva vigente: la está enviando otra vuelta (la pantalla o la tarea de segundo plano, que
+      // comparten el almacén). Con la reserva vencida, quedó así porque la app se cerró a mitad: vuelve a pendiente.
+      if (leida.estado === "enviando" && leida.proximoIntento > this.ahora()) { r.pendientes++; continue; }
+      const op: Operacion = leida.estado === "enviando" ? { ...leida, estado: "pendiente", proximoIntento: 0 } : leida;
       if (op.estado !== "pendiente") continue;
       if (r.sinSenal || (!forzar && op.proximoIntento > this.ahora())) {
         if (leida.estado === "enviando") await this.almacen.guardar(op);
         r.pendientes++; continue;
       }
-      await this.almacen.guardar({ ...op, estado: "enviando" });
+      await this.almacen.guardar({ ...op, estado: "enviando", proximoIntento: this.ahora() + RESERVA_ENVIO_MS });
       try {
         const res = await this.transporte.enviar(op);
-        await this.almacen.guardar({ ...op, datos: this.depurar(op), estado: "enviado", intentos: op.intentos + 1, ultimoError: undefined });
+        await this.almacen.guardar({ ...op, datos: this.depurar(op), estado: "enviado", intentos: op.intentos + 1, proximoIntento: this.ahora(), ultimoError: undefined });
         if (res === "creada") r.enviadas++; else r.yaEstaban++;
       } catch (e) {
         const intentos = op.intentos + 1;

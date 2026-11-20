@@ -32,6 +32,15 @@ function recordarSesion(s: Sesion | null) {
   try { if (s) localStorage.setItem(LLAVE_SESION, JSON.stringify(s)); else localStorage.removeItem(LLAVE_SESION); } catch { /* sin almacenamiento */ }
 }
 
+/** ¿De quién es el token que Supabase guardó en el teléfono? (misma llave que usa supabase-js por defecto). */
+function duenoDelToken(url: string): string | null {
+  try {
+    const crudo = localStorage.getItem(`sb-${new URL(url).hostname.split(".")[0]}-auth-token`);
+    const t = crudo ? JSON.parse(crudo) as { user?: { id?: string } } : null;
+    return t?.user?.id ?? null;
+  } catch { return null; }
+}
+
 export function crearFuenteSupabase(url: string, clavePublicable: string): FuenteMovil {
   const sb: SupabaseClient = createClient(url, clavePublicable, {
     auth: { storage: localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
@@ -81,7 +90,8 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       const guardada = sesionLocal();
       const { data, error } = await sb.auth.getSession();
       // Sin señal, Supabase no puede renovar el token vencido, pero la sesión sigue siendo de esta persona.
-      if (!data.session) return error && sinRed(error) ? guardada : null;
+      // Solo si el token sigue guardado y es de la misma persona: si se borró, hay que entrar de nuevo.
+      if (!data.session) return error && sinRed(error) && guardada && duenoDelToken(url) === guardada.usuarioId ? guardada : null;
       const propia = guardada?.usuarioId === data.session.user.id ? guardada : null;
       try {
         const s = await armarSesion();
