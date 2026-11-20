@@ -26,6 +26,9 @@ export default function App() {
   useEffect(() => {
     abrirAlmacen().then(setLocal);
     fuente.sesionGuardada().then(setSesion).catch(() => setSesion(null));
+    // Si abrió con la sesión guardada y luego el servidor la rechaza, se pide entrar de nuevo. Lo que estaba sin
+    // enviar sigue en el teléfono y sale al volver a entrar.
+    return fuente.alRechazarSesion?.(() => setSesion(null));
   }, [fuente]);
 
   return (

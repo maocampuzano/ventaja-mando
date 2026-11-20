@@ -7,6 +7,7 @@ import {
   type LlamarRpc, type Operacion, type Transporte,
 } from "@ventaja/nucleo";
 import { BUCKET_EVIDENCIAS, esArchivoLocal, rutaFoto } from "./rutas";
+import { primeroLaGuardada } from "./sesionRapida";
 import type { DatosLider, DatosTestigo, FuenteMovil, MesaTestigo, PersonaMovil, RolMovil, Sesion, TareaMovil } from "./tipos";
 
 const mensajeIngreso = (m: string) =>
@@ -42,6 +43,7 @@ function duenoDelToken(url: string): string | null {
 }
 
 export function crearFuenteSupabase(url: string, clavePublicable: string): FuenteMovil {
+  const rechazos = new Set<() => void>();
   const sb: SupabaseClient = createClient(url, clavePublicable, {
     auth: { storage: localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
@@ -88,21 +90,30 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
 
     async sesionGuardada() {
       const guardada = sesionLocal();
-      const { data, error } = await sb.auth.getSession();
-      // Sin señal, Supabase no puede renovar el token vencido, pero la sesión sigue siendo de esta persona.
-      // Solo si el token sigue guardado y es de la misma persona: si se borró, hay que entrar de nuevo.
-      if (!data.session) return error && sinRed(error) && guardada && duenoDelToken(url) === guardada.usuarioId ? guardada : null;
-      const propia = guardada?.usuarioId === data.session.user.id ? guardada : null;
-      try {
-        const s = await armarSesion();
-        recordarSesion(s);
-        return s;
-      } catch (e) {
-        // Sin señal se abre con la copia del teléfono; si el servidor rechazó la sesión, se pide entrar de nuevo.
-        if (sinRed(e)) return propia;
-        recordarSesion(null);
-        return null;
-      }
+      // Solo cuenta la copia si el token guardado es de la misma persona: si se borró, hay que entrar de nuevo.
+      const propia = guardada && duenoDelToken(url) === guardada.usuarioId ? guardada : null;
+      const confirmar = (async (): Promise<Sesion | null> => {
+        const { data, error } = await sb.auth.getSession();
+        // Sin señal, Supabase no puede renovar el token vencido, pero la sesión sigue siendo de esta persona.
+        if (!data.session) return error && sinRed(error) ? propia : null;
+        const mismaPersona = guardada?.usuarioId === data.session.user.id ? guardada : null;
+        try {
+          const s = await armarSesion();
+          recordarSesion(s);
+          return s;
+        } catch (e) {
+          // Sin señal se abre con la copia del teléfono; si el servidor rechazó la sesión, se pide entrar de nuevo.
+          if (sinRed(e)) return mismaPersona;
+          recordarSesion(null);
+          return null;
+        }
+      })();
+      return primeroLaGuardada(confirmar, propia, () => rechazos.forEach((f) => f()));
+    },
+
+    alRechazarSesion(f) {
+      rechazos.add(f);
+      return () => { rechazos.delete(f); };
     },
 
     async iniciarSesion(correo, clave) {

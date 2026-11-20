@@ -43,6 +43,11 @@ export type DatosTestigo = { mesas: MesaTestigo[] };
 export interface FuenteMovil {
   modo: "demo" | "supabase";
   sesionGuardada(): Promise<Sesion | null>;
+  /**
+   * Avisa si, después de abrir con la sesión guardada (sin señal), el servidor la rechaza. Devuelve cómo dejar de
+   * escuchar. La demostración no lo necesita.
+   */
+  alRechazarSesion?(f: () => void): () => void;
   iniciarSesion(correo: string, clave: string): Promise<Sesion>;
   cerrarSesion(): Promise<void>;
   /** Trae del servidor lo que el usuario ve. Lanza error si no hay señal; la app usa entonces la copia local. */
