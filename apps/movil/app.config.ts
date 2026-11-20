@@ -27,6 +27,16 @@ const config: ExpoConfig = {
   plugins: [
     "expo-sqlite",
     "expo-background-task",
+    // El optimizador de Android (R8) borraba el constructor de la base interna de WorkManager (Room), que usa el envío
+    // en segundo plano, y la app se cerraba al abrir. Estas reglas lo conservan.
+    ["expo-build-properties", {
+      android: {
+        extraProguardRules: [
+          "-keep class * extends androidx.room.RoomDatabase { <init>(); }",
+          "-keep class androidx.work.impl.** { *; }",
+        ].join("\n"),
+      },
+    }],
     ["expo-image-picker", {
       cameraPermission: "Comando usa la cámara para tomar la foto de las planillas, del E-14 y de la autorización firmada.",
       photosPermission: "Comando abre su galería solo cuando usted elige una foto del E-14 o de una planilla.",

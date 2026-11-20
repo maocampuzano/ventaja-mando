@@ -21,13 +21,25 @@ function lanzar(error: { message: string; code?: string } | null, que: string) {
   throw new Error(`No se pudo leer ${que}: ${error.message}`);
 }
 
+// Copia de la sesión en el teléfono: sin señal, la app abre con ella (nombre, rol y campaña) en vez de pedir entrar.
+// No guarda la contraseña ni datos de personas; el token lo guarda Supabase en su propio almacenamiento.
+const LLAVE_SESION = "comando.sesion";
+const sinRed = (e: unknown) => e instanceof ErrorDeRed || /fetch|network|timeout|retryable/i.test(`${(e as Error)?.name} ${(e as Error)?.message}`);
+function sesionLocal(): Sesion | null {
+  try { return JSON.parse(localStorage.getItem(LLAVE_SESION) ?? "null") as Sesion | null; } catch { return null; }
+}
+function recordarSesion(s: Sesion | null) {
+  try { if (s) localStorage.setItem(LLAVE_SESION, JSON.stringify(s)); else localStorage.removeItem(LLAVE_SESION); } catch { /* sin almacenamiento */ }
+}
+
 export function crearFuenteSupabase(url: string, clavePublicable: string): FuenteMovil {
   const sb: SupabaseClient = createClient(url, clavePublicable, {
     auth: { storage: localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
 
   async function armarSesion(): Promise<Sesion> {
-    const { data: u } = await sb.auth.getUser();
+    const { data: u, error: eu } = await sb.auth.getUser();
+    if (eu && sinRed(eu)) throw new ErrorDeRed("Sin conexión al confirmar la sesión");
     if (!u.user) throw new Error("La sesión terminó. Vuelva a entrar.");
     const { data: ms, error } = await sb.from("membresia").select("rol, campana_id")
       .eq("usuario_id", u.user.id).eq("activa", true).in("rol", ["lider", "testigo"]).order("creado_en");
@@ -66,18 +78,33 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
     modo: "supabase",
 
     async sesionGuardada() {
-      const { data } = await sb.auth.getSession();
-      if (!data.session) return null;
-      try { return await armarSesion(); } catch { return null; }
+      const guardada = sesionLocal();
+      const { data, error } = await sb.auth.getSession();
+      // Sin señal, Supabase no puede renovar el token vencido, pero la sesión sigue siendo de esta persona.
+      if (!data.session) return error && sinRed(error) ? guardada : null;
+      const propia = guardada?.usuarioId === data.session.user.id ? guardada : null;
+      try {
+        const s = await armarSesion();
+        recordarSesion(s);
+        return s;
+      } catch (e) {
+        // Sin señal se abre con la copia del teléfono; si el servidor rechazó la sesión, se pide entrar de nuevo.
+        if (sinRed(e)) return propia;
+        recordarSesion(null);
+        return null;
+      }
     },
 
     async iniciarSesion(correo, clave) {
       const { error } = await sb.auth.signInWithPassword({ email: correo.trim(), password: clave });
       if (error) throw new Error(mensajeIngreso(error.message));
-      return armarSesion();
+      const s = await armarSesion();
+      recordarSesion(s);
+      return s;
     },
 
     async cerrarSesion() {
+      recordarSesion(null);
       await sb.auth.signOut();
     },
 
