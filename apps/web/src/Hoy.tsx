@@ -2,7 +2,8 @@
 // Solo muestra conteos; cada pendiente lleva a la pantalla donde se resuelve.
 import { useEffect, useMemo, useState } from "react";
 import { miles, pct, resumenFinanzas } from "@ventaja/nucleo";
-import { Barra, colorIndice, diasParaEleccion } from "./comunes";
+import { Barra } from "./comunes";
+import { colorIndice, diasParaEleccion } from "./indicadores";
 import { useTablero } from "./datos/contexto";
 import { armarHoy, saludo, type ExtrasHoy } from "./datos/hoy";
 import { fuente } from "./datos/index";
