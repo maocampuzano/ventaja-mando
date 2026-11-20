@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ESQUEMA_ACTA, compromisosConDinero, limpiarNotas, mencionaDinero, redaccionSimulada } from "./actaReunion";
+import { ESQUEMA_ACTA, compromisosConDinero, limpiarNotas, mencionaDinero, redaccionSimulada, rutaAdjuntoValida } from "./actaReunion";
 
 describe("actas de reuniones", () => {
   it("las notas salen sin teléfonos, correos ni documentos (regla 6)", () => {
@@ -27,5 +27,18 @@ describe("actas de reuniones", () => {
 
   it("el esquema pide todo lo que el acta necesita", () => {
     expect(ESQUEMA_ACTA.required).toEqual(["resumen", "temas", "acuerdos", "compromisos"]);
+  });
+
+  it("la foto del acta solo se acepta dentro de la carpeta de su reunión", () => {
+    const c = "11111111-1111-4111-8111-111111111111";
+    const r = "22222222-2222-4222-8222-222222222222";
+    expect(rutaAdjuntoValida(`${c}/${r}/33333333-3333-4333-8333-333333333333.jpg`, c, r)).toBe(true);
+    expect(rutaAdjuntoValida(`${c}/${r}/foto.PNG`, c, r)).toBe(true);
+    expect(rutaAdjuntoValida(`${c}/${r}/../../../evidencias/${c}/x.jpg`, c, r)).toBe(false);
+    expect(rutaAdjuntoValida(`${c}/${r}/..`, c, r)).toBe(false);
+    expect(rutaAdjuntoValida(`${c}/${r}/%2e%2e.jpg`, c, r)).toBe(false);
+    expect(rutaAdjuntoValida(`${c}/${r}/sub/foto.jpg`, c, r)).toBe(false);
+    expect(rutaAdjuntoValida(`${c}/${r}/foto.pdf`, c, r)).toBe(false);
+    expect(rutaAdjuntoValida(`${c}/33333333-3333-4333-8333-333333333333/foto.jpg`, c, r)).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 -- Reuniones y actas: quién ve y registra, compromisos sin dinero (regla 4), texto limpio de datos de contacto,
 -- aprobar crea tareas, base de conocimiento y agregados sin nombres.
 begin;
-select plan(24);
+select plan(27);
 
 create temporary table v (k text primary key, id uuid);
 grant select, insert on v to authenticated;
@@ -82,6 +82,18 @@ reset role;
 select pruebas.como('coord_a');
 select is((select count(*)::int from public.resumen_reuniones('20000000-0000-4000-8000-00000000000a')), 1,
   'La coordinación solo recibe el resumen de sus zonas');
+reset role;
+
+-- Adjuntos: solo un archivo dentro de la carpeta de su reunión (sin «..» ni subcarpetas)
+select pruebas.como('coord_a');
+select lives_ok(format($$ select public.registrar_adjunto_acta(%L, %L, 'acta_escrita') $$, (select id from v where k = 'r1'),
+  '20000000-0000-4000-8000-00000000000a/' || (select id from v where k = 'r1') || '/foto-1.jpg'), 'Se registra la foto del acta de su reunión');
+select throws_ok(format($$ select public.registrar_adjunto_acta(%L, %L, 'acta_escrita') $$, (select id from v where k = 'r1'),
+  '20000000-0000-4000-8000-00000000000a/' || (select id from v where k = 'r1') || '/../../../evidencias/x.jpg'), '22023', null,
+  'Una ruta con «..» no se registra');
+select throws_ok(format($$ select public.registrar_adjunto_acta(%L, %L, 'acta_escrita') $$, (select id from v where k = 'r1'),
+  '20000000-0000-4000-8000-00000000000a/' || (select id from v where k = 'r1') || '/sub/foto.jpg'), '22023', null,
+  'Una subcarpeta no se registra');
 reset role;
 
 select * from finish();
