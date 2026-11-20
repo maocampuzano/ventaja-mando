@@ -27,3 +27,8 @@ export async function huellaFoto(uri: string): Promise<string | null> {
     return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
   } catch { return null; }
 }
+
+/** En el navegador no hay carpeta de fotos: viven dentro de cada operación. */
+export async function limpiarFotosSueltas(enUso: ReadonlySet<string>, antesDe: number) {
+  void enUso; void antesDe;
+}

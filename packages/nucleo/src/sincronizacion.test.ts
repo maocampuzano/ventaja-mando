@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  AlmacenEnMemoria, ColaSincronizacion, ErrorDefinitivo, ErrorDeRed, espera, transporteSupabase, type LlamarRpc, type Operacion, type Transporte,
+  AlmacenEnMemoria, ColaSincronizacion, ErrorDefinitivo, ErrorDeRed, RESERVA_ENVIO_MS, espera, transporteSupabase, type LlamarRpc, type Operacion, type Transporte,
 } from "./sincronizacion";
 
 /** Servidor falso e idempotente por id, como las funciones *_movil de la base. */
@@ -226,6 +226,30 @@ describe("APK del E-14: estado «enviando» y huella de la foto", () => {
     const op = await cola.agregar("e14", { campana: "c", puesto: "p", mesa: 3, foto: "file:///fotos/1.jpg" });
     await cola.sincronizar();
     expect((await almacen.todas()).find((o) => o.id === op.id)?.estado).toBe("pendiente");
+  });
+
+  it("lo que otra vuelta está enviando (la pantalla o el segundo plano) no se envía dos veces; si la reserva vence, se retoma", async () => {
+    const servidor = new ServidorFalso();
+    const almacen = new AlmacenEnMemoria();
+    const { cola, avanzar } = crear(servidor, almacen);
+    let envios = 0;
+    const original = servidor.enviar.bind(servidor);
+    servidor.enviar = async (op) => { envios++; return original(op); };
+    const op = await cola.agregar("e14", { campana: "c", puesto: "p", mesa: 3, foto: "file:///fotos/1.jpg", hash: "abc" });
+    // Otra vuelta (otra instancia de la cola sobre el mismo almacén) la tiene reservada ahora mismo.
+    await almacen.guardar({ ...op, estado: "enviando", proximoIntento: 1_000_000 + RESERVA_ENVIO_MS });
+    const r = await cola.sincronizar({ forzar: true });
+    expect(envios).toBe(0);
+    expect(r.pendientes).toBe(1);
+    expect((await almacen.todas())[0].estado).toBe("enviando");
+    // La otra vuelta murió sin terminar: pasada la reserva, esta la envía.
+    avanzar(RESERVA_ENVIO_MS + 1);
+    await cola.sincronizar({ forzar: true });
+    expect(envios).toBe(1);
+    const enviada = (await almacen.todas())[0];
+    expect(enviada.estado).toBe("enviado");
+    // Al quedar enviada, guarda cuándo la confirmó el servidor (para borrar la foto 7 días después).
+    expect(enviada.proximoIntento).toBe(1_000_000 + RESERVA_ENVIO_MS + 1);
   });
 
   it("el E-14 viaja con su huella a la base", async () => {
