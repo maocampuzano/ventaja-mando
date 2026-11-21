@@ -24,11 +24,16 @@ export default function App() {
   const [sesion, setSesion] = useState<Sesion | null | undefined>(undefined);
 
   useEffect(() => {
-    abrirAlmacen().then(setLocal);
+    const almacen = abrirAlmacen();
+    almacen.then(setLocal);
     fuente.sesionGuardada().then(setSesion).catch(() => setSesion(null));
-    // Si abrió con la sesión guardada y luego el servidor la rechaza, se pide entrar de nuevo. Lo que estaba sin
-    // enviar sigue en el teléfono y sale al volver a entrar.
-    return fuente.alRechazarSesion?.(() => setSesion(null));
+    // Si abrió con la sesión guardada y luego el servidor la rechaza, se pide entrar de nuevo y se borra la copia de
+    // lo que esa persona veía (ya no tiene acceso). Lo que dejó sin enviar sigue en el teléfono, a su nombre: sale
+    // cuando ella vuelva a entrar, y nadie más lo ve ni lo envía.
+    return fuente.alRechazarSesion?.(() => {
+      almacen.then((l) => l.copia.borrarCopias()).catch(() => undefined);
+      setSesion(null);
+    });
   }, [fuente]);
 
   return (

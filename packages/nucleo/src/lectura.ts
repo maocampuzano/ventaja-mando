@@ -87,7 +87,7 @@ export function revisarFila(f: FilaLeida): FilaRevisada {
   const cedula = f.cedula.trim() ? normalizarCedula(f.cedula) : null;
   if (f.cedula.trim() && !cedula) { dudas.add("cedula"); corregir.push("Cédula incompleta o con dígitos ilegibles: corríjala o bórrela."); }
   const celular = f.celular.trim() ? normalizarCelular(f.celular) : null;
-  if (f.celular.trim() && !celular) dudas.add("celular");
+  if (f.celular.trim() && !celular) { dudas.add("celular"); corregir.push("Celular incompleto o con dígitos ilegibles: corríjalo o bórrelo."); }
   if (!f.firma) bloqueos.push("Sin firma de autorización: no se registra (regla 3).");
   return { renglon: f.renglon, nombre, cedula, celular, barrio: f.barrio.trim(), firma: f.firma, dudas: [...dudas], bloqueos, corregir };
 }

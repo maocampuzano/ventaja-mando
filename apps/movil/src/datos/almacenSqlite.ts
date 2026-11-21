@@ -19,7 +19,8 @@ const ESQUEMA = `
     intentos integer not null,
     creada_en integer not null,
     proximo_intento integer not null,
-    ultimo_error text
+    ultimo_error text,
+    dueno text
   );
   create table if not exists copia_local (
     clave text primary key,
@@ -30,11 +31,14 @@ const ESQUEMA = `
 
 type Fila = {
   id: string; tipo: Operacion["tipo"]; datos: string; estado: Operacion["estado"]; intentos: number;
-  creada_en: number; proximo_intento: number; ultimo_error: string | null;
+  creada_en: number; proximo_intento: number; ultimo_error: string | null; dueno: string | null;
 };
 
 export async function prepararBase(db: BaseSQLite) {
   await db.execAsync(ESQUEMA);
+  // Teléfonos con la versión anterior: la tabla ya existía sin la columna del dueño.
+  const columnas = await db.getAllAsync<{ name: string }>("pragma table_info(operacion)");
+  if (!columnas.some((c) => c.name === "dueno")) await db.execAsync("alter table operacion add column dueno text;");
 }
 
 export class AlmacenSQLite implements Almacen {
@@ -47,16 +51,18 @@ export class AlmacenSQLite implements Almacen {
     return filas.map((f) => ({
       id: f.id, tipo: f.tipo, datos: JSON.parse(f.datos), estado: f.estado, intentos: f.intentos,
       creadaEn: f.creada_en, proximoIntento: f.proximo_intento, ...(f.ultimo_error ? { ultimoError: f.ultimo_error } : {}),
+      ...(f.dueno ? { dueno: f.dueno } : {}),
     }));
   }
 
   async guardar(op: Operacion) {
     await this.db.runAsync(
-      `insert into operacion (id, tipo, datos, estado, intentos, creada_en, proximo_intento, ultimo_error)
-       values (?, ?, ?, ?, ?, ?, ?, ?)
+      `insert into operacion (id, tipo, datos, estado, intentos, creada_en, proximo_intento, ultimo_error, dueno)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?)
        on conflict (id) do update set datos = excluded.datos, estado = excluded.estado, intentos = excluded.intentos,
          proximo_intento = excluded.proximo_intento, ultimo_error = excluded.ultimo_error`,
       op.id, op.tipo, JSON.stringify(op.datos), op.estado, op.intentos, op.creadaEn, op.proximoIntento, op.ultimoError ?? null,
+      op.dueno ?? null,
     );
   }
 
@@ -85,6 +91,11 @@ export class CopiaLocal {
     await this.db.runAsync(
       "insert into copia_local (clave, valor, actualizada_en) values (?, ?, ?) on conflict (clave) do update set valor = excluded.valor, actualizada_en = excluded.actualizada_en",
       clave, JSON.stringify(valor), ahora);
+  }
+
+  /** Borra la copia local (lo que se trajo del servidor para ver sin señal), sin tocar la cola. */
+  async borrarCopias() {
+    await this.db.execAsync("delete from copia_local;");
   }
 
   /** Al cerrar sesión no queda nada de la campaña en el teléfono. */

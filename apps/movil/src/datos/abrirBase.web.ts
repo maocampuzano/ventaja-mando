@@ -18,6 +18,7 @@ export async function abrirAlmacen(): Promise<AlmacenLocal> {
     copia: {
       async leer<T>(clave: string) { return (copias.get(clave) as { valor: T; actualizadaEn: number } | undefined) ?? null; },
       async escribir(clave, valor, ahora = Date.now()) { copias.set(clave, { valor, actualizadaEn: ahora }); },
+      async borrarCopias() { copias.clear(); },
       async borrarTodo() {
         copias.clear();
         for (const op of await cola.todas()) await cola.borrar(op.id);

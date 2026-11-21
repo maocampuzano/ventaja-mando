@@ -24,6 +24,11 @@ export type Operacion<D = unknown> = {
    */
   proximoIntento: number;
   ultimoError?: string;
+  /**
+   * Usuario que la registró. Si en el teléfono entra otra persona (por ejemplo, porque el servidor rechazó la sesión
+   * anterior), no ve ni envía lo de la anterior: se enviaría a nombre de quien no lo registró.
+   */
+  dueno?: string;
 };
 
 export interface Almacen {
@@ -43,6 +48,11 @@ export interface Transporte {
 export class ErrorDeRed extends Error {}
 /** El servidor rechazó la operación (permisos, datos inválidos): reintentar no lo arregla; se muestra al líder. */
 export class ErrorDefinitivo extends Error {}
+/**
+ * El servidor respondió con un error pasajero (ocupado, sesión por renovar): se reintenta solo esa operación más tarde,
+ * sin dar por perdida la señal; las demás de la vuelta siguen enviándose.
+ */
+export class ErrorTemporal extends Error {}
 
 export const ESPERA_BASE_MS = 5_000;
 export const ESPERA_MAXIMA_MS = 10 * 60_000;
@@ -61,29 +71,34 @@ export class ColaSincronizacion {
   private nuevoId: () => string;
   private ahora: () => number;
   private depurar: (op: Operacion) => unknown;
+  private dueno: string | undefined;
 
   /**
    * `depurar` recorta los datos de lo que ya llegó al servidor: el teléfono no tiene por qué seguir guardando, por
    * ejemplo, la cédula o el celular de una persona que ya está en la base. Por defecto no recorta nada.
    */
   constructor(almacen: Almacen, transporte: Transporte, nuevoId: () => string, ahora: () => number = Date.now,
-    depurar: (op: Operacion) => unknown = (op) => op.datos) {
+    depurar: (op: Operacion) => unknown = (op) => op.datos, dueno?: string) {
     this.almacen = almacen;
     this.transporte = transporte;
     this.nuevoId = nuevoId;
     this.ahora = ahora;
     this.depurar = depurar;
+    this.dueno = dueno;
   }
 
   /** Guarda la operación en el celular. Nunca falla por falta de señal. */
   async agregar<D>(tipo: TipoOperacion, datos: D, id = this.nuevoId()): Promise<Operacion<D>> {
-    const op: Operacion<D> = { id, tipo, datos, estado: "pendiente", intentos: 0, creadaEn: this.ahora(), proximoIntento: 0 };
+    const op: Operacion<D> = { id, tipo, datos, estado: "pendiente", intentos: 0, creadaEn: this.ahora(), proximoIntento: 0,
+      ...(this.dueno ? { dueno: this.dueno } : {}) };
     await this.almacen.guardar(op);
     return op;
   }
 
+  /** Las operaciones de quien tiene la sesión (y las de versiones anteriores, que no guardaban dueño). */
   async operaciones(): Promise<Operacion[]> {
-    return (await this.almacen.todas()).sort((a, b) => a.creadaEn - b.creadaEn);
+    return (await this.almacen.todas()).filter((o) => !this.dueno || !o.dueno || o.dueno === this.dueno)
+      .sort((a, b) => a.creadaEn - b.creadaEn);
   }
 
   /**
@@ -131,6 +146,10 @@ export class ColaSincronizacion {
         if (e instanceof ErrorDefinitivo) {
           await this.almacen.guardar({ ...op, estado: "error", intentos, ultimoError: e.message });
           r.errores++;
+        } else if (e instanceof ErrorTemporal) {
+          // El servidor respondió pero no pudo esta vez: solo esta espera; las demás siguen.
+          await this.almacen.guardar({ ...op, intentos, proximoIntento: this.ahora() + espera(intentos), ultimoError: e.message });
+          r.pendientes++;
         } else {
           // Sin señal: no se insiste con las demás en esta vuelta; quedan para la siguiente.
           await this.almacen.guardar({ ...op, intentos, proximoIntento: this.ahora() + espera(intentos), ultimoError: (e as Error).message });
@@ -144,7 +163,7 @@ export class ColaSincronizacion {
   }
 
   private async actualizarRevisadas() {
-    const enviadas = (await this.almacen.todas()).filter((o) => o.estado === "enviado");
+    const enviadas = (await this.operaciones()).filter((o) => o.estado === "enviado");
     if (!enviadas.length) return;
     try {
       const revisadas = new Set(await this.transporte.revisadas!(enviadas.map((o) => o.id)));
@@ -154,20 +173,20 @@ export class ColaSincronizacion {
 
   /** Vuelve a poner en cola una operación con error, después de que el líder la corrigió. */
   async reintentar(id: string, datos?: unknown) {
-    const op = (await this.almacen.todas()).find((o) => o.id === id);
+    const op = (await this.operaciones()).find((o) => o.id === id);
     if (op && op.estado === "error") await this.almacen.guardar({ ...op, datos: datos ?? op.datos, estado: "pendiente", proximoIntento: 0, ultimoError: undefined });
   }
 
   /** El líder decide no enviar una operación rechazada (por ejemplo, la persona ya estaba en la base). */
   async descartar(id: string) {
-    const op = (await this.almacen.todas()).find((o) => o.id === id);
+    const op = (await this.operaciones()).find((o) => o.id === id);
     if (op && op.estado === "error") await this.almacen.borrar(id);
   }
 
   /** Para la pantalla: cuántas hay en cada estado. */
   async conteo(): Promise<Record<EstadoOperacion, number>> {
     const c: Record<EstadoOperacion, number> = { pendiente: 0, enviando: 0, enviado: 0, revisado: 0, error: 0 };
-    for (const o of await this.almacen.todas()) c[o.estado]++;
+    for (const o of await this.operaciones()) c[o.estado]++;
     return c;
   }
 }
@@ -205,6 +224,16 @@ export type DatosTareaMovil = { tarea: string; estado: "en_curso" | "hecha" };
 
 /** Códigos de Postgres que significan «el servidor dijo que no»: reintentar no lo arregla. */
 const RECHAZOS = new Set(["42501", "22023", "23505", "23514", "P0001", "PGRST202"]);
+/**
+ * ¿Rechazo definitivo? Además de los de arriba, toda la familia de datos inválidos (22), de restricciones (23) y de
+ * sintaxis o permisos (42), y los errores de petición de PostgREST (PGRST1xx y PGRST2xx). Antes, por ejemplo, una
+ * zona borrada (23503) se tomaba como falta de señal y la operación bloqueaba para siempre las que venían detrás.
+ */
+export function esRechazoDefinitivo(codigo: string | undefined): boolean {
+  if (!codigo) return false;
+  return RECHAZOS.has(codigo) || /^(22|23|42)[0-9A-Z]{3}$/.test(codigo) || /^PGRST[12]\d\d$/.test(codigo);
+}
+const PARECE_RED = /fetch|network|timeout|failed to|conexi/i;
 
 function llamada(op: Operacion): [string, Record<string, unknown>] {
   const capturado = new Date(op.creadaEn).toISOString();
@@ -246,8 +275,10 @@ export function transporteSupabase(rpc: LlamarRpc): Transporte {
     let r: Awaited<ReturnType<LlamarRpc>>;
     try { r = await rpc(funcion, parametros); } catch (e) { throw new ErrorDeRed((e as Error).message || "Sin conexión"); }
     if (r.error) {
-      if (r.error.code && RECHAZOS.has(r.error.code)) throw new ErrorDefinitivo(r.error.message);
-      throw new ErrorDeRed(r.error.message);
+      if (esRechazoDefinitivo(r.error.code)) throw new ErrorDefinitivo(r.error.message);
+      // Sin código y con mensaje de red: no llegó al servidor. Con código: respondió, pero no pudo esta vez.
+      if (!r.error.code && PARECE_RED.test(r.error.message)) throw new ErrorDeRed(r.error.message);
+      throw new ErrorTemporal(r.error.message);
     }
     return r.data;
   };
@@ -255,7 +286,7 @@ export function transporteSupabase(rpc: LlamarRpc): Transporte {
     async enviar(op) {
       const [funcion, parametros] = llamada(op);
       const res = await llamar(funcion, parametros);
-      if (res !== "creada" && res !== "ya_estaba") throw new ErrorDeRed("Respuesta inesperada del servidor");
+      if (res !== "creada" && res !== "ya_estaba") throw new ErrorTemporal("Respuesta inesperada del servidor");
       return res;
     },
     async revisadas(ids) {

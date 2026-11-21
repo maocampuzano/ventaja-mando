@@ -17,6 +17,18 @@ function baseDePrueba(archivo = ":memory:"): BaseSQLite & { db: DatabaseSync } {
 }
 
 describe("almacén SQLite de la cola", () => {
+  it("un teléfono con la versión anterior gana la columna del dueño sin perder lo pendiente", async () => {
+    const b = baseDePrueba();
+    b.db.exec(`create table operacion (id text primary key, tipo text not null, datos text not null, estado text not null,
+      intentos integer not null, creada_en integer not null, proximo_intento integer not null, ultimo_error text);
+      insert into operacion values ('vieja', 'persona', '{"nombre":"Antes"}', 'pendiente', 0, 1, 0, null);`);
+    await prepararBase(b);
+    const almacen = new AlmacenSQLite(b);
+    await almacen.guardar({ id: "nueva", tipo: "persona", datos: {}, estado: "pendiente", intentos: 0, creadaEn: 2, proximoIntento: 0, dueno: "ana" });
+    const todas = await almacen.todas();
+    expect(todas.map((o) => [o.id, o.dueno])).toEqual([["vieja", undefined], ["nueva", "ana"]]);
+  });
+
   it("sobrevive al cierre de la app: lo pendiente sigue ahí y se envía una sola vez", async () => {
     const { mkdtempSync } = await import("node:fs");
     const { join } = await import("node:path");

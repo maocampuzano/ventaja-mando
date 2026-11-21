@@ -16,15 +16,15 @@ test("regla 7: una hoja leída solo se aprueba después de confirmar cada fila d
   await expect(tabla.getByRole("row")).toHaveCount(7);
   const aprobar = page.getByRole("button", { name: /Aprobar la hoja/ });
   await expect(aprobar).toBeDisabled();
-  // Renglón 3: la cédula se leyó con un «?». Confirmarla no basta: hay que corregirla.
-  await expect(page.getByText("1 fila por corregir: una cédula incompleta no se puede aprobar.")).toBeVisible();
+  // Renglón 3: la cédula se leyó con un «?». Renglón 5: el celular también. Confirmarlos no basta: hay que corregirlos.
+  await expect(page.getByText("2 filas por corregir: una cédula o un celular incompleto no se puede aprobar.")).toBeVisible();
   const r3 = tabla.getByRole("row", { name: "Renglón 3" });
   await expect(r3.getByLabel("Cédula")).toHaveClass(/duda/);
   await r3.getByLabel("Ya lo comparé con la foto").check();
   await expect(aprobar).toBeDisabled();
   await r3.getByLabel("Cédula").fill("1143000017");
   await expect(r3.getByLabel("Cédula")).not.toHaveClass(/duda/);
-  await expect(page.getByText("2 filas por confirmar (en ámbar o rojo).")).toBeVisible();
+  await expect(page.getByText("1 fila por corregir: una cédula o un celular incompleto no se puede aprobar.")).toBeVisible();
 
   // Renglón 4: misma cédula que el 2 (rojo). Renglón 5: celular dudoso, se confirma contra la foto.
   const r4 = tabla.getByRole("row", { name: "Renglón 4" });

@@ -56,7 +56,7 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
       for (const f of fotosParaBorrar(op)) await borrarArchivo(f);
       return r;
     } };
-    return new ColaSincronizacion(almacen, transporte, () => Crypto.randomUUID(), Date.now, depurarEnviada);
+    return new ColaSincronizacion(almacen, transporte, () => Crypto.randomUUID(), Date.now, depurarEnviada, sesion.usuarioId);
   }, [almacen, fuente, sesion]);
   const [conteo, setConteo] = useState<Conteo>({ pendiente: 0, enviando: 0, enviado: 0, revisado: 0, error: 0 });
   const [conexion, setConexion] = useState<Conexion>("conectado");
@@ -174,7 +174,10 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
     async descartar(id) { await cola.descartar(id); await refrescarCola(); },
     async cerrarSesion() {
       await fuente.cerrarSesion();
-      await copia.borrarTodo();
+      // Se borra lo de esta persona y la copia local. Lo que otra persona dejó sin enviar en el teléfono se queda,
+      // para que lo envíe ella cuando vuelva a entrar.
+      for (const o of await cola.operaciones()) await almacen.borrar(o.id);
+      await copia.borrarCopias();
       alSalir();
     },
   };

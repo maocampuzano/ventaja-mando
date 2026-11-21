@@ -83,7 +83,7 @@ export function crearFuenteDemo(servidor = crearServidorDemo()): FuenteMovil & {
         personas: NOMBRES.map((nombre, i) => ({
           id: `80000000-0000-4000-8000-0000000001${String(i + 1).padStart(2, "0")}`, nombre,
           telefono: `300000${String(1001 + i).padStart(4, "0")}`, zonaId: "50000000-0000-4000-8000-000000000001",
-          estado: ESTADOS[(1 + i) % 5], autorizacionVigente: i !== 6, dadaDeBaja: i === 3,
+          estado: ESTADOS[(1 + i) % 5], autorizacionVigente: i !== 6, autorizaContacto: i !== 6, dadaDeBaja: i === 3,
         })),
       };
     },

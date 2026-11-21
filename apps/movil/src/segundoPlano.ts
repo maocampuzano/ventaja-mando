@@ -19,15 +19,17 @@ export async function enviarPendientes(): Promise<"sin_sesion" | "sin_pendientes
   const sesion = await fuente.sesionGuardada();
   if (!sesion) return "sin_sesion";
   const { cola: almacen } = await abrirAlmacen();
-  if (!(await almacen.todas()).some((o) => o.estado === "pendiente" || o.estado === "enviando")) return "sin_pendientes";
-  if (!(await fuente.ping(sesion))) return "sin_conexion";
   const base = fuente.transporte(sesion);
   const transporte = { ...base, async enviar(op: Operacion) {
     const r = await base.enviar(op);
     for (const f of fotosParaBorrar(op)) await borrarArchivo(f);
     return r;
   } };
-  await new ColaSincronizacion(almacen, transporte, () => Crypto.randomUUID(), Date.now, depurarEnviada).sincronizar({ forzar: true });
+  // Solo lo de quien tiene la sesión: lo que otra persona dejó en el teléfono no se envía a nombre de esta.
+  const cola = new ColaSincronizacion(almacen, transporte, () => Crypto.randomUUID(), Date.now, depurarEnviada, sesion.usuarioId);
+  if (!(await cola.operaciones()).some((o) => o.estado === "pendiente" || o.estado === "enviando")) return "sin_pendientes";
+  if (!(await fuente.ping(sesion))) return "sin_conexion";
+  await cola.sincronizar({ forzar: true });
   return "enviado";
 }
 
