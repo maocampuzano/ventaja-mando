@@ -4,7 +4,7 @@
 import * as BackgroundTask from "expo-background-task";
 import * as TaskManager from "expo-task-manager";
 import * as Crypto from "expo-crypto";
-import { ColaSincronizacion, type Operacion } from "@ventaja/nucleo";
+import { ColaSincronizacion } from "@ventaja/nucleo";
 import { abrirAlmacen } from "./datos/abrirBase";
 import { borrarArchivo } from "./datos/archivos";
 import { crearFuente } from "./datos/crearFuente";
@@ -19,14 +19,9 @@ export async function enviarPendientes(): Promise<"sin_sesion" | "sin_pendientes
   const sesion = await fuente.sesionGuardada();
   if (!sesion) return "sin_sesion";
   const { cola: almacen } = await abrirAlmacen();
-  const base = fuente.transporte(sesion);
-  const transporte = { ...base, async enviar(op: Operacion) {
-    const r = await base.enviar(op);
-    for (const f of fotosParaBorrar(op)) await borrarArchivo(f);
-    return r;
-  } };
   // Solo lo de quien tiene la sesión: lo que otra persona dejó en el teléfono no se envía a nombre de esta.
-  const cola = new ColaSincronizacion(almacen, transporte, () => Crypto.randomUUID(), Date.now, depurarEnviada, sesion.usuarioId);
+  const cola = new ColaSincronizacion(almacen, fuente.transporte(sesion), () => Crypto.randomUUID(), Date.now, depurarEnviada,
+    sesion.usuarioId, (op) => Promise.all(fotosParaBorrar(op).map(borrarArchivo)));
   if (!(await cola.operaciones()).some((o) => o.estado === "pendiente" || o.estado === "enviando")) return "sin_pendientes";
   if (!(await fuente.ping(sesion))) return "sin_conexion";
   await cola.sincronizar({ forzar: true });

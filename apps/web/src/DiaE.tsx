@@ -1,6 +1,6 @@
 // Centro de mando del día E (fase 5): mesas con semáforo y su motivo, novedades con prioridad, responsable y
 // escalamiento, E-14 por revisar (regla 7) y modo simulacro. Todo agregado por mesa: aquí no se ven personas.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ADVERTENCIA_CUMPLIMIENTO, alertasActa, estadoMesa, miles, ordenarNovedades, pct, resumenDiaE, type ActaLeida, type Semaforo,
 } from "@ventaja/nucleo";
@@ -28,13 +28,19 @@ export function DiaE() {
   const [soloPendientes, setSoloPendientes] = useState(false);
   const [equipo, setEquipo] = useState<Miembro[]>([]);
 
+  // Varias lecturas pueden cruzarse (tiempo real, el respaldo de 30 s, después de cada acción): solo la más reciente
+  // cambia la pantalla, para que una respuesta lenta y vieja no tape datos más nuevos.
+  const ultimaLectura = useRef(0);
   const cargar = useCallback(async () => {
+    const esta = ++ultimaLectura.current;
     try {
       const sim = await fuente.simulacroActivo(sesion);
+      const mesas = await fuente.tableroDiaE(sesion, !!sim);
+      if (esta !== ultimaLectura.current) return;
       setSimulacro(sim);
-      setMesas(await fuente.tableroDiaE(sesion, !!sim));
+      setMesas(mesas);
       setError("");
-    } catch (e) { setError((e as Error).message); }
+    } catch (e) { if (esta === ultimaLectura.current) setError((e as Error).message); }
   }, [sesion]);
 
   // Tiempo real, con una lectura de respaldo cada 30 segundos por si se cae la conexión.

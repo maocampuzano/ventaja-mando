@@ -49,14 +49,9 @@ export function ProveedorApp({ fuente, sesion, local, alSalir, children }: {
 }) {
   const { cola: almacen, copia } = local;
   const cola = useMemo(() => {
-    const base = fuente.transporte(sesion);
-    // Al llegar al servidor, la foto de la firma o de la planilla se borra del teléfono (ya está en el bucket).
-    const transporte = { ...base, async enviar(op: Operacion) {
-      const r = await base.enviar(op);
-      for (const f of fotosParaBorrar(op)) await borrarArchivo(f);
-      return r;
-    } };
-    return new ColaSincronizacion(almacen, transporte, () => Crypto.randomUUID(), Date.now, depurarEnviada, sesion.usuarioId);
+    // Al quedar guardado que llegó al servidor, la foto de la firma o de la planilla se borra del teléfono.
+    return new ColaSincronizacion(almacen, fuente.transporte(sesion), () => Crypto.randomUUID(), Date.now, depurarEnviada,
+      sesion.usuarioId, (op) => Promise.all(fotosParaBorrar(op).map(borrarArchivo)));
   }, [almacen, fuente, sesion]);
   const [conteo, setConteo] = useState<Conteo>({ pendiente: 0, enviando: 0, enviado: 0, revisado: 0, error: 0 });
   const [conexion, setConexion] = useState<Conexion>("conectado");
