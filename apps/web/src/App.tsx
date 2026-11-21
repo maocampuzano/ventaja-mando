@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { nombreRol, type RolCampana } from "@ventaja/nucleo";
-import { Icono, Logo, diasParaEleccion } from "./comunes";
+import { Icono, Logo } from "./comunes";
+import { diasParaEleccion } from "./indicadores";
 import { fuente } from "./datos/index";
 import { ContextoTablero, type Contexto } from "./datos/contexto";
 import { sesionDemoPorRol } from "./datos/demo";

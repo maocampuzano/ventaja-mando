@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Barra, claseIndice, colorIndice } from "./comunes";
+import { Barra } from "./comunes";
+import { claseIndice, colorIndice } from "./indicadores";
 import type { Lider } from "./data";
 import { useTablero } from "./datos/contexto";
 import { enlaceWhatsAppManual, miles, numeroWhatsApp, pct } from "@ventaja/nucleo";

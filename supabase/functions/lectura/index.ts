@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { ErrorLectura, MODELO_LECTURA_POR_DEFECTO, leerConClaude, redactarActaConClaude, type ImagenLectura } from "../../../packages/nucleo/src/lecturaClaude.ts";
 import { alertasActa } from "../../../packages/nucleo/src/lectura.ts";
-import { rutaAdjuntoValida } from "../../../packages/nucleo/src/actaReunion.ts";
+import { rutaAdjuntoValida, rutaEvidenciaValida } from "../../../packages/nucleo/src/actaReunion.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +65,8 @@ Deno.serve(async (req) => {
   const { data: lote } = await usuario.from("lote_ocr").select("id, campana_id, archivo_url, estado").eq("id", loteId).maybeSingle();
   if (!lote) return responder(404, { error: "La planilla no existe o no la puede ver." });
   if (lote.estado !== "pendiente") return responder(409, { error: "Esta planilla ya se leyó." });
+  // La foto se descarga con la llave del servidor: tiene que estar en la carpeta de la campaña de la planilla.
+  if (!rutaEvidenciaValida(lote.archivo_url, lote.campana_id)) return responder(400, { error: "La foto de la planilla no está en la carpeta de su campaña." });
 
   const clave = Deno.env.get("ANTHROPIC_API_KEY");
   if (!clave) return responder(503, { error: "La lectura con IA no está activa todavía. Puede revisar la foto y digitar los datos a mano." });
@@ -132,6 +134,8 @@ async function leerActa(usuario: Cliente, servicio: Cliente, usuarioId: string, 
   const { data: acta } = await servicio.from("acta_e14").select("id, campana_id, foto_url, estado").eq("id", actaId).maybeSingle();
   if (!acta) return responder(404, { error: "El acta no existe o no la puede leer." });
   if (acta.estado !== "recibida") return responder(409, { error: "Esta acta ya se leyó o ya fue revisada." });
+  // La foto se descarga con la llave del servidor: tiene que estar en la carpeta de la campaña del acta.
+  if (!rutaEvidenciaValida(acta.foto_url, acta.campana_id)) return responder(400, { error: "La foto del acta no está en la carpeta de su campaña." });
 
   const clave = Deno.env.get("ANTHROPIC_API_KEY");
   if (!clave) return responder(503, { error: "La lectura con IA no está activa todavía. Digite los números desde la foto." });

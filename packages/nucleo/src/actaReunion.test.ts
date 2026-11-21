@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ESQUEMA_ACTA, compromisosConDinero, limpiarNotas, mencionaDinero, redaccionSimulada, rutaAdjuntoValida } from "./actaReunion";
+import { ESQUEMA_ACTA, compromisosConDinero, limpiarNotas, mencionaDinero, redaccionSimulada, rutaAdjuntoValida, rutaEvidenciaValida } from "./actaReunion";
 
 describe("actas de reuniones", () => {
   it("las notas salen sin teléfonos, correos ni documentos (regla 6)", () => {
@@ -40,5 +40,16 @@ describe("actas de reuniones", () => {
     expect(rutaAdjuntoValida(`${c}/${r}/sub/foto.jpg`, c, r)).toBe(false);
     expect(rutaAdjuntoValida(`${c}/${r}/foto.pdf`, c, r)).toBe(false);
     expect(rutaAdjuntoValida(`${c}/33333333-3333-4333-8333-333333333333/foto.jpg`, c, r)).toBe(false);
+  });
+
+  it("la foto de una planilla o E-14 solo se lee si está en la carpeta de su campaña", () => {
+    const c = "11111111-1111-4111-8111-111111111111";
+    const u = "22222222-2222-4222-8222-222222222222";
+    const otra = "99999999-9999-4999-8999-999999999999";
+    expect(rutaEvidenciaValida(`${c}/${u}/33333333-3333-4333-8333-333333333333.jpg`, c)).toBe(true);
+    expect(rutaEvidenciaValida(`${c}/${u}/firma-autorizacion.jpg`, c)).toBe(true);
+    expect(rutaEvidenciaValida(`${otra}/${u}/foto.jpg`, c)).toBe(false);
+    expect(rutaEvidenciaValida(`${c}/${u}/../../${otra}/x.jpg`, c)).toBe(false);
+    expect(rutaEvidenciaValida(`${c}/no-es-uuid/foto.jpg`, c)).toBe(false);
   });
 });
