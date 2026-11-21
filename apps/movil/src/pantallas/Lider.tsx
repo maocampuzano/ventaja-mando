@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
-  enlaceWhatsAppManual, FINALIDADES, miles, TEXTO_AUTORIZACION_ES_BORRADOR, textoAutorizacion,
+  enlaceWhatsAppManual, FINALIDADES, miles, numeroWhatsApp, TEXTO_AUTORIZACION_ES_BORRADOR, textoAutorizacion,
   type DatosPersonaMovil, type DatosTareaMovil, type Operacion,
 } from "@ventaja/nucleo";
 import { Aviso, Barra, Boton, Campo, Casilla, Pildora, Subtitulo, Tarjeta, Tenue, Texto, Titulo } from "../componentes";
@@ -245,7 +245,8 @@ function MiGente() {
   function escribir(p: PersonaMovil) {
     const texto = `Hola, ${p.nombre.split(" ")[0]}. Le escribe ${sesion.nombre.split(" ")[0]}, de ${sesion.campanaNombre}.`;
     // El WhatsApp del líder se abre con el texto listo y lo envía él (regla 1). La app no envía nada.
-    Linking.openURL(enlaceWhatsAppManual(`57${p.telefono}`, texto));
+    const numero = numeroWhatsApp(p.telefono);
+    if (numero) Linking.openURL(enlaceWhatsAppManual(numero, texto));
   }
 
   return (
@@ -264,7 +265,8 @@ function MiGente() {
       ))}
       {personas.map((p) => {
         const [et, tono] = ETIQUETA_ESTADO[p.estado];
-        const puedeEscribir = !!p.telefono && p.autorizacionVigente && !p.dadaDeBaja;
+        // Solo a un celular válido, con autorización para contacto de la campaña y sin baja (reglas 1 y 3).
+        const puedeEscribir = !!numeroWhatsApp(p.telefono) && p.autorizaContacto && !p.dadaDeBaja;
         return (
           <View key={p.id} style={s.persona}>
             <View style={{ flex: 1, gap: 4 }}>
@@ -272,6 +274,7 @@ function MiGente() {
               <Pildora texto={et} tono={tono} />
               {!p.autorizacionVigente && <Tenue>Retiró su autorización: no se le puede contactar.</Tenue>}
               {p.autorizacionVigente && p.dadaDeBaja && <Tenue>Pidió no recibir más mensajes: no le escriba.</Tenue>}
+              {p.autorizacionVigente && !p.autorizaContacto && !p.dadaDeBaja && <Tenue>Su autorización no incluye que la campaña le escriba.</Tenue>}
             </View>
             {puedeEscribir && (
               <Pressable onPress={() => escribir(p)} accessibilityRole="link" accessibilityLabel={`Escribir por WhatsApp a ${p.nombre}`}

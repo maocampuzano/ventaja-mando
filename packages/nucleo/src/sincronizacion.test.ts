@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  AlmacenEnMemoria, ColaSincronizacion, ErrorDefinitivo, ErrorDeRed, RESERVA_ENVIO_MS, espera, transporteSupabase, type LlamarRpc, type Operacion, type Transporte,
+  AlmacenEnMemoria, ColaSincronizacion, ErrorDefinitivo, ErrorDeRed, ErrorTemporal, RESERVA_ENVIO_MS, espera, transporteSupabase, type LlamarRpc, type Operacion, type Transporte,
 } from "./sincronizacion";
 
 /** Servidor falso e idempotente por id, como las funciones *_movil de la base. */
@@ -191,9 +191,55 @@ describe("transporte a Supabase", () => {
     await expect(con({ data: null, error: { code: "42501", message: "Solo un líder sube planillas desde la app." } }).enviar(p)).rejects.toBeInstanceOf(ErrorDefinitivo);
     await expect(con({ data: null, error: { code: "23505", message: "Ya está en la base (misma cédula)." } }).enviar(p)).rejects.toThrow("misma cédula");
     await expect(con(new TypeError("Network request failed")).enviar(p)).rejects.toBeInstanceOf(ErrorDeRed);
-    await expect(con({ data: null, error: { code: "57014", message: "timeout" } }).enviar(p)).rejects.toBeInstanceOf(ErrorDeRed);
+    // El servidor respondió (con código): no es falta de señal, es un error pasajero de esa operación.
+    await expect(con({ data: null, error: { code: "57014", message: "timeout" } }).enviar(p)).rejects.toBeInstanceOf(ErrorTemporal);
+    await expect(con({ data: null, error: { code: "", message: "TypeError: fetch failed" } }).enviar(p)).rejects.toBeInstanceOf(ErrorDeRed);
+    // Datos que el servidor nunca va a aceptar (zona borrada, campo vacío, tipo inválido): definitivo.
+    for (const code of ["23503", "23502", "22P02", "22001", "42883", "PGRST204"]) {
+      await expect(con({ data: null, error: { code, message: "no" } }).enviar(p)).rejects.toBeInstanceOf(ErrorDefinitivo);
+    }
     await expect(con({ data: "ya_estaba", error: null }).enviar(p)).resolves.toBe("ya_estaba");
     await expect(con({ data: null, error: null }).enviar(op("respuesta", {}))).rejects.toBeInstanceOf(ErrorDefinitivo);
+  });
+});
+
+describe("una operación que el servidor rechaza no frena a las demás", () => {
+  it("un rechazo definitivo o un error pasajero de una operación no detiene las que siguen", async () => {
+    const servidor = new ServidorFalso();
+    const { cola, almacen } = crear(servidor);
+    const original = servidor.enviar.bind(servidor);
+    let n = 0;
+    servidor.enviar = async (o) => {
+      n++;
+      if (n === 1) throw new ErrorDefinitivo("La zona ya no existe.");
+      if (n === 2) throw new ErrorTemporal("El servidor está ocupado.");
+      return original(o);
+    };
+    await cola.agregar("persona", { nombre: "Primera" });
+    await cola.agregar("persona", { nombre: "Segunda" });
+    await cola.agregar("e14", { campana: "c", puesto: "p", mesa: 1, foto: "file:///fotos/1.jpg" });
+    const r = await cola.sincronizar();
+    expect(r.sinSenal).toBe(false);
+    expect((await almacen.todas()).map((o) => o.estado)).toEqual(["error", "pendiente", "enviado"]);
+  });
+});
+
+describe("cada persona solo ve y envía lo suyo", () => {
+  it("si en el teléfono entra otra persona, no ve ni envía lo que dejó la anterior", async () => {
+    const servidor = new ServidorFalso();
+    const almacen = new AlmacenEnMemoria();
+    let n = 0;
+    const id = () => `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`;
+    const deAna = new ColaSincronizacion(almacen, servidor, id, () => 1, undefined, "ana");
+    await deAna.agregar("persona", { nombre: "Registrada por Ana" });
+    const deBeto = new ColaSincronizacion(almacen, servidor, id, () => 1, undefined, "beto");
+    expect(await deBeto.operaciones()).toEqual([]);
+    expect((await deBeto.conteo()).pendiente).toBe(0);
+    await deBeto.sincronizar({ forzar: true });
+    expect(servidor.personas.size).toBe(0);
+    // Cuando Ana vuelve a entrar, lo suyo sale a su nombre.
+    await deAna.sincronizar({ forzar: true });
+    expect(servidor.personas.size).toBe(1);
   });
 });
 

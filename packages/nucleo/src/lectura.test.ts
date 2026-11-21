@@ -140,6 +140,15 @@ describe("acta de reunión con Claude (cliente simulado)", () => {
     expect(r.acta.compromisos).toHaveLength(1);
   });
 
+  it("los compromisos y los temas también salen sin teléfonos (por ejemplo, de una foto del acta)", async () => {
+    const propuesta = { resumen: "Reunión en la vereda.", temas: ["vías", "310 000 1234"], acuerdos: "",
+      compromisos: [{ descripcion: "Llamar a Pedro al 300 123 4567", vence_en: null }] };
+    const { cliente } = clienteFalso({ content: texto(JSON.stringify(propuesta)) });
+    const r = await redactarActaConClaude(cliente, "Reunión en la vereda.", null);
+    expect(r.acta.compromisos[0].descripcion).not.toContain("300 123 4567");
+    expect(r.acta.temas).toEqual(["vías"]);
+  });
+
   it("sin notas ni foto no llama a la IA", async () => {
     const { cliente, pedidos } = clienteFalso({ content: texto("{}") });
     await expect(redactarActaConClaude(cliente, "   ", null)).rejects.toThrow(/Escriba las notas/);

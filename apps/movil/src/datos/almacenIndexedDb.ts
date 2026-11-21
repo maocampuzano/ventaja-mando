@@ -74,6 +74,11 @@ export function almacenIndexedDb(db: IDBDatabase): AlmacenLocal {
         t.objectStore("copia").put({ clave, valor: structuredClone(valor), actualizadaEn: ahora });
         await terminar(t);
       },
+      async borrarCopias() {
+        const t = db.transaction("copia", "readwrite");
+        t.objectStore("copia").clear();
+        await terminar(t);
+      },
       async borrarTodo() {
         const t = db.transaction(["copia", "operacion"], "readwrite");
         t.objectStore("copia").clear();

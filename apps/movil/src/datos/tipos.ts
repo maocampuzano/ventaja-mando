@@ -19,6 +19,8 @@ export type PersonaMovil = {
   id: string; nombre: string; telefono: string | null; zonaId: string | null;
   estado: "sin_contactar" | "contactado" | "validado" | "comprometido" | "no_interesado";
   autorizacionVigente: boolean;
+  /** Tiene una autorización vigente que incluye «contacto de la campaña» (la que permite escribirle). */
+  autorizaContacto: boolean;
   /** Pidió no recibir más mensajes ni llamadas (por el enlace, por teléfono o al operador). */
   dadaDeBaja: boolean;
 };

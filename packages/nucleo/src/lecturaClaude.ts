@@ -103,5 +103,12 @@ export async function redactarActaConClaude(
   try { acta = JSON.parse(salida); } catch { throw new ErrorLectura("La redacción no devolvió un resultado válido."); }
   if (typeof acta?.resumen !== "string" || !Array.isArray(acta.compromisos)) throw new ErrorLectura("La redacción no devolvió un acta.");
   // Por si acaso: la propuesta tampoco trae datos de contacto.
-  return { acta: { ...acta, resumen: limpiarNotas(acta.resumen), acuerdos: limpiarNotas(acta.acuerdos ?? "") }, uso };
+  return {
+    acta: {
+      ...acta, resumen: limpiarNotas(acta.resumen), acuerdos: limpiarNotas(acta.acuerdos ?? ""),
+      temas: (acta.temas ?? []).map((t) => limpiarNotas(String(t), 60)).filter((t) => t.trim() && !/^‹[^›]+›$/.test(t.trim())),
+      compromisos: acta.compromisos.map((c) => ({ ...c, descripcion: limpiarNotas(String(c.descripcion ?? ""), 500) })),
+    },
+    uso,
+  };
 }
