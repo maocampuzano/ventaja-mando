@@ -97,7 +97,7 @@ export function BandejaLider() {
             <>
               <h2>Mi meta</h2>
               <div className="dato">{miles(yo.validados)}<span className="tenue" style={{ fontSize: 16 }}> / {miles(yo.meta)}</span></div>
-              <Barra valor={yo.validados / yo.meta} />
+              <Barra valor={yo.meta > 0 ? yo.validados / yo.meta : 0} />
               <p className="tenue" style={{ fontSize: 13 }}>Solo cuentan los validados. Tienes {miles(yo.registrados - yo.validados)} registros esperando validación.</p>
             </>
           )}
@@ -147,7 +147,8 @@ export function MiMesa() {
 /* ---------- Candidato ---------- */
 export function Resumen({ aprobadas }: { aprobadas: Tarea[] }) {
   const { campana, totales, recomendaciones, zonaDe, hayPauta } = useTablero();
-  const meta = totales.comprometidos / campana.metaVotos;
+  // Sin meta configurada (0) no hay porcentaje: se muestra «—» en vez de «Infinity %» o «NaN %».
+  const meta = campana.metaVotos > 0 ? totales.comprometidos / campana.metaVotos : null;
   return (
     <div className="pagina">
       <div className="pagina-cabeza">
@@ -159,14 +160,14 @@ export function Resumen({ aprobadas }: { aprobadas: Tarea[] }) {
       <div className="rejilla">
         <div className="tarjeta pila">
           <div className="etiqueta">Cómo vamos</div>
-          <div className="dato">{pct(meta)}</div>
-          <Barra valor={meta} color="var(--verde)" />
+          <div className="dato">{meta === null ? "—" : pct(meta)}</div>
+          <Barra valor={meta ?? 0} color="var(--verde)" />
           <p className="tenue">{miles(totales.comprometidos)} comprometidos de una meta de {miles(campana.metaVotos)} votos.</p>
         </div>
         <div className="tarjeta pila">
           <div className="etiqueta">La base</div>
           <div className="dato">{miles(totales.validados)}</div>
-          <p className="tenue">Validados de {miles(totales.bruto)} registrados. {pct(1 - totales.validados / totales.bruto)} todavía sin comprobar.</p>
+          <p className="tenue">Validados de {miles(totales.bruto)} registrados. {totales.bruto > 0 ? `${pct(1 - totales.validados / totales.bruto)} todavía sin comprobar.` : "Todavía no hay registros."}</p>
         </div>
         {hayPauta ? (
           <div className="tarjeta pila">

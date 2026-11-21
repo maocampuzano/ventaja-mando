@@ -61,6 +61,15 @@ const mensajeError = (m: string) =>
   /already registered/i.test(m) ? "Ese correo ya tiene cuenta: elija «Ya tengo cuenta»." :
   `No se pudo iniciar sesión: ${m}`;
 
+// Campaña con la que entra la persona si pertenece a varias: la última a la que aceptó una invitación.
+const llaveCampana = (usuario: string) => `comando-campana:${usuario}`;
+function campanaPreferida(usuario: string): string | null {
+  try { return localStorage.getItem(llaveCampana(usuario)); } catch { return null; }
+}
+function recordarCampana(usuario: string, campana: string) {
+  try { localStorage.setItem(llaveCampana(usuario), campana); } catch { /* sin almacenamiento */ }
+}
+
 export function crearFuenteSupabase(url: string, clavePublicable: string): FuenteDatos {
   const sb: SupabaseClient = createClient(url, clavePublicable);
   let factorPendiente: string | null = null;
@@ -72,7 +81,9 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
     const { data: ms, error } = await sb.from("membresia").select("rol, territorio_ids, campana_id")
       .eq("usuario_id", u.user.id).eq("activa", true).order("creado_en");
     if (error) return { estado: "error", mensaje: `No se pudo leer su membresía: ${error.message}` };
-    const m = ms?.[0];
+    // Con varias campañas, la última a la que aceptó una invitación (antes siempre entraba a la más antigua).
+    const preferida = campanaPreferida(u.user.id);
+    const m = ms?.find((x) => x.campana_id === preferida) ?? ms?.[0];
     if (!m) return { estado: "error", mensaje: "Su usuario no pertenece a ninguna campaña todavía. Pida una invitación." };
 
     const rol = m.rol as RolCampana;
@@ -165,6 +176,16 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
       }));
       return { miembros, invitaciones };
     },
+    async crearTarea(s, t) {
+      // La política de «tarea» deja crear a la dirección (y a la coordinación en sus zonas): si no puede, la base dice no.
+      const titulo = `${t.titulo}${t.detalle ? `: ${t.detalle}` : ""}`.slice(0, 300);
+      const { data, error } = await sb.from("tarea")
+        .insert({ campana_id: s.campana.id, tipo: t.tipo ?? "ia", titulo, origen: "ia", creado_por: s.usuarioId })
+        .select("id").single();
+      if (error) throw new Error(/row-level security/i.test(error.message)
+        ? "Su rol no puede crear tareas: pídaselo a la gerencia." : `No se pudo guardar la tarea: ${error.message}`);
+      return data.id as string;
+    },
     async invitar(s, d) {
       const { data, error } = await sb.rpc("crear_invitacion", {
         p_campana: s.campana.id, p_correo: d.correo, p_rol: d.rol, p_territorios: d.territorioIds, p_dias: d.dias,
@@ -193,8 +214,11 @@ export function crearFuenteSupabase(url: string, clavePublicable: string): Fuent
           if (error) return { estado: "error", mensaje: mensajeError(error.message) };
         }
       }
-      const { error } = await sb.rpc("aceptar_invitacion", { p_codigo: a.codigo, p_nombre: a.nombre.trim() || correo });
+      const { data: campana, error } = await sb.rpc("aceptar_invitacion", { p_codigo: a.codigo, p_nombre: a.nombre.trim() || correo });
       if (error) return { estado: "error", mensaje: error.message };
+      // Entra a la campaña de la invitación, aunque ya perteneciera a otra.
+      const { data: yoAhora } = await sb.auth.getUser();
+      if (yoAhora.user && typeof campana === "string") recordarCampana(yoAhora.user.id, campana);
       return armarSesion();
     },
     async resumenCumplimiento(s): Promise<ResumenCumplimiento> {

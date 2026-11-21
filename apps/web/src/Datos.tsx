@@ -29,7 +29,8 @@ export function Datos() {
 
   const hacer = async (accion: () => Promise<unknown>, texto: string) => {
     setError(""); setAviso("");
-    try { await accion(); setAviso(texto); cargar(); } catch (e) { setError((e as Error).message); }
+    // Devuelve si salió bien: quien llama solo limpia su formulario cuando se guardó.
+    try { await accion(); setAviso(texto); cargar(); return true; } catch (e) { setError((e as Error).message); return false; }
   };
 
   const abiertas = solicitudes.filter((s) => s.estado === "recibida" || s.estado === "en_tramite");
@@ -90,7 +91,7 @@ export function Datos() {
   );
 }
 
-type Hacer = (accion: () => Promise<unknown>, texto: string) => Promise<void>;
+type Hacer = (accion: () => Promise<unknown>, texto: string) => Promise<boolean>;
 
 function FilaSolicitud({ s, hacer }: { s: Solicitud; hacer: Hacer }) {
   const { sesion } = useTablero();
@@ -147,9 +148,10 @@ function NuevaSolicitudForm({ hacer }: { hacer: Hacer }) {
   }
   async function registrar(e: FormEvent) {
     e.preventDefault();
-    await hacer(() => fuente.registrarSolicitud(sesion, { tipo, personaId: persona?.id, detalle, recibida }),
+    const ok = await hacer(() => fuente.registrarSolicitud(sesion, { tipo, personaId: persona?.id, detalle, recibida }),
       "Solicitud registrada con su plazo legal.");
-    setDetalle(""); setPersona(null); setEncontradas(null); setBusqueda("");
+    // Si no se guardó, lo escrito se queda para corregirlo y reintentar.
+    if (ok) { setDetalle(""); setPersona(null); setEncontradas(null); setBusqueda(""); }
   }
 
   return (

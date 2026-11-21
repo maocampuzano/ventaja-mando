@@ -7,13 +7,14 @@ import { fuente } from "./datos/index";
 import { useTablero } from "./datos/contexto";
 import type { RespuestaAsesorPanel } from "./datos/tipos";
 
-export type Tarea = { id: string; titulo: string; detalle: string };
+export type Tarea = { id: string; titulo: string; detalle: string; tipo?: string };
 
 const SUGERIDAS = ["¿Dónde actúo esta semana?", "¿Qué líderes debo revisar?", "¿Cómo vamos frente a la meta?", "¿Qué pidieron en las reuniones?"];
 
-type Turno = { id: number; pregunta: string; respuesta?: RespuestaAsesorPanel; error?: string };
+/** `clave`: única aunque el Asesor se vuelva a montar (al cambiar de pestaña): identifica sus tareas propuestas. */
+type Turno = { id: number; clave: string; pregunta: string; respuesta?: RespuestaAsesorPanel; error?: string };
 
-export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
+export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAprobar: (t: Tarea) => Promise<void> }) {
   const { sesion, zonas, lideres, meta } = useTablero();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [texto, setTexto] = useState("");
@@ -39,18 +40,18 @@ export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAproba
   const zonaNombre = useMemo(() => new Map(zonas.map((z) => [z.id, z.nombre])), [zonas]);
   const conNombres = (t: string) => t.replace(/\bL-\d{2,}\b/g, (r) => nombres.get(r) ?? r);
 
-  const tareaDe = (turno: number, i: number, t: TareaPropuesta): Tarea => {
+  const tareaDe = (turno: string, i: number, t: TareaPropuesta): Tarea => {
     const donde = [...t.zonas.map((z) => zonaNombre.get(z) ?? z), ...t.lideres.map((r) => nombres.get(r) ?? r)];
     const detalle = conNombres(t.detalle);
     const faltan = donde.filter((d) => !detalle.includes(d));
-    return { id: `ia-${turno}-${i}`, titulo: conNombres(t.titulo), detalle: detalle + (faltan.length ? ` (${faltan.join(", ")})` : "") };
+    return { id: `ia-${turno}-${i}`, tipo: t.tipo, titulo: conNombres(t.titulo), detalle: detalle + (faltan.length ? ` (${faltan.join(", ")})` : "") };
   };
 
   async function preguntar(p: string) {
     const pregunta = p.trim();
     if (!pregunta || ocupado) return;
     const id = siguiente.current++;
-    setTurnos((ts) => [...ts, { id, pregunta }]);
+    setTurnos((ts) => [...ts, { id, clave: crypto.randomUUID(), pregunta }]);
     setTexto("");
     try {
       const respuesta = await fuente.preguntarAsesor(sesion, pregunta, datos);
@@ -81,7 +82,7 @@ export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAproba
                 {t.respuesta.aviso && <p className="etiqueta">{t.respuesta.aviso}</p>}
               </div>
               {t.respuesta.tareas.map((tp, i) => {
-                const tarea = tareaDe(t.id, i, tp);
+                const tarea = tareaDe(t.clave, i, tp);
                 return (
                   <div key={tarea.id} className="tarea-prop">
                     <div>
@@ -92,7 +93,7 @@ export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAproba
                       {aprobadas.includes(tarea.id) ? (
                         <span className="sello verde">Aprobada y asignada</span>
                       ) : (
-                        <button className="btn btn-primario btn-chico" onClick={() => alAprobar(tarea)}>Aprobar tarea</button>
+                        <BotonAprobar alAprobar={() => alAprobar(tarea)} />
                       )}
                     </div>
                   </div>
@@ -117,6 +118,25 @@ export function Asesor({ aprobadas, alAprobar }: { aprobadas: string[]; alAproba
           ? "Modo demo: responde el modelo simulado, con los mismos datos y herramientas que usará la IA."
           : "Los pronósticos son escenarios con supuestos, nunca una certeza. Revise antes de decidir."}
       </p>
+    </>
+  );
+}
+
+/** Aprueba la tarea en el servidor: mientras guarda, el botón espera; si falla, dice por qué y no la marca aprobada. */
+function BotonAprobar({ alAprobar }: { alAprobar: () => Promise<void> }) {
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <>
+      <button className="btn btn-primario btn-chico" disabled={guardando}
+        onClick={async () => {
+          setGuardando(true); setError("");
+          try { await alAprobar(); } catch (e) { setError((e as Error).message || "No se pudo aprobar la tarea."); }
+          finally { setGuardando(false); }
+        }}>
+        {guardando ? "Guardando…" : "Aprobar tarea"}
+      </button>
+      {error && <span className="sello rojo" role="alert">{error}</span>}
     </>
   );
 }

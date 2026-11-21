@@ -65,7 +65,7 @@ export function Reuniones() {
               <thead><tr><th>Fecha</th><th>Reunión</th><th>Zona</th><th>Acta</th></tr></thead>
               <tbody>{pasadas.map((r) => (
                 <tr key={r.id} className="clic" onClick={() => setAbierta(r)}>
-                  <td>{fecha(r.fecha.slice(0, 10))}</td>
+                  <td>{fecha(r.fecha)}</td>
                   <td><strong>{r.titulo}</strong><div className="tenue" style={{ fontSize: 12 }}>{NOMBRE_TIPO[r.tipo]}{r.asistentesComunidad ? ` · ${miles(r.asistentesComunidad)} de la comunidad` : ""}</div></td>
                   <td>{(r.territorioId && nombreZona.get(r.territorioId)) || "—"}</td>
                   <td>{r.estado === "cancelada" ? <span className="sello">Cancelada</span>
@@ -121,7 +121,7 @@ function BaseConocimiento({ nombreZona, alAbrir }: { nombreZona: Map<string, str
         <div className="pila" style={{ gap: 8 }} aria-label="Resultados de la búsqueda">
           {resultados.map((r) => (
             <button key={r.actaId} className="sugerida" onClick={() => alAbrir(r.reunionId)}>
-              <strong>{r.titulo}</strong> <span className="tenue">· {fecha(r.fecha.slice(0, 10))}{r.territorio ? ` · ${r.territorio}` : ""}</span>
+              <strong>{r.titulo}</strong> <span className="tenue">· {fecha(r.fecha)}{r.territorio ? ` · ${r.territorio}` : ""}</span>
               <div style={{ fontSize: 13, marginTop: 4 }}>{r.extracto}</div>
               {r.temas.length > 0 && <div className="fila" style={{ gap: 6, marginTop: 6 }}>{r.temas.map((t) => <span key={t} className="sello">{t}</span>)}</div>}
             </button>
