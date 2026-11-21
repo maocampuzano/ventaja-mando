@@ -220,7 +220,7 @@ function Revision({ planilla, alCerrar, alCambiar, alAprobar }: {
       {error && <p className="error" role="alert">{error}</p>}
       <div className="fila entre">
         <span className="tenue">
-          {!vinculada ? "Falta vincular la hoja impresa." : porCorregir.length ? `${porCorregir.length} ${porCorregir.length === 1 ? "fila por corregir" : "filas por corregir"}: una cédula incompleta no se puede aprobar.` : porConfirmar.length ? `${porConfirmar.length} ${porConfirmar.length === 1 ? "fila por confirmar" : "filas por confirmar"} (en ámbar o rojo).` : "Todo revisado."}
+          {!vinculada ? "Falta vincular la hoja impresa." : porCorregir.length ? `${porCorregir.length} ${porCorregir.length === 1 ? "fila por corregir" : "filas por corregir"}: una cédula o un celular incompleto no se puede aprobar.` : porConfirmar.length ? `${porConfirmar.length} ${porConfirmar.length === 1 ? "fila por confirmar" : "filas por confirmar"} (en ámbar o rojo).` : "Todo revisado."}
         </span>
         <button className="btn btn-primario" disabled={!filas || !vinculada || porConfirmar.length > 0 || porCorregir.length > 0 || ocupado} onClick={() => void aprobar()}>
           {ocupado ? "Aprobando…" : `Aprobar la hoja (${seRegistran} ${seRegistran === 1 ? "registro" : "registros"})`}
