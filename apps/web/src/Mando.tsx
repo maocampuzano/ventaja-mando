@@ -22,7 +22,7 @@ const todasLasCapas: { id: Capa; nombre: string; leyenda: ReactNode }[] = [
 const nombreTipo = { brigada: "Brigada", pauta: "Más pauta", oportunidad: "Oportunidad", mantener: "Mantener" };
 const colorTipo = { brigada: "ambar", pauta: "azul", oportunidad: "azul", mantener: "" };
 
-export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprobadas: string[]; alAprobar: (t: Tarea) => void }) {
+export function Mando({ barra, aprobadas, alAprobar }: { barra: ReactNode; aprobadas: string[]; alAprobar: (t: Tarea) => Promise<void> }) {
   const { meta: metaVista, recomendaciones, totales, zonaDe, modo, zonas, hayPauta } = useTablero();
   // Sin pauta conectada no se ofrece su capa, y la de acciones solo distingue dónde enviar brigada.
   const capas = hayPauta ? todasLasCapas : todasLasCapas.filter((c) => c.id !== "pauta")
@@ -115,7 +115,7 @@ function PerfilZona({ id }: { id: string }) {
       <div className="rejilla" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div><div className="etiqueta">Potencial (votos 2023)</div><div className="dato" style={{ fontSize: 22 }}>{miles(z.potencial)}</div></div>
         <div><div className="etiqueta">Validados</div><div className="dato" style={{ fontSize: 22 }}>{miles(z.validados)}</div></div>
-        <div><div className="etiqueta">Comprometidos / meta</div><div className="dato" style={{ fontSize: 22 }}>{pct(z.comprometidos / z.meta)}</div></div>
+        <div><div className="etiqueta">Comprometidos / meta</div><div className="dato" style={{ fontSize: 22 }}>{z.meta > 0 ? pct(z.comprometidos / z.meta) : "—"}</div></div>
         <div><div className="etiqueta">Líderes asignados</div><div className="dato" style={{ fontSize: 22 }}>{suyos.length}</div></div>
       </div>
       {hayPauta && (

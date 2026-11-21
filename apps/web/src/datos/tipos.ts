@@ -78,6 +78,8 @@ export interface FuenteDatos {
   equipo(sesion: Sesion): Promise<{ miembros: Miembro[]; invitaciones: InvitacionPendiente[] }>;
   /** Devuelve el código de la invitación: va en el enlace y en el QR, y en la base solo queda su hash. */
   invitar(sesion: Sesion, datos: NuevaInvitacion): Promise<string>;
+  /** Guarda en la base una tarea propuesta por el Asesor IA y aprobada por una persona. Devuelve su id. */
+  crearTarea(sesion: Sesion, tarea: { titulo: string; detalle: string; tipo?: string }): Promise<string>;
   anularInvitacion(sesion: Sesion, id: string): Promise<void>;
   aceptarInvitacion(datos: Aceptacion): Promise<Ingreso>;
   // Datos y cumplimiento (solo la dirección; la base lo hace cumplir)

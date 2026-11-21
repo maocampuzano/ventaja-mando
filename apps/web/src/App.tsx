@@ -89,14 +89,23 @@ export default function App() {
   const baja = /^#(?:b|baja)\/(.+)$/.exec(location.hash);
   if (baja) return <Baja fuente={fuente} token={decodeURIComponent(baja[1])} />;
   if (sesion === undefined) return <main className="ingreso"><p className="tenue">Cargando…</p></main>;
-  if (!sesion && invitacion) {
+  // Con una invitación en el enlace se muestra la invitación aunque ya haya una sesión abierta (por ejemplo, alguien
+  // de otra campaña): AceptarInvitacion cierra la sesión si el correo no coincide.
+  if (invitacion) {
     return <AceptarInvitacion fuente={fuente} codigo={invitacion}
       alEntrar={(s) => { cerrarInvitacion(); setSesion(s); }}
-      alNecesitar2fa={() => { cerrarInvitacion(); setAviso("Invitación aceptada. Su rol pide verificación en dos pasos: entre con su correo y contraseña para activarla."); }} />;
+      alNecesitar2fa={() => {
+        cerrarInvitacion();
+        // Si había otra sesión abierta, se cierra: hay que entrar de nuevo con la verificación en dos pasos.
+        if (sesion) { fuente.cerrarSesion(); setSesion(null); }
+        setAviso("Invitación aceptada. Su rol pide verificación en dos pasos: entre con su correo y contraseña para activarla.");
+      }} />;
   }
   if (!sesion) return <InicioSesion fuente={fuente} alEntrar={setSesion} aviso={aviso} />;
   return <Panel sesion={sesion} alSalir={() => { fuente.cerrarSesion(); setSesion(null); history.replaceState(null, "", " "); }} />;
 }
+
+const hoyBogota = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
 
 function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
   useRegistroDeErrores(sesion);
@@ -108,8 +117,10 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [datos, setDatos] = useState<Contexto | null>(null);
   const [error, setError] = useState("");
+  // Las tareas aprobadas hoy, por persona y campaña: otra sesión en la misma pestaña no hereda las de la anterior.
+  const llaveAprobadas = `comando-aprobadas:${sesion.usuarioId}:${sesion.campana.id}:${hoyBogota()}`;
   const [aprobadas, setAprobadas] = useState<Tarea[]>(() => {
-    try { return JSON.parse(sessionStorage.getItem("vm-aprobadas") ?? "[]"); } catch { return []; }
+    try { return JSON.parse(sessionStorage.getItem(llaveAprobadas) ?? "[]"); } catch { return []; }
   });
 
   useEffect(() => {
@@ -129,8 +140,8 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
   const enSala = sala || vista === "mando" || vista === "diae";
 
   useEffect(() => {
-    try { sessionStorage.setItem("vm-aprobadas", JSON.stringify(aprobadas)); } catch { /* sin almacenamiento */ }
-  }, [aprobadas]);
+    try { sessionStorage.setItem(llaveAprobadas, JSON.stringify(aprobadas)); } catch { /* sin almacenamiento */ }
+  }, [aprobadas, llaveAprobadas]);
 
   useEffect(() => {
     const f = () => setVista(vistaInicial());
@@ -142,7 +153,12 @@ function Panel({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
     setVista(v);
     try { history.replaceState(null, "", `#${v}`); } catch { /* la página publicada no muestra la dirección */ }
   };
-  const aprobar = (t: Tarea) => setAprobadas((a) => (a.some((x) => x.id === t.id) ? a : [...a, t]));
+  // Aprobar guarda la tarea en la base (antes solo cambiaba la pantalla). Si falla, el error sube al botón.
+  const aprobar = async (t: Tarea) => {
+    if (aprobadas.some((x) => x.id === t.id)) return;
+    await fuente.crearTarea(sesion, t);
+    setAprobadas((a) => (a.some((x) => x.id === t.id) ? a : [...a, t]));
+  };
 
   const usuario = (
     <span className="chip">

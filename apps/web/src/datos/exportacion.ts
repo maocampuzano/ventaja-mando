@@ -4,7 +4,10 @@
 import type { Exportacion } from "./tipos";
 
 const celda = (v: unknown) => {
-  const s = v === null || v === undefined ? "" : String(v);
+  let s = v === null || v === undefined ? "" : String(v);
+  // Un nombre que empieza por «=», «+», «-», «@», tabulador o retorno lo tomaría Excel como fórmula (podría, por
+  // ejemplo, enviar a otro sitio los teléfonos de las demás filas): se antepone un apóstrofo para que sea texto.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Barra, claseIndice, colorIndice } from "./comunes";
 import type { Lider } from "./data";
 import { useTablero } from "./datos/contexto";
-import { enlaceWhatsAppManual, miles, pct } from "@ventaja/nucleo";
+import { enlaceWhatsAppManual, miles, numeroWhatsApp, pct } from "@ventaja/nucleo";
 
 const comps = [
   { k: "calidad", n: "Calidad", ayuda: "Validados sobre registrados" },
@@ -49,7 +49,7 @@ export function Lideres() {
               {lista.map((l) => (
                 <tr key={l.id} className="clic" aria-selected={sel?.id === l.id} onClick={() => setSel(l)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSel(l)}>
                   <td><strong>{l.nombre}</strong></td>
-                  <td className="tenue">{zonaDe(l.zonaId).nombre}</td>
+                  <td className="tenue">{zonaDe(l.zonaId)?.nombre ?? "—"}</td>
                   <td className="num">{miles(l.registrados)}</td>
                   <td className="num">{miles(l.validados)}</td>
                   <td>
@@ -75,7 +75,7 @@ export function Lideres() {
               <h2>{sel.nombre}</h2>
               <button className="btn btn-chico" onClick={() => setSel(null)}>Cerrar</button>
             </div>
-            <p className="tenue">{zonaDe(sel.zonaId).nombre}, meta de {miles(sel.meta)} validados.</p>
+            <p className="tenue">{zonaDe(sel.zonaId)?.nombre ?? "—"}, meta de {miles(sel.meta)} validados.</p>
             {comps.map((c) => (
               <div key={c.k} className="pila" style={{ gap: 4 }}>
                 <div className="fila entre"><span>{c.n}</span><strong>{pct(sel.indice.componentes[c.k])}</strong></div>
@@ -86,12 +86,19 @@ export function Lideres() {
             {sel.duplicadosConOtros / sel.registrados > 0.15 && (
               <p className="aviso">{miles(sel.duplicadosConOtros)} de sus registros coinciden con los de otros líderes. Puede ser una lista compartida: conviene revisarla con él antes de sumar sus cifras.</p>
             )}
-            <div className="fila">
-              <a className="btn btn-primario" href={enlaceWhatsAppManual("573000000000", `Hola ${sel.nombre.split(" ")[0]}, ¿podemos revisar tu lista esta semana?`)} target="_blank" rel="noreferrer">
-                Escribirle por WhatsApp
-              </a>
-            </div>
-            <p className="etiqueta">Abre su WhatsApp con el mensaje listo; lo envía usted. El número del prototipo es ficticio.</p>
+            {numeroWhatsApp(sel.telefono) ? (
+              <>
+                <div className="fila">
+                  <a className="btn btn-primario" href={enlaceWhatsAppManual(numeroWhatsApp(sel.telefono)!, `Hola ${sel.nombre.split(" ")[0]}, ¿podemos revisar tu lista esta semana?`)} target="_blank" rel="noreferrer">
+                    Escribirle por WhatsApp
+                  </a>
+                </div>
+                <p className="etiqueta">Abre su WhatsApp con el mensaje listo; lo envía usted.</p>
+              </>
+            ) : (
+              // Sin celular válido no hay botón: antes abría un número inventado, que podía ser de un desconocido.
+              <p className="etiqueta">No tiene un celular registrado para escribirle por WhatsApp.</p>
+            )}
             <hr className="separa" />
             <h3>Después de la elección</h3>
             <p className="tenue" style={{ fontSize: 13 }}>Se comparan los apoyos que registró con los votos del E-14 en sus mesas, siempre en agregado por mesa. Nunca dice cómo votó una persona.</p>

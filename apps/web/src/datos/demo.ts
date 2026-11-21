@@ -135,6 +135,7 @@ export function crearFuenteDemo(): FuenteDatos {
         .map((i) => ({ id: i.id, correo: i.correo, rol: i.rol, territorioIds: i.territorioIds, expira: i.expira }));
       return { miembros, invitaciones };
     },
+    async crearTarea() { return crypto.randomUUID(); },
     // Mismas validaciones que public.crear_invitacion y la política de la tabla invitacion.
     async invitar(s, d) {
       const correo = normalizarCorreo(d.correo);
