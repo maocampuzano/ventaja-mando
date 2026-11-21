@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { Barra, diasParaEleccion } from "./comunes";
+import { Barra } from "./comunes";
+import { diasParaEleccion } from "./indicadores";
 // La bandeja del líder y la mesa del testigo son vistas previas de la app (fase 3): usan la semilla ficticia.
 import { lideres as lideresSemilla, puestos as puestosSemilla, zonaDe as zonaSemilla } from "./data";
 import { useTablero } from "./datos/contexto";
