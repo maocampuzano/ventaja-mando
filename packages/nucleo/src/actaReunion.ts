@@ -87,3 +87,14 @@ export function rutaAdjuntoValida(ruta: string, campanaId: string, reunionId: st
   const partes = ruta.split("/");
   return partes.length === 3 && partes[0] === campanaId && partes[1] === reunionId && ARCHIVO_ACTA.test(partes[2]);
 }
+
+/**
+ * Foto del bucket «evidencias» (planillas y E-14): «<campaña>/<usuario>/<archivo>.<jpg|jpeg|png|webp>», dentro de la
+ * campaña indicada. La lectura con IA la descarga con la llave del servidor: sin esta comprobación, una ruta cambiada
+ * a mano podía apuntar a la foto de otra campaña.
+ */
+const UUID_RUTA = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function rutaEvidenciaValida(ruta: string, campanaId: string): boolean {
+  const partes = ruta.split("/");
+  return partes.length === 3 && partes[0] === campanaId && UUID_RUTA.test(partes[1]) && ARCHIVO_ACTA.test(partes[2]);
+}
