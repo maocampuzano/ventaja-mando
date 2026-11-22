@@ -224,6 +224,30 @@ describe("una operación que el servidor rechaza no frena a las demás", () => {
   });
 });
 
+describe("la foto se borra solo cuando ya quedó guardado que llegó", () => {
+  it("alConfirmar corre después de guardar «enviado», nunca antes", async () => {
+    const servidor = new ServidorFalso();
+    const almacen = new AlmacenEnMemoria();
+    let estadoAlBorrar: string | undefined;
+    const cola = new ColaSincronizacion(almacen, servidor, () => "00000000-0000-4000-8000-000000000001", () => 1, undefined, undefined,
+      async (op) => { estadoAlBorrar = (await almacen.todas()).find((o) => o.id === op.id)?.estado; });
+    await cola.agregar("persona", { nombre: "Con firma" });
+    await cola.sincronizar();
+    expect(estadoAlBorrar).toBe("enviado");
+  });
+
+  it("si el envío falla, no se borra nada", async () => {
+    const servidor = new ServidorFalso();
+    servidor.conSenal = false;
+    let borradas = 0;
+    const cola = new ColaSincronizacion(new AlmacenEnMemoria(), servidor, () => "00000000-0000-4000-8000-000000000002", () => 1,
+      undefined, undefined, async () => { borradas++; });
+    await cola.agregar("persona", { nombre: "Sin señal" });
+    await cola.sincronizar();
+    expect(borradas).toBe(0);
+  });
+});
+
 describe("cada persona solo ve y envía lo suyo", () => {
   it("si en el teléfono entra otra persona, no ve ni envía lo que dejó la anterior", async () => {
     const servidor = new ServidorFalso();

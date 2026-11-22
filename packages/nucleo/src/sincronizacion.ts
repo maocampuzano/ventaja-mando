@@ -72,19 +72,22 @@ export class ColaSincronizacion {
   private ahora: () => number;
   private depurar: (op: Operacion) => unknown;
   private dueno: string | undefined;
+  private alConfirmar: ((op: Operacion) => Promise<unknown>) | undefined;
 
   /**
    * `depurar` recorta los datos de lo que ya llegó al servidor: el teléfono no tiene por qué seguir guardando, por
    * ejemplo, la cédula o el celular de una persona que ya está en la base. Por defecto no recorta nada.
    */
   constructor(almacen: Almacen, transporte: Transporte, nuevoId: () => string, ahora: () => number = Date.now,
-    depurar: (op: Operacion) => unknown = (op) => op.datos, dueno?: string) {
+    depurar: (op: Operacion) => unknown = (op) => op.datos, dueno?: string,
+    alConfirmar?: (op: Operacion) => Promise<unknown>) {
     this.almacen = almacen;
     this.transporte = transporte;
     this.nuevoId = nuevoId;
     this.ahora = ahora;
     this.depurar = depurar;
     this.dueno = dueno;
+    this.alConfirmar = alConfirmar;
   }
 
   /** Guarda la operación en el celular. Nunca falla por falta de señal. */
@@ -140,6 +143,9 @@ export class ColaSincronizacion {
       try {
         const res = await this.transporte.enviar(op);
         await this.almacen.guardar({ ...op, datos: this.depurar(op), estado: "enviado", intentos: op.intentos + 1, proximoIntento: this.ahora(), ultimoError: undefined });
+        // Solo después de dejar guardado que llegó (por ejemplo, borrar del teléfono la foto de la firma). Si se hiciera
+        // antes y el teléfono se apagara en medio, el reintento ya no encontraría la foto.
+        if (this.alConfirmar) await this.alConfirmar(op).catch(() => undefined);
         if (res === "creada") r.enviadas++; else r.yaEstaban++;
       } catch (e) {
         const intentos = op.intentos + 1;

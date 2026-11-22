@@ -1,4 +1,5 @@
-import { createReadStream, copyFileSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { createReadStream, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { defineConfig, loadEnv, type Plugin } from "vite";
@@ -32,6 +33,39 @@ function maplibreAparte(): Plugin {
   };
 }
 
+// Política de seguridad de contenido (CSP). La página es un solo archivo con el código en línea: en vez de permitir
+// cualquier script en línea, se permite solo este, por su huella SHA-256, que se calcula al compilar y se escribe en
+// dist/_headers (Cloudflare Pages). Si alguien lograra inyectar un script, el navegador no lo ejecuta.
+function politicaDeContenido(supabaseUrl: string): Plugin {
+  return {
+    name: "politica-de-contenido",
+    apply: "build",
+    enforce: "post",
+    writeBundle(opciones) {
+      const dir = opciones.dir ?? "dist";
+      const html = readFileSync(join(dir, "index.html"), "utf8");
+      const huellas = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+        .filter((m) => m[1].trim())
+        .map((m) => `'sha256-${createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
+      const supa = supabaseUrl ? `${supabaseUrl} ${supabaseUrl.replace(/^https:/, "wss:")}` : "";
+      const csp = [
+        "default-src 'self'",
+        `script-src 'self' ${huellas.join(" ")}`,
+        "worker-src 'self' blob:",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        `img-src 'self' data: blob: https://api.maptiler.com ${supabaseUrl}`.trim(),
+        `connect-src 'self' https://api.maptiler.com ${supa}`.trim(),
+        "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'",
+      ].join("; ");
+      const archivo = join(dir, "_headers");
+      if (!existsSync(archivo)) return;
+      const cabeceras = readFileSync(archivo, "utf8");
+      writeFileSync(archivo, cabeceras.replace("  Referrer-Policy: no-referrer", `  Content-Security-Policy: ${csp}\n  Referrer-Policy: no-referrer`));
+    },
+  };
+}
+
 // `npm run build` deja la aplicación (JS y CSS) dentro de dist/index.html, más MapLibre aparte en dist/vendor/.
 // Solo estas variables llegan al navegador. La clave secreta de Supabase nunca se incluye. La de MapTiler es pública
 // por diseño: se protege restringiéndola a los dominios del panel en la cuenta de MapTiler.
@@ -40,7 +74,7 @@ export default defineConfig(({ mode }) => {
   const supabase = env.MODO_DATOS === "supabase"; // en modo demo no se incluye nada del proyecto real
   const url = supabase ? (env.SUPABASE_URL ?? "").replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/$/, "") : "";
   return {
-    plugins: [react(), viteSingleFile(), maplibreAparte()],
+    plugins: [react(), viteSingleFile(), maplibreAparte(), politicaDeContenido(url)],
     define: {
       "import.meta.env.VITE_MODO_DATOS": JSON.stringify(supabase ? "supabase" : "demo"),
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(url),

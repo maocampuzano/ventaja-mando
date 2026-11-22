@@ -21,7 +21,13 @@ export function SelectorSegmento({ segmento, alCambiar }: { segmento: SegmentoEn
       <div className="fila" style={{ gap: 10, flexWrap: "wrap" }}>
         {zonas.map((z) => (
           <label key={z.id} className="fila" style={{ gap: 6, fontSize: 13 }}>
-            <input type="checkbox" checked={zonasSel.includes(z.id)} onChange={() => alCambiar({ ...segmento, territorioIds: alternar(zonasSel, z.id) })} />{z.nombre}
+            <input type="checkbox" checked={zonasSel.includes(z.id)} onChange={() => {
+              // Al cambiar las zonas, los líderes elegidos que ya no están en ellas se quitan: no quedan escondidos
+              // en el segmento, sumando destinatarios que la persona ya no ve en la lista.
+              const nuevas = alternar(zonasSel, z.id);
+              const visibles = new Set((nuevas.length ? lideres.filter((l) => nuevas.includes(l.zonaId)) : lideres).map((l) => l.id));
+              alCambiar({ ...segmento, territorioIds: nuevas, liderIds: lideresSel.filter((id) => visibles.has(id)) });
+            }} />{z.nombre}
           </label>
         ))}
       </div>
